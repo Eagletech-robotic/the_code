@@ -1,0 +1,17 @@
+/*
+ * map
+ *
+ *  Created on: Aug 29, 2024
+ *      Author: nboulay
+ */
+#pragma once
+
+struct point_t {
+	float x;
+	float y;
+} point_t;
+
+struct map_t {
+	point_t current_position;
+	point_t current_vitesse;
+} map_t;
