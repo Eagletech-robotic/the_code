@@ -18,7 +18,8 @@ typedef struct pid_t {
 
 // constructeur
 void pid_init(pid_t *pid);
-float pid_compute(pid_t * pid, float input); //fonction in_loop
+float pid_compute(pid_t * pid, float input); //fonction in_loop avec l'entrée capteur
+void pid_command(pid_t * pid, float setpoint); // mise à jour de la commande
 void pid_tune(pid_t *pid,float Kp, float Ki, float Kd); // modif des paramètres
 void pid_frequency(pid_t* pid,int f); // modification de la vitesse de sample, n'a pas raison de changer.
 void pid_limits(pid_t* pid, float Min, float Max);

@@ -2,107 +2,149 @@
 // code issue de https://www.pm-robotix.eu/2022/01/19/ameliorer-vos-regulateurs-pid/#Direction-du-contr%C3%B4leur
 /*working variables*/
 
-unsigned long lastTime;
-double Input, Output, Setpoint;
-double ITerm, lastInput;
-double kp, ki, kd;
-int SampleTime = 1000; //1 sec
-double outMin, outMax;
-bool inAuto = false;
+//unsigned long lastTime;
+//float Input, Output, Setpoint;
+//float ITerm, lastInput;
+//float kp, ki, kd;
+//int SampleTime_hz = 1000; //1 sec
+//float outMin, outMax;
+//bool inAuto = false;
 
-#define MANUAL 0
-#define AUTOMATIC 1
+//#define MANUAL 0
+//#define AUTOMATIC 1
 
-#define DIRECT 0
-#define REVERSE 1
-int controllerDirection = DIRECT;
+//#define DIRECT 0
+//#define REVERSE 1
+//int controllerDirection = DIRECT;
 
-void Compute()
-{
-   if(!inAuto) return;
-   unsigned long now = millis();
-   int timeChange = (now - lastTime);
-   if(timeChange>=SampleTime)
-   {
-      /*Compute all the working error variables*/
-      double error = Setpoint - Input;
-      ITerm+= (ki * error);
-      if(ITerm > outMax) ITerm= outMax;
-      else if(ITerm < outMin) ITerm= outMin;
-      double dInput = (Input - lastInput);
+#include "pid.h"
 
-      /*Compute PID Output*/
-      Output = kp * error + ITerm- kd * dInput;
-      if(Output > outMax) Output = outMax;
-      else if(Output < outMin) Output = outMin;
+float clamp(float val, float Min, float Max) {
+	float ret = val;
 
-      /*Remember some variables for next time*/
-      lastInput = Input;
-      lastTime = now;
-   }
+	if (val > Max) {
+		ret = Max;
+	} else if (val < Min) {
+		ret = Min;
+	}
+	return ret;
 }
 
-void SetTunings(double Kp, double Ki, double Kd)
+void Initialize(pid_t* pid)
+{
+   pid->lastInput = pid->Input;
+   pid->ITerm = pid->Output;
+   pid->ITerm = clamp(pid->ITerm, pid->outMin, pid->outMax);
+}
+
+void pid_init(pid_t *pid) {
+	pid_t pid_ = {0};
+	*pid = pid_;
+	pid->SampleTime_hz = 1000;
+	pid->isModeAuto = 0;
+	pid->isControllerDirectionDirect = 1;
+	Initialize(pid);
+}
+
+void pid_command(pid_t * pid, float setpoint) {
+	pid->Setpoint = setpoint;
+}
+
+float pid_compute(pid_t * pid, float input) {
+
+	if(!pid->isModeAuto) return 0.0; // attention, cette valeur n'a peut être aucun sens
+
+	pid->Input = input;
+	/*Compute all the working error variables*/
+	float error = pid->Setpoint - pid->Input;
+	pid->ITerm += (pid->ki * error);
+
+	// anti windup
+	pid->ITerm = clamp(pid->ITerm,pid->outMin,pid->outMax);
+
+	float dInput = (pid->Input - pid->lastInput);
+
+	/*Compute PID Output*/
+	pid->Output = pid->kp * error + pid->ITerm - pid->kd * dInput;
+
+	pid->Output = clamp(pid->Output,pid->outMin,pid->outMax);
+
+	pid->lastInput = pid->Input;
+	return pid->Output;
+}
+
+//void Compute(pid_t *pid)
+//{
+//   if(!pid->inAuto) return;
+//   unsigned long now = millis();
+//   int timeChange = (now - lastTime);
+//   if(timeChange>=SampleTime)
+//   {
+//      /*Compute all the working error variables*/
+//		pid_compute(pid);
+//      /*Remember some variables for next time*/
+//      lastTime = now;
+//   }
+//}
+
+void pid_tune(pid_t *pid,float Kp, float Ki, float Kd)
 {
    if (Kp<0 || Ki<0|| Kd<0) return;
 
-  double SampleTimeInSec = ((double)SampleTime)/1000;
-   kp = Kp;
-   ki = Ki * SampleTimeInSec;
-   kd = Kd / SampleTimeInSec;
+  float SampleTimeInSec = ((float)pid->SampleTime_hz)/1000;
+  float kp = Kp;
+  float ki = Ki * SampleTimeInSec;
+  float kd = Kd / SampleTimeInSec;
 
-  if(controllerDirection ==REVERSE)
+  if(!pid->isControllerDirectionDirect)
    {
       kp = (0 - kp);
       ki = (0 - ki);
       kd = (0 - kd);
    }
+  pid->kp = kp;
+  pid->ki = ki;
+  pid->kd = kd;
 }
 
-void SetSampleTime(int NewSampleTime)
+void pid_frequency(pid_t* pid,int f)
 {
-   if (NewSampleTime > 0)
+   if (f > 0)
    {
-      double ratio  = (double)NewSampleTime
-                      / (double)SampleTime;
-      ki *= ratio;
-      kd /= ratio;
-      SampleTime = (unsigned long)NewSampleTime;
+      float ratio  = (float)f / (float)pid->SampleTime_hz;
+      pid->ki *= ratio;
+      pid->kd /= ratio;
+      pid->SampleTime_hz = (unsigned long)f;
    }
 }
 
-void SetOutputLimits(double Min, double Max)
+void pid_limits(pid_t* pid, float Min, float Max)
 {
    if(Min > Max) return;
-   outMin = Min;
-   outMax = Max;
-
-   if(Output > outMax) Output = outMax;
-   else if(Output < outMin) Output = outMin;
-
-   if(ITerm > outMax) ITerm= outMax;
-   else if(ITerm < outMin) ITerm= outMin;
+   pid->outMin = Min;
+   pid->outMax = Max;
+   pid->Output = clamp(pid->Output, Min, Max);
+   pid->ITerm = clamp(pid->ITerm, Min, Max);
 }
 
-void SetMode(int Mode)
+void pid_mode(pid_t* pid, int Mode)
 {
-    bool newAuto = (Mode == AUTOMATIC);
-    if(newAuto == !inAuto)
+    if(Mode)
     {  /*we just went from manual to auto*/
-        Initialize();
+        Initialize(pid);
     }
-    inAuto = newAuto;
+    pid->isModeAuto = Mode;
 }
 
-void Initialize()
-{
-   lastInput = Input;
-   ITerm = Output;
-   if(ITerm > outMax) ITerm= outMax;
-   else if(ITerm < outMin) ITerm= outMin;
+void pid_stop(pid_t* pid) {
+	pid_mode(pid, 0);
 }
 
-void SetControllerDirection(int Direction)
+void pid_start(pid_t* pid) {
+	pid_mode(pid, 1);
+}
+
+void pid_SetControllerDirection(pid_t* pid, int Direction)
 {
-   controllerDirection = Direction;
+   pid->isControllerDirectionDirect = Direction;
 }
