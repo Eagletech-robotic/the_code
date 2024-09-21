@@ -18,6 +18,7 @@
 //int controllerDirection = DIRECT;
 
 #include "pid.h"
+#include <stdio.h>  //printf
 
 float clamp(float val, float Min, float Max) {
 	float ret = val;
@@ -28,6 +29,13 @@ float clamp(float val, float Min, float Max) {
 		ret = Min;
 	}
 	return ret;
+}
+
+void pid_print(pid_t* pid) {
+	printf("%f %f %f\r\n", pid->kp, pid->ki , pid->kd);
+	printf("%f : %f (%f)\r\n", pid->Setpoint, pid->Output , pid->Input);
+	printf(" %f %f \r\n", pid->ITerm, pid->lastInput , pid->Input);
+	printf(" [%f %f] %i %i\r\n", pid->outMin, pid->outMax,pid->isModeAuto, pid->isControllerDirectionDirect);
 }
 
 void Initialize(pid_t* pid)
@@ -41,7 +49,7 @@ void pid_init(pid_t *pid) {
 	pid_t pid_ = {0};
 	*pid = pid_;
 	pid->SampleTime_hz = 1000;
-	pid->isModeAuto = 0;
+	pid->isModeAuto = 1;
 	pid->isControllerDirectionDirect = 1;
 	Initialize(pid);
 }
@@ -147,4 +155,41 @@ void pid_start(pid_t* pid) {
 void pid_SetControllerDirection(pid_t* pid, int Direction)
 {
    pid->isControllerDirectionDirect = Direction;
+}
+
+int pid_test() {
+	pid_t pid;
+
+	pid_init(&pid);
+	pid_tune(&pid,1.0,1.0,1.0); // valeur bien trop grande
+	pid_limits(&pid,-110.0,110.0);
+	//inloop simulation
+	pid_command(&pid,100.0);
+	float sensor =1.0;
+	float output;
+	for(int i =0; i<1000;i++){
+		output = pid_compute(&pid, sensor);
+
+		// simulation de système
+		if (output > sensor) {
+			sensor +=1.0f;
+		} else {
+			sensor -=1.0f;
+		}
+		//pid_print(&pid);
+		printf("%i %f\r\n",i,output);
+	}
+	pid_command(&pid,-10.0);
+	for(int i =0; i<1000;i++){
+		output = pid_compute(&pid, sensor);
+
+		// simulation de système
+		if (output > sensor) {
+			sensor +=1.0f;
+		} else {
+			sensor -=1.0f;
+		}
+		printf("%i %f\r\n",i,output);
+	}
+	return output != 0.0; // oui, je sais...
 }

@@ -138,6 +138,7 @@ int main(void)
 
   printf("hello world\r\n");
 
+  pid_test();
 
 //  if(carre_test()) {
 //	  printf("carre_test ok\r\n");
@@ -166,6 +167,7 @@ int main(void)
   float cycle_period_s = 1.0f / (80000000.0f /(htim16.Init.Prescaler + 1.0f ) / (htim16.Init.Period + 1.0f) );
   printf("cycle_period : %f s\r\n", cycle_period_s);
   carre_init(&carre, cycle_period_s);
+
 
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
 
