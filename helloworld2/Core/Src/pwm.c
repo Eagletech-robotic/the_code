@@ -12,27 +12,26 @@
 // tout cela est programmer dans le ioc
 
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim17;
 
-
-void PWMset_(TIM_HandleTypeDef *htim, float ratio2, float ratio15) {
+void PWMset_1(TIM_HandleTypeDef *htim, float ratio) {
 	uint32_t period = htim->Init.Period;
-
-	htim->Instance->CCR1 = ratio15* (1.0f*period);
-	htim->Instance->CCR3 = ratio2 * (1.0f*period);
-
-	//printf("CCR1 : %li %f\r\n", htim->Instance->CCR1, ratio15);
+    htim->Instance->CCR1 = ratio* (1.0f*period);
+	//printf("CCR1 : %li %f\r\n", htim->Instance->CCR1, ratio);
 }
 
 // 0.0<=ratio<=1.0
 // cela permet de changer la fréquence et le compteur sans changer les utilisations
-// PA2 timer 2 channel 3
-// PA15 timer 2 channel 1
-void PWMset( float ratio2, float ratio15) {
-	PWMset_(&htim2,ratio2,ratio15);
+// PA6 timer 16 channel 1
+// PA7 timer 17 channel 1
+void PWMset( float ratio1, float ratio2) {
+	PWMset_1(&htim16,ratio1);
+	PWMset_1(&htim17,ratio2);
 }
 
 void PWMstart() {
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
 }
 
