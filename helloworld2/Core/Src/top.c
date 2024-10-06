@@ -35,8 +35,8 @@ void top_init(){
 //  test du jack de démarrage pour lancer un match : enregistre le t0 du match
 //  test du bouton bleue pour un autotest ?
 void top_in_loop() {
-	printf("encoder1 %lu\r\n", encoder_get_value(&htim5));
-	printf("encoder2 %lu\r\n", encoder_get_value(&htim3));
+	printf("encoder %lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
+
 }
 
 int old_tick=0;
