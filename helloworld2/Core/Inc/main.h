@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BLUE_BUTTON_Pin GPIO_PIN_13
+#define BLUE_BUTTON_GPIO_Port GPIOC
 #define encoder1_1_Pin GPIO_PIN_2
 #define encoder1_1_GPIO_Port GPIOA
 #define encoder1_2_Pin GPIO_PIN_3
@@ -69,6 +71,8 @@ void Error_Handler(void);
 #define PWM1_GPIO_Port GPIOA
 #define PWM2_Pin GPIO_PIN_7
 #define PWM2_GPIO_Port GPIOA
+#define JACK_Pin GPIO_PIN_5
+#define JACK_GPIO_Port GPIOC
 #define encoder2_1_Pin GPIO_PIN_0
 #define encoder2_1_GPIO_Port GPIOB
 #define encoder2_2_Pin GPIO_PIN_1

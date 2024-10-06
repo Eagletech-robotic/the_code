@@ -32,6 +32,7 @@ void carre_init(carre_t * carre, float cycle_period_s) {
 	carre->timer_period_s = cycle_period_s; // cela dépend de la vitesse de cycle choisi à la configuration
 }
 
+// calcul de vitesses avec la vitesse moyenne et le rayon de courbure voulu selon l'entre-axe
 void r_to_v (float r, float v, float *v1, float *v2 ) {
 	*v1 = v * (1 + r_axel_m/(2*r));
 	*v2 = v * (1 - r_axel_m/(2*r));

@@ -151,17 +151,7 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  startToF();
-
-  printf("hello world\r\n");
-
-//  pid_test();
-
-//  if(carre_test()) {
-//	  printf("carre_test ok\r\n");
-//  } else {
-//	  printf("carre_test KO !!!\r\n");
-//  }
+  top_init();
 
   // Start timer
   HAL_TIM_Base_Start_IT(&htim1);
@@ -200,12 +190,12 @@ int main(void)
   while (1)
   {
 
-	 while(! time_to_start) {}
+	 while(! top_is_time_to_start()) {}
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+	 top_in_loop();
 	  //	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
 	    led_1(.5);
 	 	carre_in_loop(&carre);
@@ -215,13 +205,15 @@ int main(void)
 
 	  	int distance;
 
+	  	// prend 10 ms !!!!
 		//getAxisAccelerometer(&accx,&accy,&accz);
-	  	getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
-		getAxisMagnetometer(&magx,&magy,&magz);
-		getHumidity(&hum);
-		getTemperature(&temp);
-	    getDistance(&distance);
+//	  	getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
+//		getAxisMagnetometer(&magx,&magy,&magz);
+//		getHumidity(&hum);
+//		getTemperature(&temp);
+//	    getDistance(&distance);
 	    //getAxisGyro(&gyrox, &gyroy, &gyroz);
+
 
 //	    printf("distance : %i \r\n",distance);
 //	    printf("acc : %f %f %f\r\n", accx, accy, accz);
@@ -856,15 +848,21 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(sens2_GPIO_Port, sens2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(sens1_GPIO_Port, sens1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : BLUE_BUTTON_Pin JACK_Pin */
+  GPIO_InitStruct.Pin = BLUE_BUTTON_Pin|JACK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : sens2_Pin */
   GPIO_InitStruct.Pin = sens2_Pin;
