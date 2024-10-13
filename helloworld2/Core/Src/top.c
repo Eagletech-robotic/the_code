@@ -11,12 +11,12 @@
 #include <stdio.h>
 #include "encoder.h"
 
-extern TIM_HandleTypeDef htim1; // timer de gestion du temps (1khz) : TODO : utiliser systick c'est fait pour: HAL_GetTick()
+extern TIM_HandleTypeDef htim1; //
+extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 2
 extern TIM_HandleTypeDef htim5; // encoder 1
 extern TIM_HandleTypeDef htim15; // pwm sur la led
-extern TIM_HandleTypeDef htim16; // PWM1
-extern TIM_HandleTypeDef htim17; // PWM2
+
 
 extern UART_HandleTypeDef huart4; // uart du connector ARD
 extern UART_HandleTypeDef huart1; // uart pour debug par usb
@@ -29,11 +29,22 @@ void top_init(){
 	  encoder_init(&htim5);
 }
 
-// code executer à la fréquence du timer htim1
+// code executer à la fréquence du timer systick
 //  écriture des IO
+	//  commande PWM des 2 moteurs
+	//  commande servo si on les utilises
+	//  commande ouput
 //  lecture des IOs
-//  test du jack de démarrage pour lancer un match : enregistre le t0 du match
-//  test du bouton bleue pour un autotest ?
+	// encodeuse roues
+	// lecture du jack
+	// lecture du bouton bleu (sur 2 cycles pour faire un antirebond ?)
+	// lecture ADC si besoin
+ 	// lecture gyroscope
+	// " accelero
+	// " boussole
+// couche du dessous :
+	//  test du jack de démarrage pour lancer un match : enregistre le t0 du match
+	//  test du bouton bleue pour un autotest ?
 void top_in_loop() {
 	printf("encoder %lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
 
