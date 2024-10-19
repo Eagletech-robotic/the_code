@@ -54,7 +54,7 @@ int old_tick=0;
 int top_is_time_to_start() {
 	int now = HAL_GetTick();
 	int step_ms = 5;
-	if (old_tick+step_ms == now) { // 1 ms
+	if (old_tick+step_ms == now) {
 		old_tick = now;
 		return 1;
 	} else if ((old_tick+step_ms) < now)  {

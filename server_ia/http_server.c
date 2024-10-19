@@ -13,15 +13,39 @@
 
 #define PORT 8080
 
+// Structures pour /init
 typedef struct {
     char name[50];
     int age;
-} Person;
-
-typedef struct {
     char city[50];
     char country[50];
-} Location;
+} query_init_t;
+
+typedef struct {
+    char welcome_message[100];
+} response_init_t;
+
+// Structures pour /step
+typedef struct {
+    int step;
+    char action[50];
+} query_step_t;
+
+typedef struct {
+    int next_step;
+    char status[100];
+} response_step_t;
+
+// Fonction myinit()
+void myinit(query_init_t *query_init, response_init_t *response_init) {
+    sprintf(response_init->welcome_message, "Bienvenue %s de %s, %s!", query_init->name, query_init->city, query_init->country);
+}
+
+// Fonction mystep()
+void mystep(query_step_t *query_step, response_step_t *response_step) {
+    response_step->next_step = query_step->step + 1;
+    sprintf(response_step->status, "Action '%s' exécutée avec succès.", query_step->action);
+}
 
 void handle_init(int client_socket, const char *json_data) {
     // Parse the JSON data
@@ -31,9 +55,9 @@ void handle_init(int client_socket, const char *json_data) {
         return;
     }
 
-    // Extract data into structures
-    Person person;
-    Location location;
+    // Extraire les données dans la structure query_init_t
+    query_init_t query_init;
+    memset(&query_init, 0, sizeof(query_init_t));
 
     cJSON *json_person = cJSON_GetObjectItem(json, "person");
     cJSON *json_location = cJSON_GetObjectItem(json, "location");
@@ -42,8 +66,8 @@ void handle_init(int client_socket, const char *json_data) {
         cJSON *name = cJSON_GetObjectItem(json_person, "name");
         cJSON *age = cJSON_GetObjectItem(json_person, "age");
         if (name && age) {
-            strcpy(person.name, name->valuestring);
-            person.age = age->valueint;
+            strcpy(query_init.name, name->valuestring);
+            query_init.age = age->valueint;
         }
     }
 
@@ -51,20 +75,23 @@ void handle_init(int client_socket, const char *json_data) {
         cJSON *city = cJSON_GetObjectItem(json_location, "city");
         cJSON *country = cJSON_GetObjectItem(json_location, "country");
         if (city && country) {
-            strcpy(location.city, city->valuestring);
-            strcpy(location.country, country->valuestring);
+            strcpy(query_init.city, city->valuestring);
+            strcpy(query_init.country, country->valuestring);
         }
     }
 
-    // Create response JSON
+    // Appel de la fonction myinit()
+    response_init_t response_init;
+    memset(&response_init, 0, sizeof(response_init_t));
+    myinit(&query_init, &response_init);
+
+    // Créer le JSON de réponse
     cJSON *response_json = cJSON_CreateObject();
-    cJSON_AddStringToObject(response_json, "message", "Init data received successfully");
-    cJSON_AddItemToObject(response_json, "person", cJSON_Duplicate(json_person, 1));
-    cJSON_AddItemToObject(response_json, "location", cJSON_Duplicate(json_location, 1));
+    cJSON_AddStringToObject(response_json, "message", response_init.welcome_message);
 
     char *response_data = cJSON_Print(response_json);
 
-    // Send HTTP response
+    // Envoyer la réponse HTTP
     char response[2048];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
@@ -76,7 +103,7 @@ void handle_init(int client_socket, const char *json_data) {
 
     write(client_socket, response, strlen(response));
 
-    // Clean up
+    // Nettoyage
     cJSON_Delete(json);
     cJSON_Delete(response_json);
     free(response_data);
@@ -91,27 +118,31 @@ void handle_step(int client_socket, const char *json_data) {
         return;
     }
 
-    // Extract data
-    int step = 0;
-    char action[50] = {0};
+    // Extraire les données dans la structure query_step_t
+    query_step_t query_step;
+    memset(&query_step, 0, sizeof(query_step_t));
 
     cJSON *json_step = cJSON_GetObjectItem(json, "step");
     cJSON *json_action = cJSON_GetObjectItem(json, "action");
 
     if (json_step && json_action) {
-        step = json_step->valueint;
-        strcpy(action, json_action->valuestring);
+        query_step.step = json_step->valueint;
+        strcpy(query_step.action, json_action->valuestring);
     }
 
-    // Create response JSON
+    // Appel de la fonction mystep()
+    response_step_t response_step;
+    memset(&response_step, 0, sizeof(response_step_t));
+    mystep(&query_step, &response_step);
+
+    // Créer le JSON de réponse
     cJSON *response_json = cJSON_CreateObject();
-    cJSON_AddStringToObject(response_json, "message", "Step data received successfully");
-    cJSON_AddNumberToObject(response_json, "step", step);
-    cJSON_AddStringToObject(response_json, "action", action);
+    cJSON_AddStringToObject(response_json, "message", response_step.status);
+    cJSON_AddNumberToObject(response_json, "next_step", response_step.next_step);
 
     char *response_data = cJSON_Print(response_json);
 
-    // Send HTTP response
+    // Envoyer la réponse HTTP
     char response[2048];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
@@ -123,7 +154,7 @@ void handle_step(int client_socket, const char *json_data) {
 
     write(client_socket, response, strlen(response));
 
-    // Clean up
+    // Nettoyage
     cJSON_Delete(json);
     cJSON_Delete(response_json);
     free(response_data);
