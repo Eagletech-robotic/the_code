@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include "cjson/cJSON.h"
+#include "output.h"
+#include "input.h"
 
 #define PORT 8080
 
