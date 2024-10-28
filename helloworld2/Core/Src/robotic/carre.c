@@ -18,7 +18,7 @@
 // soit R = e* (v1+v2) / (v1-v2)
 
 
-#include "carre.h"
+#include "robotic/carre.h"
 #include <math.h>
 #include <stdio.h>
 

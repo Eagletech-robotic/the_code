@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "output.h"
+#include "iot01A/output.h" //TODO : to remove
 typedef struct carre_t {
 	output_t output;
 	float time_from_start_s; //free running compteur depuis le début

@@ -7,9 +7,9 @@
 
 // top niveau du code, main.c est remplit de code généré cela permet de séparer
 #include "main.h" //generated code
-#include "sensors.h"
+#include "iot01A/sensors.h"
 #include <stdio.h>
-#include "encoder.h"
+#include "iot01A/encoder.h"
 
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2

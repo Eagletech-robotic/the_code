@@ -6,7 +6,7 @@
  */
 
 
-#include"encoder.h"
+#include"iot01A/encoder.h"
 
 // les 2 channels doivent être configuré dans l'ioc.
 // les encodeurs retournent un nombre non signé.

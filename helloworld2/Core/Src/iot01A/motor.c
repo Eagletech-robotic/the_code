@@ -8,7 +8,7 @@
 // Le but est d'ajouter le control de sens au control des PWM
 
 #include "main.h"
-#include "pwm.h"
+#include "iot01A/pwm.h"
 
 void motorInit() {
 	PWMstart();

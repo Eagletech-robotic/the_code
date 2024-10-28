@@ -6,7 +6,7 @@
  */
 
 
-#include "inertial.h"
+#include "robotic/inertial.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -18,7 +18,7 @@
 // appeler la fonction une fois par cycle
 //
 
-
+//TODO : ses valeurs doivent être des paramètres et non des constantes pour que le code soit réutilisable
 const float r_wheel         = 0.065; //m ? rayon de roue ?
 const float r_axel          = 0.33;  // m écartement des roues ?
 const float delta_t         = 0.01;  // s pas de temps entre 2 lectures ? normalise la vitesse -> paramètres

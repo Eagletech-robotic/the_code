@@ -6,7 +6,7 @@
  */
 
 
-#include "sensors.h"
+#include "iot01A/sensors.h"
 #include "stm32l4xx_hal.h"
 #include <stdlib.h>
 

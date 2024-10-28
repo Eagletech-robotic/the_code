@@ -22,14 +22,14 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include "sensors.h"
+#include "iot01A/sensors.h"
 #include <math.h>
-#include "pwm.h"
-#include "motor.h"
-#include "carre.h"
+#include "iot01A/pwm.h"
+#include "iot01A/motor.h"
+#include "robotic/carre.h"
 #include <stdlib.h>  //exit
-#include "pid.h"
-#include "led.h"
+#include "robotic/pid.h"
+#include "iot01A/led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
