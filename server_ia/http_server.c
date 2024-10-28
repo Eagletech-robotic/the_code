@@ -44,9 +44,106 @@ void myinit(query_init_t *query_init, response_init_t *response_init) {
 }
 
 // Fonction mystep()
-void mystep(query_step_t *query_step, response_step_t *response_step) {
-    response_step->next_step = query_step->step + 1;
-    sprintf(response_step->status, "Action '%s' exécutée avec succès.", query_step->action);
+void mystep(input_t *input, output_t *output) {
+    // Traitement des données d'entrée pour produire la sortie
+    // Exemple de logique (à adapter selon vos besoins) :
+
+    // Calculer ratio2 en fonction de tof (Time of Flight)
+    output->ratio2 = input->tof / 1000.0f; // Exemple : normaliser la distance
+
+    // Calculer ratio15 en fonction des données gyroscopiques
+    output->ratio15 = (input->gyro[0] + input->gyro[1] + input->gyro[2]) / 3.0f;
+
+    // Déterminer servo_pelle_ratio en fonction de is_jack_gone
+    output->servo_pelle_ratio = input->is_jack_gone ? 1.0f : 0.0f;
+}
+
+void output_to_json(output_t *output, cJSON *json) {
+    if (output == NULL || json == NULL) {
+        return;
+    }
+
+    // Ajouter "ratio2"
+    cJSON_AddNumberToObject(json, "ratio2", output->ratio2);
+
+    // Ajouter "ratio15"
+    cJSON_AddNumberToObject(json, "ratio15", output->ratio15);
+
+    // Ajouter "servo_pelle_ratio"
+    cJSON_AddNumberToObject(json, "servo_pelle_ratio", output->servo_pelle_ratio);
+}
+
+
+void json_to_input(cJSON *json, input_t *input) {
+    cJSON *item = NULL;
+
+    // Récupérer "is_jack_gone"
+    item = cJSON_GetObjectItem(json, "is_jack_gone");
+    if (item && cJSON_IsNumber(item)) {
+        input->is_jack_gone = item->valueint;
+    } else {
+        input->is_jack_gone = 0; // Valeur par défaut ou gérer l'erreur
+    }
+
+    // Récupérer "tof"
+    item = cJSON_GetObjectItem(json, "tof");
+    if (item && cJSON_IsNumber(item)) {
+        input->tof = (float)item->valuedouble;
+    } else {
+        input->tof = 0.0f;
+    }
+
+    // Récupérer "gyro"
+    item = cJSON_GetObjectItem(json, "gyro");
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < 3; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                input->gyro[i] = (float)subitem->valuedouble;
+            } else {
+                input->gyro[i] = 0.0f;
+            }
+        }
+    }
+
+    // Récupérer "accelero"
+    item = cJSON_GetObjectItem(json, "accelero");
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < 3; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                input->accelero[i] = (float)subitem->valuedouble;
+            } else {
+                input->accelero[i] = 0.0f;
+            }
+        }
+    }
+
+    // Récupérer "compass"
+    item = cJSON_GetObjectItem(json, "compass");
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < 3; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                input->compass[i] = (float)subitem->valuedouble;
+            } else {
+                input->compass[i] = 0.0f;
+            }
+        }
+    }
+
+    // Récupérer "last_wifi_data"
+    item = cJSON_GetObjectItem(json, "last_wifi_data");
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < 10; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                input->last_wifi_data[i] = subitem->valueint;
+            } else {
+                input->last_wifi_data[i] = 0;
+            }
+        }
+    }
 }
 
 void handle_init(int client_socket, const char *json_data) {
@@ -113,39 +210,34 @@ void handle_init(int client_socket, const char *json_data) {
 }
 
 void handle_step(int client_socket, const char *json_data) {
-    // Parse the JSON data
-    cJSON *json = cJSON_Parse(json_data);
-    if (!json) {
+    // Parse the JSON data from the request
+    cJSON *json_request = cJSON_Parse(json_data);
+    if (!json_request) {
+        // Envoyer une réponse d'erreur
+        const char *error_response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
+        write(client_socket, error_response, strlen(error_response));
         close(client_socket);
         return;
     }
 
-    // Extraire les données dans la structure query_step_t
-    query_step_t query_step;
-    memset(&query_step, 0, sizeof(query_step_t));
+    // Convertir le JSON en structure input_t
+    input_t input_data;
+    memset(&input_data, 0, sizeof(input_t));
+    json_to_input(json_request, &input_data);
 
-    cJSON *json_step = cJSON_GetObjectItem(json, "step");
-    cJSON *json_action = cJSON_GetObjectItem(json, "action");
+    // Appeler mystep() pour traiter les données et obtenir output_t
+    output_t output_data;
+    memset(&output_data, 0, sizeof(output_t));
+    mystep(&input_data, &output_data);
 
-    if (json_step && json_action) {
-        query_step.step = json_step->valueint;
-        strcpy(query_step.action, json_action->valuestring);
-    }
+    // Convertir la structure output_t en JSON pour la réponse
+    cJSON *json_response = cJSON_CreateObject();
+    output_to_json(&output_data, json_response);
 
-    // Appel de la fonction mystep()
-    response_step_t response_step;
-    memset(&response_step, 0, sizeof(response_step_t));
-    mystep(&query_step, &response_step);
-
-    // Créer le JSON de réponse
-    cJSON *response_json = cJSON_CreateObject();
-    cJSON_AddStringToObject(response_json, "message", response_step.status);
-    cJSON_AddNumberToObject(response_json, "next_step", response_step.next_step);
-
-    char *response_data = cJSON_Print(response_json);
+    char *response_data = cJSON_Print(json_response);
 
     // Envoyer la réponse HTTP
-    char response[2048];
+    char response[4096];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
@@ -157,12 +249,11 @@ void handle_step(int client_socket, const char *json_data) {
     write(client_socket, response, strlen(response));
 
     // Nettoyage
-    cJSON_Delete(json);
-    cJSON_Delete(response_json);
+    cJSON_Delete(json_request);
+    cJSON_Delete(json_response);
     free(response_data);
     close(client_socket);
 }
-
 void handle_client(int client_socket) {
     char buffer[2048] = {0};
     read(client_socket, buffer, 2048);
