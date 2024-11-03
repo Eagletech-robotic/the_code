@@ -10,8 +10,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include "cjson/cJSON.h"
-#include "output.h"
-#include "input.h"
+#include "iot01A/top_driver.h"
 
 #define PORT 8080
 
@@ -49,13 +48,16 @@ void mystep(input_t *input, output_t *output) {
     // Exemple de logique (à adapter selon vos besoins) :
 
     // Calculer ratio2 en fonction de tof (Time of Flight)
-    output->ratio2 = input->tof / 1000.0f; // Exemple : normaliser la distance
+    /* output->ratio2 = input->tof / 1000.0f; // Exemple : normaliser la distance */
 
-    // Calculer ratio15 en fonction des données gyroscopiques
-    output->ratio15 = (input->gyro[0] + input->gyro[1] + input->gyro[2]) / 3.0f;
+    /* // Calculer ratio15 en fonction des données gyroscopiques */
+    /* output->ratio15 = (input->gyro[0] + input->gyro[1] + input->gyro[2]) / 3.0f; */
 
-    // Déterminer servo_pelle_ratio en fonction de is_jack_gone
-    output->servo_pelle_ratio = input->is_jack_gone ? 1.0f : 0.0f;
+    /* // Déterminer servo_pelle_ratio en fonction de is_jack_gone */
+    /* output->servo_pelle_ratio = input->is_jack_gone ? 1.0f : 0.0f; */
+  config_t config;
+  config.time_step_ms = 5;
+  top_step(&config,input,output);
 }
 
 void output_to_json(output_t *output, cJSON *json) {
@@ -63,13 +65,10 @@ void output_to_json(output_t *output, cJSON *json) {
         return;
     }
 
-    // Ajouter "ratio2"
-    cJSON_AddNumberToObject(json, "ratio2", output->ratio2);
+    cJSON_AddNumberToObject(json, "vitesse1_ratio", output->vitesse1_ratio);
 
-    // Ajouter "ratio15"
-    cJSON_AddNumberToObject(json, "ratio15", output->ratio15);
+    cJSON_AddNumberToObject(json, "vitesse1_ratio", output->vitesse2_ratio);
 
-    // Ajouter "servo_pelle_ratio"
     cJSON_AddNumberToObject(json, "servo_pelle_ratio", output->servo_pelle_ratio);
 }
 
