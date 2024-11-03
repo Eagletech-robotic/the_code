@@ -30,6 +30,7 @@
 #include <stdlib.h>  //exit
 #include "robotic/pid.h"
 #include "iot01A/led.h"
+#include "iot01A/top.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -145,7 +146,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-  top_init();
+  top_init_driver();
 
   // Start timer
   HAL_TIM_Base_Start_IT(&htim1);
@@ -153,27 +154,27 @@ int main(void)
   initHTS221();
   HAL_Delay(1);
   //int16_t accx,accy,accz;
-  float magx,magy,magz;
+  //float magx,magy,magz;
   //int16_t gyrox,gyroy,gyroz;
-  float accx,accy,accz,gyrox,gyroy,gyroz;
+  //float accx,accy,accz,gyrox,gyroy,gyroz;
   //init mems
   //init_accelerometer();
   init_inertial();
   init_magnetometer();
   //init_gyroscope();
-  motorInit();
+  //motorInit();
 
-  carre_t carre;
+  //carre_t carre;
 
   float cycle_period_s = 1.0f / (80000000.0f /(htim1.Init.Prescaler + 1.0f ) / (htim1.Init.Period + 1.0f) );
   printf("cycle_period : %f s\r\n", cycle_period_s);
-  carre_init(&carre, cycle_period_s);
+  //carre_init(&carre, cycle_period_s);
 
 
   //HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   led_init();
 
-  float temp,hum;
+  //float temp,hum;
 
   /* USER CODE END 2 */
 
@@ -189,15 +190,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	 top_in_loop();
+	 	 top_in_loop();
 	  //	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
 	    led_1(.5);
-	 	carre_in_loop(&carre);
+	 	//carre_in_loop(&carre);
 
 	 	 //pwm led
 		//htim15.Instance->CCR1 = (htim15.Instance->CCR1 +160 ) % 1000;
 
-	  	int distance;
+//	  	int distance;
 
 	  	// prend 10 ms !!!!
 		//getAxisAccelerometer(&accx,&accy,&accz);

@@ -26,10 +26,11 @@ const float r_wheel_m         = 0.035; // rayon des roues
 const float r_axel_m          = 0.33;  // entraxe des 2 roues
 
 void carre_init(carre_t * carre, float cycle_period_s) {
-	outputInit(&carre->output);
+	//output_init(&carre->output);
 	carre->time_from_start_s=0.0;
 	carre->start_sequence_time_s=0.0;
 	carre->timer_period_s = cycle_period_s; // cela dépend de la vitesse de cycle choisi à la configuration
+	printf("séquence %f\r\n",cycle_period_s);
 }
 
 // calcul de vitesses avec la vitesse moyenne et le rayon de courbure voulu selon l'entre-axe
@@ -42,36 +43,36 @@ int carre_is_elapsed_time(carre_t * c, float t_s) {
 	return c->time_from_start_s < (c->start_sequence_time_s + t_s);
 }
 
-void carre_sequence(carre_t * c) {
+void carre_sequence(carre_t * c, output_t * output) {
 	float v_r = 0.6;
 	float v_curve_r = 0.5;
 	float t_curve_s = 0.65f;
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {
 		// ligne de droite
-		c->output.ratio15 = v_r;
-		c->output.ratio2 = v_r;
+		output->vitesse2_ratio = v_r;
+		output->vitesse1_ratio = v_r;
 	} else if (carre_is_elapsed_time(c,t_line_s+t_curve_s)) {
 		// demi courbe
 		float v1,v2;
 		r_to_v(.2,v_curve_r,&v1,&v2);
-		c->output.ratio15 = v1;
-		c->output.ratio2 = v2;
+		output->vitesse2_ratio = v1;
+		output->vitesse1_ratio = v2;
 	} else {
 		// sequence terminée, on recommence
 		c->start_sequence_time_s = c->time_from_start_s;
 	}
 }
 
-void carre_output_commit(carre_t * c) {
-//	printf("v : %f %f \r\n", c->output.ratio15, c->output.ratio2);
-	outputSet(&c->output);
-}
+//void carre_output_commit(carre_t * c) {
+////	printf("v : %f %f \r\n", c->output.ratio15, c->output.ratio2);
+//	output_set(&c->output);
+//}
 
-void carre_in_loop(carre_t * c) {
+void carre_in_loop(carre_t * c, output_t * output) {
 	c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
-	carre_output_commit(c);
-	carre_sequence(c);
+//	carre_output_commit(c);
+	carre_sequence(c, output);
 }
 
 //////////////////// OLD stuff

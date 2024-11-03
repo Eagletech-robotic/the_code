@@ -6,11 +6,18 @@
  */
 
 // top niveau du code, main.c est remplit de code généré cela permet de séparer
+#include <iot01A/top_driver.h>
 #include "main.h" //generated code
 #include "iot01A/sensors.h"
 #include <stdio.h>
 #include "iot01A/encoder.h"
+#include "iot01A/output.h"
+#include "iot01A/input.h"
+#include "iot01A/config.h"
+#include "iot01A/top.h"
+#include "iot01A/motor.h"
 
+//TODO : to move to input or ouput
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 2
@@ -21,12 +28,21 @@ extern TIM_HandleTypeDef htim15; // pwm sur la led
 extern UART_HandleTypeDef huart4; // uart du connector ARD
 extern UART_HandleTypeDef huart1; // uart pour debug par usb
 
+config_t config;
+input_t input;
+output_t output;
+
 // code executé au reset
-void top_init(){
-	  startToF();
-	  printf("\r\nHello world !\r\n");
-	  encoder_init(&htim3);
-	  encoder_init(&htim5);
+void top_init_driver(){
+	  //startToF();
+	  printf("\r\ntop Hello world !\r\n");
+	  //encoder_init(&htim3);
+	  //encoder_init(&htim5);
+	  input_init(&input);
+	  output_init(&output);
+	  config.time_step_ms = 5;
+	  top_init(&config);
+	  motorInit();
 }
 
 // code executer à la fréquence du timer systick
@@ -45,15 +61,19 @@ void top_init(){
 // couche du dessous :
 	//  test du jack de démarrage pour lancer un match : enregistre le t0 du match
 	//  test du bouton bleue pour un autotest ?
-void top_in_loop() {
-	printf("encoder %lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
 
+void top_in_loop() {
+	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
+
+	input_get(&input);
+	top_step(&config, &input, &output );
+	output_set(&output);
 }
 
 int old_tick=0;
 int top_is_time_to_start() {
 	int now = HAL_GetTick();
-	int step_ms = 5;
+	int step_ms = config.time_step_ms;
 	if (old_tick+step_ms == now) {
 		old_tick = now;
 		return 1;

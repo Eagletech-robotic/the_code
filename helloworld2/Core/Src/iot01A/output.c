@@ -6,12 +6,12 @@
 #include "iot01A/output.h"
 #include "iot01A/motor.h"
 
-void outputInit(output_t * output){
-	output->ratio2 = 0;
-	output->ratio15 = 0;
+void output_init(output_t * output){
+	output->vitesse1_ratio = 0;
+	output->vitesse2_ratio = 0;
 }
 
-void outputSet(output_t *output) {
-	motorSet(output->ratio2, output->ratio15);
+void output_set(output_t *output) {
+	motorSet(output->vitesse1_ratio, output->vitesse2_ratio);
 }
 

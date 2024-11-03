@@ -1,11 +1,11 @@
 #pragma once
 
 typedef struct output_t {
-	float ratio2;
-	float ratio15;
+	float vitesse1_ratio; //ratio2
+	float vitesse2_ratio; //ratio15
 	float servo_pelle_ratio; // 0 à 1.0
 } output_t;
 
-void outputSet(output_t *output);
-void outputInit(output_t * output);
+void output_set(output_t *output);
+void output_init(output_t * output);
 
