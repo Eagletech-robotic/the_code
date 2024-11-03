@@ -19,7 +19,7 @@ void PWMset_1(TIM_HandleTypeDef *htim, float ratio1, float ratio2) {
 	uint32_t period = htim->Init.Period;
     htim->Instance->CCR1 = ratio1* (1.0f*period);
     htim->Instance->CCR3 = ratio2* (1.0f*period);
-	printf("! %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
+	//printf("! %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
 }
 
 // 0.0<=ratio<=1.0

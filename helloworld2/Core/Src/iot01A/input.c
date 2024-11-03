@@ -9,6 +9,7 @@
 #include "iot01A/input.h"
 #include"iot01A/encoder.h"
 #include "iot01A/sensors.h"
+#include <stdio.h>
 
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
@@ -26,4 +27,8 @@ void input_init(input_t * input) {
 void input_get(input_t *input) {
 	input->encoder1=encoder_get_value(&htim5);
 	input->encoder2=encoder_get_value(&htim3);
+}
+
+void input_print(input_t *input) {
+	printf("in: %li %li ...\r\n", input->encoder1, input->encoder2);
 }
