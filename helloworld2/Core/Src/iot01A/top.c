@@ -40,7 +40,7 @@ void top_init_driver(){
 	  //encoder_init(&htim5);
 	  input_init(&input);
 	  output_init(&output);
-	  config.time_step_ms = 5;
+	  config.time_step_ms = 10;
 	  top_init(&config);
 	  motorInit();
 }
@@ -64,6 +64,7 @@ void top_init_driver(){
 
 void top_in_loop() {
 	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
+
 
 	input_get(&input);
 	input_print(&input);

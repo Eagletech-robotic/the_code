@@ -12,10 +12,11 @@ void output_init(output_t * output){
 	output->vitesse2_ratio = 0;
 }
 
+
 void output_set(output_t *output) {
 	motorSet(output->vitesse1_ratio, output->vitesse2_ratio);
 }
 
 void output_print(output_t * output) {
-	printf("out: %f %f %f\r\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
+	printf("out: %.4f\t%.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
 }

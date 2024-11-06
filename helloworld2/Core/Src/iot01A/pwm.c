@@ -15,11 +15,23 @@
 
 extern TIM_HandleTypeDef htim2;
 
+uint32_t ratio_to_step(float ratio, uint32_t period) {
+	uint32_t step = ratio* (1.0f*period);
+
+	const float minimum_to_move = 60; //à 55 cela tourne à peine à vide
+
+	step = (period-minimum_to_move)*ratio + minimum_to_move;
+
+	return step;
+}
+
 void PWMset_1(TIM_HandleTypeDef *htim, float ratio1, float ratio2) {
 	uint32_t period = htim->Init.Period;
-    htim->Instance->CCR1 = ratio1* (1.0f*period);
-    htim->Instance->CCR3 = ratio2* (1.0f*period);
-	//printf("! %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
+
+    htim->Instance->CCR1 = ratio_to_step(ratio1, period);
+
+    htim->Instance->CCR3 = ratio_to_step(ratio2, period);
+	printf("PWM %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
 }
 
 // 0.0<=ratio<=1.0

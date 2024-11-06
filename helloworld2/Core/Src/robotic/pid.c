@@ -65,6 +65,7 @@ float pid_compute(pid_t * pid, float input) {
 	pid->Input = input;
 	/*Compute all the working error variables*/
 	float error = pid->Setpoint - pid->Input;
+	printf("                             err=%f\r\n", error);
 	pid->ITerm += (pid->ki * error);
 
 	// anti windup
