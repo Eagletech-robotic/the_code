@@ -82,6 +82,12 @@ float pid_compute(pid_t * pid, float input) {
 	return pid->Output;
 }
 
+float pid_(pid_t * pid, float cmd, float input) {
+	pid_command(pid,cmd);
+	float regul = pid_compute(pid,input);
+	return regul;
+}
+
 //void Compute(pid_t *pid)
 //{
 //   if(!pid->inAuto) return;

@@ -26,4 +26,5 @@ void pid_limits(pid_t* pid, float Min, float Max); // limite d'excursion de la s
 void pid_stop(pid_t* pid);    // coupe les compteurs internes compute retourne zero
 void pid_start(pid_t* pid);   // reprise
 void pid_SetControllerDirection(pid_t* pid, int Direction); // Si le capteur monte la commande doit monter ou l'inverse, dépend de l'application
+float pid_(pid_t * pid, float cmd, float input);
 int pid_test();

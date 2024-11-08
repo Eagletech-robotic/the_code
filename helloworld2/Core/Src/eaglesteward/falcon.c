@@ -28,20 +28,19 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse1_ratio = 4000.0 ;
 	output->vitesse2_ratio = .1 ;// droite dans le sens de la marche
 
-	float sensor = input->encoder1 ;//- input->encoder2;œ
-	float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
+	//float sensor = input->encoder1 ;//- input->encoder2;œ
+	//float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
 
-	pid_command(&pid,cmd);
-	float regul = pid_compute(&pid,sensor);
+	//pid_command(&pid,cmd);
+	//float regul = pid_compute(&pid,sensor);
 //	printf("  : %f %f\r\n", cmd, regul);
 	//if(regul > 0.1) {
 		pid_print(&pid);
 	//}
-	output->vitesse1_ratio = regul ;
+	//output->vitesse1_ratio = regul ;
+	float cmd = output->vitesse1_ratio;
+	float sensor = input->encoder1;
+	output->vitesse1_ratio = pid_(&pid, cmd, sensor);
 	//output->vitesse2_ratio = .5 ;
-	if(cmd > 0) {
-//		output->vitesse1_ratio = output->vitesse1_ratio - regul;
-	} else {
-	//	output->vitesse2_ratio = output->vitesse2_ratio - regul;
-	}
+
 }
