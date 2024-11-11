@@ -32,10 +32,10 @@ float clamp(float val, float Min, float Max) {
 }
 
 void pid_print(pid_t* pid) {
-	printf("%f %f %f\r\n", pid->kp, pid->ki , pid->kd);
+	//printf("%f %f %f\r\n", pid->kp, pid->ki , pid->kd);
 	printf("%f : %f (%f)\r\n", pid->Setpoint, pid->Output , pid->Input);
 	printf(" %f %f %f\r\n", pid->ITerm, pid->lastInput , pid->Input);
-	printf(" [%f %f] %i %i\r\n", pid->outMin, pid->outMax,pid->isModeAuto, pid->isControllerDirectionDirect);
+	//printf(" [%f %f] %i %i\r\n", pid->outMin, pid->outMax,pid->isModeAuto, pid->isControllerDirectionDirect);
 }
 
 void Initialize(pid_t* pid)

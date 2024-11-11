@@ -40,7 +40,7 @@ void top_init_driver(){
 	  //encoder_init(&htim5);
 	  input_init(&input);
 	  output_init(&output);
-	  config.time_step_ms = 10;
+	  config.time_step_ms = 25;
 	  top_init(&config);
 	  motorInit();
 }
@@ -64,14 +64,13 @@ void top_init_driver(){
 
 void top_in_loop() {
 	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
-
-
 	input_get(&input);
+	printf("\033[H"); // curseur en haut à gauche
 	input_print(&input);
 	top_step(&config, &input, &output );
 	output_print(&output);
 	output_set(&output);
-
+	fflush(stdout); // forcer la sortie pour mieux la lire
 }
 
 int old_tick=0;
