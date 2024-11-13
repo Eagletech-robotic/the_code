@@ -31,7 +31,7 @@ void PWMset_1(TIM_HandleTypeDef *htim, float ratio1, float ratio2) {
     htim->Instance->CCR1 = ratio_to_step(ratio1, period);
 
     htim->Instance->CCR3 = ratio_to_step(ratio2, period);
-	printf("PWM %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
+	//printf("PWM %li %li\r\n", htim->Instance->CCR1, htim->Instance->CCR3);
 }
 
 // 0.0<=ratio<=1.0

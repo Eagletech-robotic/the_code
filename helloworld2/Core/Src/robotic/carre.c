@@ -44,8 +44,8 @@ int carre_is_elapsed_time(carre_t * c, float t_s) {
 }
 
 void carre_sequence(carre_t * c, output_t * output) {
-	float v_r = 0.6;
-	float v_curve_r = 0.5;
+	float v_r = 2000.0; //0.6;
+	float v_curve_r = 1500.0;
 	float t_curve_s = 0.65f;
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {

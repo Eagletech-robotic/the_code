@@ -16,6 +16,7 @@ pid_t pid_sum;
 pid_t pid_curve;
 
 void top_init(config_t* config) {
+	config->time_step_ms = 1;
 	printf(":: %i\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
 //	pid_init(&pid_diff);
@@ -28,7 +29,7 @@ void top_init(config_t* config) {
 	pid_limits(&pid_sum, -2.0, 2.0);
 
 	pid_init(&pid_curve);
-	pid_tune(&pid_curve, .90 , 0.05, 0.1);
+	pid_tune(&pid_curve, .90 , 0.005, 0.1);
 	pid_limits(&pid_curve, -10000.0, 10000.0);
 
 }
@@ -41,9 +42,9 @@ float curve(float v1, float v2) {
 void top_step(config_t* config, input_t *input, output_t* output ) {
 	carre_in_loop(&carre, output);
 	const float ratio_speed_sensor = 0.0002;
-	output->vitesse1_ratio = 1000.0 ;
-	output->vitesse2_ratio = 4000.0 ; // àdroite dans le sens de la marche
-	float r_ = (output->vitesse1_ratio +output->vitesse2_ratio) /(output->vitesse1_ratio - output->vitesse2_ratio);
+	//output->vitesse1_ratio = 1000.0 ;
+	//output->vitesse2_ratio = 4000.0 ; // àdroite dans le sens de la marche
+	float r_ = (output->vitesse1_ratio -output->vitesse2_ratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
 	//float sensor = input->encoder1 ;//- input->encoder2;œ
 	//float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
 
@@ -62,7 +63,7 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	float cmd_sum = output->vitesse1_ratio + output->vitesse2_ratio;
 	float sensor_sum = sensor1 + sensor2;
 	float regul_sum = pid_(&pid_sum, cmd_sum, sensor_sum);
-	pid_print(&pid_sum);
+	//pid_print(&pid_sum);
 	//output->vitesse1_ratio =( (regul_sum + regul_diff) / 2.0);
 		//output->vitesse2_ratio = ((regul_sum - regul_diff) / 2.0);
 
@@ -70,7 +71,7 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	if (sensor1+sensor2 != .0) {
 		float sensor_curve = curve(sensor1, sensor2);
 		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-		pid_print(&pid_curve);
+		//pid_print(&pid_curve);
 
 		float v = regul_sum / 2.0;//ratio_speed_sensor*(output->vitesse1_ratio + output->vitesse2_ratio) /2.0;
 		output->vitesse1_ratio = v*(regul_curve+1);
@@ -80,6 +81,6 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 		output->vitesse2_ratio *= ratio_speed_sensor;
 	}
 
-	float r = (sensor1 +sensor2) / (sensor1 - sensor2);
+	float r = (sensor1 - sensor2) / (sensor1 + sensor2);
 	printf(" r=%f (%f %.4f)\r\n", r, r_, (r_-r)/r_);
 }

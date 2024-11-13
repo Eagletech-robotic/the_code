@@ -89,7 +89,16 @@ static void MX_TIM2_Init(void);
 
 int _write(int file, char *ptr, int len)
 {
-	HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
+	//HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
+
+	//SWV ITM Data trace en mode debug
+	int DataIdx;
+	for (DataIdx = 0; DataIdx < len; DataIdx++)
+	{
+		ITM_SendChar(*ptr++);
+	}
+
+
 	return len;
 }
 volatile int time_to_start =0;
@@ -159,17 +168,10 @@ int main(void)
   //float accx,accy,accz,gyrox,gyroy,gyroz;
   //init mems
   //init_accelerometer();
-  init_inertial();
-  init_magnetometer();
+  //init_inertial();
+  //init_magnetometer();
   //init_gyroscope();
   //motorInit();
-
-  //carre_t carre;
-
-  float cycle_period_s = 1.0f / (80000000.0f /(htim1.Init.Prescaler + 1.0f ) / (htim1.Init.Period + 1.0f) );
-  printf("cycle_period : %f s\r\n", cycle_period_s);
-  //carre_init(&carre, cycle_period_s);
-
 
   //HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   led_init();

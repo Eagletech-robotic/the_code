@@ -36,11 +36,8 @@ output_t output;
 void top_init_driver(){
 	  //startToF();
 	  printf("\r\ntop Hello world !\r\n");
-	  //encoder_init(&htim3);
-	  //encoder_init(&htim5);
 	  input_init(&input);
 	  output_init(&output);
-	  config.time_step_ms = 25;
 	  top_init(&config);
 	  motorInit();
 }
@@ -65,7 +62,7 @@ void top_init_driver(){
 void top_in_loop() {
 	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
 	input_get(&input);
-	printf("\033[H"); // curseur en haut à gauche
+	//printf("\033[H"); // curseur en haut à gauche sur un shell
 	input_print(&input);
 	top_step(&config, &input, &output );
 	output_print(&output);
@@ -85,5 +82,6 @@ int top_is_time_to_start() {
 		old_tick = now;
 		return 1;
 	}
+
 	return 0;
 }
