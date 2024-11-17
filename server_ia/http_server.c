@@ -44,7 +44,7 @@ typedef struct {
 } query_init_t;
 
 typedef struct {
-    char welcome_message[100];
+    char welcome_message[1000];
 } response_init_t;
 
 // Structures pour /step
@@ -169,6 +169,19 @@ void json_to_input(cJSON *json, input_t *input) {
     }
 }
 
+void handle_options(int client_socket) {
+    // Send a response with allowed methods
+    char *response =
+        "HTTP/1.1 204 No Content\r\n"
+        "Access-Control-Allow-Origin: *\r\n"
+        "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+        "Access-Control-Allow-Headers: Content-Type\r\n"
+        "Content-Length: 0\r\n"
+        "\r\n";
+    write(client_socket, response, strlen(response));
+    close(client_socket);
+}
+
 void handle_init(int client_socket, const char *json_data) {
     // Parse the JSON data
     cJSON *json = cJSON_Parse(json_data);
@@ -264,6 +277,7 @@ void handle_step(int client_socket, const char *json_data) {
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
+            "Access-Control-Allow-Origin: *\r\n"
             "Content-Length: %lu\r\n"
             "\r\n"
             "%s",
@@ -294,9 +308,11 @@ void handle_client(int client_socket) {
     }
     json_start += 4;  // Move past the "\r\n\r\n"
 
-    if (strcmp(url, "/init") == 0) {
+    if (strcmp(method, "OPTIONS") == 0) {
+        handle_options(client_socket);
+    } else if (strcmp(url, "/init") == 0 && strcmp(method, "POST") == 0) {
         handle_init(client_socket, json_start);
-    } else if (strcmp(url, "/step") == 0) {
+    } else if (strcmp(url, "/step") == 0 && strcmp(method, "POST") == 0) {
         handle_step(client_socket, json_start);
     } else {
         // Send 404 Not Found
