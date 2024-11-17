@@ -54,3 +54,6 @@ dkms.conf
 # report de build
 build/
 Debug/
+
+# IDE
+.vscode/
