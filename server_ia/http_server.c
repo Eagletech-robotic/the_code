@@ -62,11 +62,19 @@ typedef struct {
     char welcome_message[1000];
 } response_init_t;
 
+config_t config;
+
+
 // Fonction myinit()
 void myinit(query_init_t *query_init, response_init_t *response_init) {
     sprintf(response_init->welcome_message, "Bienvenue %s de %s, %s!", query_init->name,
             query_init->city, query_init->country);
+    config.time_step_ms = 5;
+    top_init(&config);
 }
+
+   
+
 
 // Fonction mystep()
 void mystep(input_t *input, output_t *output) {
@@ -84,8 +92,6 @@ void mystep(input_t *input, output_t *output) {
 
     /* // Déterminer servo_pelle_ratio en fonction de is_jack_gone */
     /* output->servo_pelle_ratio = input->is_jack_gone ? 1.0f : 0.0f; */
-    config_t config;
-    config.time_step_ms = 5;
     top_step(&config, input, output);
 }
 

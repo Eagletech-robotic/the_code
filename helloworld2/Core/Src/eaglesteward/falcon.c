@@ -36,6 +36,25 @@ void autopilot_init() {
 	pid_limits(&pid_curve, -10000.0, 10000.0);
 }
 
+// Fonction pour envoyer une valeur ITM
+//void ITM_SendValue(uint32_t port, uint32_t value) {
+//    if ((ITM->TCR & ITM_TCR_ITMENA_Msk) && // Vérifie que l'ITM est activé
+//        (ITM->TER & (1UL << port))) {      // Vérifie que le port est activé
+//        while (ITM->PORT[port].u32 == 0);  // Attendre que le port soit prêt
+//        ITM->PORT[port].u32 = value;       // Écrire la valeur sur le port
+//    }
+//}
+//
+//// Fonction pour envoyer des flottants via SWV
+//void ITM_SendFloat(uint32_t port, float value) {
+//    uint32_t scaled_value = (uint32_t)(value * 1000); // Exemple : échelle de 3 décimales
+//    ITM_SendValue(port, scaled_value);
+//}
+
+int32_t trace1, trace2;
+
+// pour éviter de créer une nouvelle structure et pour évite de perdre le flux d'information, il faut envoyer un ouput vierge
+// et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
 void autopilot(config_t * config, input_t * input, float v1, float v2, output_t* ret)
 {
 	float sensor1 = input->encoder1 / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
@@ -51,7 +70,15 @@ void autopilot(config_t * config, input_t * input, float v1, float v2, output_t*
 		float cmd_curve = curve(v1,v2);
 		float sensor_curve = curve(sensor1, sensor2);
 		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
+
+		trace1 = cmd_curve*1000+1000;
+		trace2 = sensor_curve*1000+1000;
+		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
+		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
+
 		//pid_print(&pid_curve);
+		//ITM_SendFloat(1,cmd_curve);
+		//ITM_SendFloat(2,sensor_curve);
 		float v = regul_sum / 2.0;
 		ret->vitesse1_ratio = v*(1+regul_curve);
 		ret->vitesse2_ratio = v*(1-regul_curve);
@@ -68,7 +95,7 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	//output->vitesse1_ratio = 1000.0 ;
 	//output->vitesse2_ratio = 4000.0 ; // àdroite dans le sens de la marche
 
-	float r_ = (output->vitesse1_ratio -output->vitesse2_ratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
+	//float r_ = (output->vitesse1_ratio -output->vitesseratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
 //	//float sensor = input->encoder1 ;//- input->encoder2;œ
 //	//float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
 //
@@ -109,8 +136,9 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse1_ratio=ret.vitesse1_ratio;
 	output->vitesse2_ratio=ret.vitesse2_ratio;
 
-	float r = curve(input->encoder1,input->encoder2);
-	printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
+	//float r = curve(input->encoder1,input->encoder2);
+
+	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
 }
 
 
@@ -120,3 +148,4 @@ void top_init(config_t* config) {
 	carre_init(&carre, config->time_step_ms / 1000.0);
 	autopilot_init();
 }
+

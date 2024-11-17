@@ -14,3 +14,4 @@
 // il ne doit pas y avoir de dépendance avec les spécificités ARM ou ST
 
 void top_step(config_t* config, input_t *input, output_t* output );
+void top_init(config_t * config);
