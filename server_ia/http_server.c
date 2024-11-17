@@ -1,14 +1,35 @@
+// ----------------------
+// INSTALLATION
+// ----------------------
+//
 // sudo apt-get install libcjson-dev
-// gcc -o serveur serveur.c -lcjson
-// ./server
-//curl -X POST -H "Content-Type: application/json" -d '{"person":{"name":"Alice","age":30},"location":{"city":"Paris","country":"France"}}' http://localhost:8080/init
-// curl -X POST -H "Content-Type: application/json" -d '{"step":1,"action":"start"}' http://localhost:8080/step
+// ./MAKE
+// ./build/http_server
+//
+// ----------------------
+// ENDPOINTS:
+// ----------------------
+//
+// Init/reset (TO BE IMPLEMENTED)
+//   Request:
+//     curl -X POST -d
+//     '{"person":{"name":"Alice","age":30},"location":{"city":"Paris","country":"France"}}'
+//     http://localhost:8080/init
+//   Response:
+//     {"message":"Bienvenue Alice de Paris, France!"}
+//
+// Step:
+//   Request:
+//     curl -X POST -d '{"step":1,"action":"start"}' http://localhost:8080/step
+//   Response:
+//     {"message":"Bienvenue Alice de Paris, France!"}
 
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <netinet/in.h>
+
 #include "cjson/cJSON.h"
 #include "iot01A/top_driver.h"
 
@@ -39,7 +60,8 @@ typedef struct {
 
 // Fonction myinit()
 void myinit(query_init_t *query_init, response_init_t *response_init) {
-    sprintf(response_init->welcome_message, "Bienvenue %s de %s, %s!", query_init->name, query_init->city, query_init->country);
+    sprintf(response_init->welcome_message, "Bienvenue %s de %s, %s!", query_init->name,
+            query_init->city, query_init->country);
 }
 
 // Fonction mystep()
@@ -48,16 +70,19 @@ void mystep(input_t *input, output_t *output) {
     // Exemple de logique (à adapter selon vos besoins) :
 
     // Calculer ratio2 en fonction de tof (Time of Flight)
-    /* output->ratio2 = input->tof / 1000.0f; // Exemple : normaliser la distance */
+    /* output->ratio2 = input->tof / 1000.0f; // Exemple : normaliser la
+     * distance
+     */
 
     /* // Calculer ratio15 en fonction des données gyroscopiques */
-    /* output->ratio15 = (input->gyro[0] + input->gyro[1] + input->gyro[2]) / 3.0f; */
+    /* output->ratio15 = (input->gyro[0] + input->gyro[1] + input->gyro[2])
+     * / 3.0f; */
 
     /* // Déterminer servo_pelle_ratio en fonction de is_jack_gone */
     /* output->servo_pelle_ratio = input->is_jack_gone ? 1.0f : 0.0f; */
-  config_t config;
-  config.time_step_ms = 5;
-  top_step(&config,input,output);
+    config_t config;
+    config.time_step_ms = 5;
+    top_step(&config, input, output);
 }
 
 void output_to_json(output_t *output, cJSON *json) {
@@ -72,7 +97,6 @@ void output_to_json(output_t *output, cJSON *json) {
     cJSON_AddNumberToObject(json, "servo_pelle_ratio", output->servo_pelle_ratio);
 }
 
-
 void json_to_input(cJSON *json, input_t *input) {
     cJSON *item = NULL;
 
@@ -81,7 +105,7 @@ void json_to_input(cJSON *json, input_t *input) {
     if (item && cJSON_IsNumber(item)) {
         input->is_jack_gone = item->valueint;
     } else {
-        input->is_jack_gone = 0; // Valeur par défaut ou gérer l'erreur
+        input->is_jack_gone = 0;  // Valeur par défaut ou gérer l'erreur
     }
 
     // Récupérer "tof"
@@ -268,7 +292,7 @@ void handle_client(int client_socket) {
         close(client_socket);
         return;
     }
-    json_start += 4; // Move past the "\r\n\r\n"
+    json_start += 4;  // Move past the "\r\n\r\n"
 
     if (strcmp(url, "/init") == 0) {
         handle_init(client_socket, json_start);
@@ -276,9 +300,10 @@ void handle_client(int client_socket) {
         handle_step(client_socket, json_start);
     } else {
         // Send 404 Not Found
-        char *response = "HTTP/1.1 404 Not Found\r\n"
-                         "Content-Length: 0\r\n"
-                         "\r\n";
+        char *response =
+            "HTTP/1.1 404 Not Found\r\n"
+            "Content-Length: 0\r\n"
+            "\r\n";
         write(client_socket, response, strlen(response));
         close(client_socket);
     }
@@ -321,8 +346,8 @@ int main() {
 
     while (1) {
         // Accepter une nouvelle connexion
-        if ((client_socket = accept(server_fd, (struct sockaddr *)&address,
-                                    (socklen_t *)&addrlen)) < 0) {
+        if ((client_socket =
+                 accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
             perror("Échec de l'acceptation");
             exit(EXIT_FAILURE);
         }
