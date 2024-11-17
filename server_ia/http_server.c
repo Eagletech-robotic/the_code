@@ -105,16 +105,18 @@ void decode_step_input_int(cJSON *json, const char *key, int *target) {
     cJSON *item = cJSON_GetObjectItem(json, key);
     if (item && cJSON_IsNumber(item)) {
         *target = item->valueint;
+    } else {
+        *target = 0;
     }
-    *target = 0;
 }
 
 void decode_step_input_float(cJSON *json, const char *key, float *target) {
     cJSON *item = cJSON_GetObjectItem(json, key);
     if (item && cJSON_IsNumber(item)) {
         *target = (float)item->valuedouble;
+    } else {
+        *target = 0.0;
     }
-    *target = 0.0;
 }
 
 void decode_step_input_float_array(cJSON *json, const char *key, float array[], int size) {
@@ -280,6 +282,7 @@ void handle_step(int client_socket, const char *json_data) {
     free(response_data);
     close(client_socket);
 }
+
 void handle_client(int client_socket) {
     char buffer[2048] = {0};
     read(client_socket, buffer, 2048);
