@@ -7,22 +7,38 @@
 // ./build/http_server
 //
 // ----------------------
-// ENDPOINTS:
+// POINTS D'ENTRÉE (ENDPOINTS):
 // ----------------------
 //
-// Init/reset (TO BE IMPLEMENTED)
-//   Request:
+// Init/reset (À IMPLÉMENTER)
+//   Requête :
 //     curl -X POST -d
 //     '{"person":{"name":"Alice","age":30},"location":{"city":"Paris","country":"France"}}'
 //     http://localhost:8080/init
-//   Response:
+//   Réponse :
 //     {"message":"Bienvenue Alice de Paris, France!"}
 //
-// Step:
-//   Request:
-//     curl -X POST -d '{"step":1,"action":"start"}' http://localhost:8080/step
-//   Response:
-//     {"message":"Bienvenue Alice de Paris, France!"}
+// Step
+//   Requête :
+//     curl -X POST -d '{
+//         "is_jack_gone": 1,
+//         "tof": 1234.5,
+//         "gyro": [0.1, 0.2, 0.3],
+//         "accelero": [0.01, 0.02, 0.03],
+//         "compass": [10.1, 10.2, 10.3],
+//         "last_wifi_data": [1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+//         "encoder1": 150,
+//         "encoder2": 200
+//     }' http://localhost:8080/step
+//   Réponse :
+//     {
+//         "vitesse1_ratio": 0.85,
+//         "vitesse2_ratio": 0.90,
+//         "servo_pelle_ratio": 1.0
+//     }
+//
+//  Pour le moment (sep 2024), seuls ces paramètres sont lus en entrée :
+//    curl -X POST -d '{"encoder1": 110, "encoder2": 90}' http://localhost:8080/step
 
 #include <netinet/in.h>
 #include <stdio.h>
@@ -42,21 +58,9 @@ typedef struct {
     char city[50];
     char country[50];
 } query_init_t;
-
 typedef struct {
     char welcome_message[1000];
 } response_init_t;
-
-// Structures pour /step
-typedef struct {
-    int step;
-    char action[50];
-} query_step_t;
-
-typedef struct {
-    int next_step;
-    char status[100];
-} response_step_t;
 
 // Fonction myinit()
 void myinit(query_init_t *query_init, response_init_t *response_init) {
@@ -97,76 +101,61 @@ void output_to_json(output_t *output, cJSON *json) {
     cJSON_AddNumberToObject(json, "servo_pelle_ratio", output->servo_pelle_ratio);
 }
 
-void json_to_input(cJSON *json, input_t *input) {
+void decode_step_input_int(cJSON *json, const char *key, int *target) {
+    cJSON *item = cJSON_GetObjectItem(json, key);
+    if (item && cJSON_IsNumber(item)) {
+        *target = item->valueint;
+    }
+    *target = 0;
+}
+
+void decode_step_input_float(cJSON *json, const char *key, float *target) {
+    cJSON *item = cJSON_GetObjectItem(json, key);
+    if (item && cJSON_IsNumber(item)) {
+        *target = (float)item->valuedouble;
+    }
+    *target = 0.0;
+}
+
+void decode_step_input_float_array(cJSON *json, const char *key, float array[], int size) {
+    cJSON *item = cJSON_GetObjectItem(json, key);
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < size; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                array[i] = (float)item->valuedouble;
+            } else {
+                array[i] = 0.0;
+            }
+        }
+    }
+}
+
+void decode_step_input_int_array(cJSON *json, const char *key, int array[], int size) {
+    cJSON *item = cJSON_GetObjectItem(json, key);
+    if (item && cJSON_IsArray(item)) {
+        for (int i = 0; i < size; i++) {
+            cJSON *subitem = cJSON_GetArrayItem(item, i);
+            if (subitem && cJSON_IsNumber(subitem)) {
+                array[i] = item->valueint;
+            } else {
+                array[i] = 0;
+            }
+        }
+    }
+}
+
+void decode_step_input(cJSON *json, input_t *input) {
     cJSON *item = NULL;
 
-    // Récupérer "is_jack_gone"
-    item = cJSON_GetObjectItem(json, "is_jack_gone");
-    if (item && cJSON_IsNumber(item)) {
-        input->is_jack_gone = item->valueint;
-    } else {
-        input->is_jack_gone = 0;  // Valeur par défaut ou gérer l'erreur
-    }
-
-    // Récupérer "tof"
-    item = cJSON_GetObjectItem(json, "tof");
-    if (item && cJSON_IsNumber(item)) {
-        input->tof = (float)item->valuedouble;
-    } else {
-        input->tof = 0.0f;
-    }
-
-    // Récupérer "gyro"
-    item = cJSON_GetObjectItem(json, "gyro");
-    if (item && cJSON_IsArray(item)) {
-        for (int i = 0; i < 3; i++) {
-            cJSON *subitem = cJSON_GetArrayItem(item, i);
-            if (subitem && cJSON_IsNumber(subitem)) {
-                input->gyro[i] = (float)subitem->valuedouble;
-            } else {
-                input->gyro[i] = 0.0f;
-            }
-        }
-    }
-
-    // Récupérer "accelero"
-    item = cJSON_GetObjectItem(json, "accelero");
-    if (item && cJSON_IsArray(item)) {
-        for (int i = 0; i < 3; i++) {
-            cJSON *subitem = cJSON_GetArrayItem(item, i);
-            if (subitem && cJSON_IsNumber(subitem)) {
-                input->accelero[i] = (float)subitem->valuedouble;
-            } else {
-                input->accelero[i] = 0.0f;
-            }
-        }
-    }
-
-    // Récupérer "compass"
-    item = cJSON_GetObjectItem(json, "compass");
-    if (item && cJSON_IsArray(item)) {
-        for (int i = 0; i < 3; i++) {
-            cJSON *subitem = cJSON_GetArrayItem(item, i);
-            if (subitem && cJSON_IsNumber(subitem)) {
-                input->compass[i] = (float)subitem->valuedouble;
-            } else {
-                input->compass[i] = 0.0f;
-            }
-        }
-    }
-
-    // Récupérer "last_wifi_data"
-    item = cJSON_GetObjectItem(json, "last_wifi_data");
-    if (item && cJSON_IsArray(item)) {
-        for (int i = 0; i < 10; i++) {
-            cJSON *subitem = cJSON_GetArrayItem(item, i);
-            if (subitem && cJSON_IsNumber(subitem)) {
-                input->last_wifi_data[i] = subitem->valueint;
-            } else {
-                input->last_wifi_data[i] = 0;
-            }
-        }
-    }
+    decode_step_input_int(json, "is_jack_gone", &input->is_jack_gone);
+    decode_step_input_float(json, "tof", &input->tof);
+    decode_step_input_float_array(json, "gyro", input->gyro, 3);
+    decode_step_input_float_array(json, "accelero", input->accelero, 3);
+    decode_step_input_float_array(json, "compass", input->compass, 3);
+    decode_step_input_int_array(json, "last_wifi_data", input->last_wifi_data, 10);
+    decode_step_input_int(json, "encoder1", &input->encoder1);
+    decode_step_input_int(json, "encoder2", &input->encoder2);
 }
 
 void handle_options(int client_socket) {
@@ -259,7 +248,7 @@ void handle_step(int client_socket, const char *json_data) {
     // Convertir le JSON en structure input_t
     input_t input_data;
     memset(&input_data, 0, sizeof(input_t));
-    json_to_input(json_request, &input_data);
+    decode_step_input(json_request, &input_data);
 
     // Appeler mystep() pour traiter les données et obtenir output_t
     output_t output_data;
