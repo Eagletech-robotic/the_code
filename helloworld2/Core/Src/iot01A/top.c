@@ -65,7 +65,7 @@ void top_in_loop() {
 	//printf("\033[H"); // curseur en haut à gauche sur un shell
 	//input_print(&input);
 	top_step(&config, &input, &output );
-	output_print(&output);
+	//output_print(&output);
 	output_set(&output);
 	fflush(stdout); // forcer la sortie pour mieux la lire
 }

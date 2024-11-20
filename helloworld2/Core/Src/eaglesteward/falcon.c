@@ -14,8 +14,6 @@ carre_t carre;
 
 pid_t pid_diff;
 pid_t pid_sum;
-pid_t pid_curve;
-
 
 float curve(float v1, float v2) {
 	return (v1-v2) / (v1+v2);
@@ -34,10 +32,6 @@ void autopilot_init(config_t * config) {
 	pid_limits(&pid_sum, -2.0, 2.0);
 	pid_frequency(&pid_sum, f);
 
-	pid_init(&pid_curve);
-	pid_tune(&pid_curve, 1.00 , 0.00, 0.6);
-	pid_limits(&pid_curve, -10000.0, 10000.0);
-	pid_frequency(&pid_curve, f);
 }
 
 // Fonction pour envoyer une valeur ITM
@@ -68,24 +62,9 @@ void autopilot(config_t * config, input_t * input, float v1, float v2, output_t*
 	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2); // vitesse linéaire
 	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2); // diff utilisé pour une rotation sur place
 
-	//if (v1 + v2 !=0 && sensor1+sensor2 !=0) {
-	if(0) {
-		float cmd_curve = curve(v1,v2);
-		float sensor_curve = curve(sensor1, sensor2);
-		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
-		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
+	ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
+	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 
-		//pid_print(&pid_curve);
-		//ITM_SendFloat(1,cmd_curve);
-		//ITM_SendFloat(2,sensor_curve);
-		float v = regul_sum / 2.0;
-		ret->vitesse1_ratio = v*(1+regul_curve);
-		ret->vitesse2_ratio = v*(1-regul_curve);
-	} else {
-		ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
-		ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
-	}
 	float cmd_curve = curve(v1,v2);
 	float sensor_curve = curve(sensor1, sensor2);
 	printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
@@ -95,45 +74,9 @@ void autopilot(config_t * config, input_t * input, float v1, float v2, output_t*
 void top_step(config_t* config, input_t *input, output_t* output ) {
 	carre_in_loop(&carre, output);
 	//const float ratio_speed_sensor = 0.0002;
-	output->vitesse1_ratio = 1000.0 ;
-	output->vitesse2_ratio = 2000.0 ; // àdroite dans le sens de la marche
+	//output->vitesse1_ratio = 100.0 ;
+	//output->vitesse2_ratio = 200.0 ; // àdroite dans le sens de la marche 3500 est 97% de la vitesse à 15V 100% à 12V à vide
 
-	//float r_ = (output->vitesse1_ratio -output->vitesseratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
-//	//float sensor = input->encoder1 ;//- input->encoder2;œ
-//	//float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
-//
-//	//pid_command(&pid,cmd);
-//	//float regul = pid_compute(&pid,sensor);
-////	printf("  : %f %f\r\n", cmd, regul);
-//
-//	float sensor1 = input->encoder1; // todo : tout diviser par /config->time_step_ms pour gérer les changements de timing.
-//	float sensor2 = input->encoder2; //        et trouver les bonnes version Kp ki kd
-//
-////	float cmd_diff = output->vitesse1_ratio - output->vitesse2_ratio;
-////	float sensor_diff = sensor1 - sensor2;
-////	float regul_diff = pid_(&pid_diff, cmd_diff, sensor_diff);
-////	pid_print(&pid_diff);
-//
-//	float cmd_sum = output->vitesse1_ratio + output->vitesse2_ratio;
-//	float sensor_sum = sensor1 + sensor2;
-//	float regul_sum = pid_(&pid_sum, cmd_sum, sensor_sum);
-//	//pid_print(&pid_sum);
-//	//output->vitesse1_ratio =( (regul_sum + regul_diff) / 2.0);
-//		//output->vitesse2_ratio = ((regul_sum - regul_diff) / 2.0);
-//	float cmd_curve = curve(output->vitesse1_ratio ,output->vitesse2_ratio );
-//	if (sensor1+sensor2 != .0) {
-//		float sensor_curve = curve(sensor1, sensor2);
-//		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-//		//pid_print(&pid_curve);
-//
-//		float v = regul_sum / 2.0;//ratio_speed_sensor*(output->vitesse1_ratio + output->vitesse2_ratio) /2.0;
-//		output->vitesse1_ratio = v*(regul_curve+1);
-//		output->vitesse2_ratio = v*(1-regul_curve);
-//	} else {
-//		//rotation sur place : asservissement en position sur les roues ? ou gérer l'asservissement en 1/r ?
-//		output->vitesse1_ratio *= ratio_speed_sensor;
-//		output->vitesse2_ratio *= ratio_speed_sensor;
-//	}
 	output_t ret;
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio;
