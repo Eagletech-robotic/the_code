@@ -64,7 +64,6 @@ typedef struct {
 
 config_t config;
 
-
 // Fonction myinit()
 void myinit(query_init_t *query_init, response_init_t *response_init) {
     sprintf(response_init->welcome_message, "Bienvenue %s de %s, %s!", query_init->name,
@@ -72,9 +71,6 @@ void myinit(query_init_t *query_init, response_init_t *response_init) {
     config.time_step_ms = 5;
     top_init(&config);
 }
-
-   
-
 
 // Fonction mystep()
 void mystep(input_t *input, output_t *output) {
@@ -101,9 +97,7 @@ void output_to_json(output_t *output, cJSON *json) {
     }
 
     cJSON_AddNumberToObject(json, "vitesse1_ratio", output->vitesse1_ratio);
-
-    cJSON_AddNumberToObject(json, "vitesse1_ratio", output->vitesse2_ratio);
-
+    cJSON_AddNumberToObject(json, "vitesse2_ratio", output->vitesse2_ratio);
     cJSON_AddNumberToObject(json, "servo_pelle_ratio", output->servo_pelle_ratio);
 }
 
@@ -229,6 +223,7 @@ void handle_init(int client_socket, const char *json_data) {
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
             "Content-Length: %lu\r\n"
+            "Access-Control-Allow-Origin: *\r\n"
             "\r\n"
             "%s",
             strlen(response_data), response_data);
@@ -274,8 +269,8 @@ void handle_step(int client_socket, const char *json_data) {
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
-            "Access-Control-Allow-Origin: *\r\n"
             "Content-Length: %lu\r\n"
+            "Access-Control-Allow-Origin: *\r\n"
             "\r\n"
             "%s",
             strlen(response_data), response_data);
