@@ -21,19 +21,23 @@ float curve(float v1, float v2) {
 	return (v1-v2) / (v1+v2);
 }
 
-void autopilot_init() {
+void autopilot_init(config_t * config) {
 	pid_init(&pid_diff);
 	//pid_tune(&pid,    0.000132, 0.00006, 0.000000165); // Ku=0.00022 Tu = 110 ms
-	pid_tune(&pid_diff, 0.000132  , 0.0000000, 0.00001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v)
+	pid_tune(&pid_diff, 0.00033  , 0.0000000, 0.000001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v)
 	pid_limits(&pid_diff, -2.0, 2.0);
+	float f = 1000.0 / config->time_step_ms;
+	pid_frequency(&pid_diff, f);
 
 	pid_init(&pid_sum);
-	pid_tune(&pid_sum, 0.00015 , 0.0000000, 0.000001); //ki est toujours trop instable au démarrage.
+	pid_tune(&pid_sum, 0.0003 , 0.0000000, 0.000001); //ki est toujours trop instable au démarrage.
 	pid_limits(&pid_sum, -2.0, 2.0);
+	pid_frequency(&pid_sum, f);
 
 	pid_init(&pid_curve);
-	pid_tune(&pid_curve, .90 , 0.005, 0.1);
+	pid_tune(&pid_curve, 1.00 , 0.00, 0.6);
 	pid_limits(&pid_curve, -10000.0, 10000.0);
+	pid_frequency(&pid_curve, f);
 }
 
 // Fonction pour envoyer une valeur ITM
@@ -51,28 +55,24 @@ void autopilot_init() {
 //    ITM_SendValue(port, scaled_value);
 //}
 
-int32_t trace1, trace2;
-
 // pour éviter de créer une nouvelle structure et pour évite de perdre le flux d'information, il faut envoyer un ouput vierge
 // et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
 void autopilot(config_t * config, input_t * input, float v1, float v2, output_t* ret)
 {
-	float sensor1 = input->encoder1 / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
-	float sensor2 = input->encoder2 / (1.0*config->time_step_ms);
+	//float sensor1 = input->encoder1 / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
+	//float sensor2 = input->encoder2 / (1.0*config->time_step_ms);
+
+	float sensor1 = input->encoder1;// / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
+	float sensor2 = input->encoder2;// / (1.0*config->time_step_ms);
 
 	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2); // vitesse linéaire
 	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2); // diff utilisé pour une rotation sur place
 
-	if(sensor1 == sensor2) {
-		ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
-		ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
-	} else if (v1 + v2 !=0) {
+	//if (v1 + v2 !=0 && sensor1+sensor2 !=0) {
+	if(0) {
 		float cmd_curve = curve(v1,v2);
 		float sensor_curve = curve(sensor1, sensor2);
 		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-
-		trace1 = cmd_curve*1000+1000;
-		trace2 = sensor_curve*1000+1000;
 		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
 		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
 
@@ -83,17 +83,20 @@ void autopilot(config_t * config, input_t * input, float v1, float v2, output_t*
 		ret->vitesse1_ratio = v*(1+regul_curve);
 		ret->vitesse2_ratio = v*(1-regul_curve);
 	} else {
-		ret->vitesse1_ratio = regul_diff / 2.0;
-		ret->vitesse2_ratio = regul_diff / 2.0;
+		ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
+		ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 	}
+	float cmd_curve = curve(v1,v2);
+	float sensor_curve = curve(sensor1, sensor2);
+	printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
 }
 
 // top_loop doit appeler la fonction et gérer les IOS
 void top_step(config_t* config, input_t *input, output_t* output ) {
 	carre_in_loop(&carre, output);
 	//const float ratio_speed_sensor = 0.0002;
-	//output->vitesse1_ratio = 1000.0 ;
-	//output->vitesse2_ratio = 4000.0 ; // àdroite dans le sens de la marche
+	output->vitesse1_ratio = 1000.0 ;
+	output->vitesse2_ratio = 2000.0 ; // àdroite dans le sens de la marche
 
 	//float r_ = (output->vitesse1_ratio -output->vitesseratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
 //	//float sensor = input->encoder1 ;//- input->encoder2;œ
@@ -136,6 +139,7 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse1_ratio=ret.vitesse1_ratio;
 	output->vitesse2_ratio=ret.vitesse2_ratio;
 
+	//printf("%.3f\r\n", output->vitesse1_ratio);
 	//float r = curve(input->encoder1,input->encoder2);
 
 	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
@@ -146,6 +150,6 @@ void top_init(config_t* config) {
 	config->time_step_ms = 2;
 	printf(":: %i\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
-	autopilot_init();
+	autopilot_init(config);
 }
 

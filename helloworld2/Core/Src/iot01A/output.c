@@ -18,5 +18,6 @@ void output_set(output_t *output) {
 }
 
 void output_print(output_t * output) {
-	printf("out: %.4f\t%.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
+	//printf("out: %.4f\t%.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
+	printf("o: %.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio);
 }

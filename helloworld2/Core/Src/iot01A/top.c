@@ -63,7 +63,7 @@ void top_in_loop() {
 	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
 	input_get(&input);
 	//printf("\033[H"); // curseur en haut à gauche sur un shell
-	input_print(&input);
+	//input_print(&input);
 	top_step(&config, &input, &output );
 	output_print(&output);
 	output_set(&output);
