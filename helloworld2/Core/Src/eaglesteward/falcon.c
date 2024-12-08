@@ -9,6 +9,7 @@
 #include "robotic/carre.h"
 #include <stdio.h>
 #include "robotic/pid.h"
+#include "iot01A/sensors.h"
 
 carre_t carre;
 
@@ -21,8 +22,7 @@ float curve(float v1, float v2) {
 
 void autopilot_init(config_t * config) {
 	pid_init(&pid_diff);
-	//pid_tune(&pid,    0.000132, 0.00006, 0.000000165); // Ku=0.00022 Tu = 110 ms
-	pid_tune(&pid_diff, 0.00033  , 0.0000000, 0.000001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v)
+	pid_tune(&pid_diff, 0.00033  , 0.0000000, 0.000001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v), ki fait diverger
 	pid_limits(&pid_diff, -2.0, 2.0);
 	float f = 1000.0 / config->time_step_ms;
 	pid_frequency(&pid_diff, f);
@@ -53,29 +53,30 @@ void autopilot_init(config_t * config) {
 // et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
 void autopilot(config_t * config, input_t * input, float v1, float v2, output_t* ret)
 {
-	//float sensor1 = input->encoder1 / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
-	//float sensor2 = input->encoder2 / (1.0*config->time_step_ms);
+	float sensor1 = input->encoder1;
+	float sensor2 = input->encoder2;
 
-	float sensor1 = input->encoder1;// / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
-	float sensor2 = input->encoder2;// / (1.0*config->time_step_ms);
-
-	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2); // vitesse linéaire
-	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2); // diff utilisé pour une rotation sur place
+	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2);
+	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2);
 
 	ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
 	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 
-	float cmd_curve = curve(v1,v2);
-	float sensor_curve = curve(sensor1, sensor2);
-	printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
+	//float cmd_curve = curve(v1,v2);
+	//float sensor_curve = curve(sensor1, sensor2);
+	//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
 }
 
-// top_loop doit appeler la fonction et gérer les IOS
+//  doit appeler la fonction et gérer les IOS
 void top_step(config_t* config, input_t *input, output_t* output ) {
+	float gyrox,gyroy,gyroz;float accx,accy,accz;
+	getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
 	carre_in_loop(&carre, output);
 	//const float ratio_speed_sensor = 0.0002;
 	//output->vitesse1_ratio = 100.0 ;
 	//output->vitesse2_ratio = 200.0 ; // àdroite dans le sens de la marche 3500 est 97% de la vitesse à 15V 100% à 12V à vide
+
+	float r_ = curve(input->encoder1,input->encoder2); // la command
 
 	output_t ret;
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
@@ -83,16 +84,17 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse2_ratio=ret.vitesse2_ratio;
 
 	//printf("%.3f\r\n", output->vitesse1_ratio);
-	//float r = curve(input->encoder1,input->encoder2);
+	float r = curve(input->encoder1,input->encoder2);
 
-	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
+	printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
 }
 
 
 void top_init(config_t* config) {
-	config->time_step_ms = 2;
+	config->time_step_ms = 6;
 	printf(":: %i\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
 	autopilot_init(config);
+	init_inertial();
 }
 

@@ -14,6 +14,12 @@ void output_init(output_t * output){
 
 
 void output_set(output_t *output) {
+	if ( output->vitesse1_ratio < -1.0|| 1.0 < output->vitesse1_ratio) {
+		printf("V1 survitesse (%f)\r\n",output->vitesse1_ratio);
+	}
+	if ( output->vitesse2_ratio < -1.0|| 1.0 < output->vitesse2_ratio) {
+			printf("V2 survitesse (%f)\r\n",output->vitesse2_ratio);
+	}
 	motorSet(output->vitesse1_ratio, output->vitesse2_ratio);
 }
 
