@@ -455,18 +455,32 @@ int getfirstValidBit(int absoluteValue){
 	return counter;
 }
 
+void mag_write(uint8_t reg, uint8_t data_) {
+	 uint8_t addressWrite=0x3c;
+	 uint8_t data[2];
+	 data[0]= reg;
+	 data[1]= data_;
+	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,data,2,1);
+}
+
 // lis3mdl
 void init_magnetometer(){
 
-	 uint8_t addressWrite=0x3c;
-	 uint8_t turnOn[]={0x22,0x00}; //Continuous-conversion mode
-	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOn,2,1);
+//	 uint8_t addressWrite=0x3c;
+//	 uint8_t turnOn[]={0x22,0x00}; //Continuous-conversion mode
+//	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOn,2,1);
+//
+//	 uint8_t turnOnxy[]={0x20,0x7E}; //ultrahigh-performance mode 155hz
+//	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOnxy,2,1);
+//
+//	 uint8_t turnOnz[]={0x23,0xC}; //ultrahigh-performance mode en Z
+// 	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOnz,2,1);
 
-	 uint8_t turnOnxy[]={0x20,0x7E}; //ultrahigh-performance mode 155hz
-	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOnxy,2,1);
-
-	 uint8_t turnOnz[]={0x23,0xC}; //ultrahigh-performance mode
- 	 HAL_I2C_Master_Transmit(&hi2c2,addressWrite,turnOnz,2,1);
+ 	 mag_write(0x20,0x7e); // 10hz UHP
+ 	 mag_write(0x21,0x00); // 4Gauss
+ 	 mag_write(0x22,0x00); // continuous mode
+ 	 mag_write(0x23,0x0C); // UHP en Z
+ 	 mag_write(0x24,0x40); // BDU
 
 }
 
@@ -515,13 +529,20 @@ void getAxisMagnetometer(float *magx_, float *magy_, float *magz_){
 	   HAL_I2C_Master_Receive(&hi2c2,addressRead,MAGread,1,1);
 	   magz|=((MAGread[0])<<8);
 
-	   *magx_=magx/16535.0f;
-	   *magy_=magy/16535.0f;
-	   *magz_=magz/16535.0f;
+	   //*magx_=magx/16535.0f;
+	   //*magy_=magy/16535.0f;
+	   //*magz_=magz/16535.0f;
 
-
-
+	   *magx_=magx/6842.0f;
+   	   *magy_=magy/6842.0f;
+   	   *magz_=magz/6842.0f;
 }
+
+// 22.46  ­ 0.46 0.20 -0.11  0.51
+// 14.60  -0.39 0.12 -0.13  0.42
+//  6.47   0.37 -0.3 -0.14  0.40
+
+
 //
 //void init_gyroscope(){
 //
