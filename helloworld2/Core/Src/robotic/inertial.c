@@ -10,7 +10,7 @@
 
 #include <math.h>
 #include <stdio.h>
-
+#include "robotic/inertial.h"
 // todo :
 // remplacer les const par des paramètres
 // faire une structure pour stoquer l'état interne et la vitesse
@@ -19,13 +19,13 @@
 //
 
 //TODO : ses valeurs doivent être des paramètres et non des constantes pour que le code soit réutilisable
-const float r_wheel         = 0.065; //m ? rayon de roue ?
-const float r_axel          = 0.33;  // m écartement des roues ?
-const float delta_t         = 0.01;  // s pas de temps entre 2 lectures ? normalise la vitesse -> paramètres
+//const float r_wheel         = 0.065/2; //m ? rayon de roue ?
+//const float r_axel          = 0.33;  // m écartement des roues ?
+//const float delta_t         = 0.01;  // s pas de temps entre 2 lectures ? normalise la vitesse -> paramètres
 const float pi              = 3.14159265358979;
 //const float w_accel_max     = 10.0;
 //const float deg_rad         = pi / 180.0;
-const float holes           = 500.0;
+//const float holes           = 500.0;
 //const float v_collect       = 0.0;
 //const float v_max           = 2.0;
 //const float sensor1_x       = 0.0;
@@ -37,7 +37,7 @@ const float holes           = 500.0;
 // on considère des petits pas de temps, la machine parcourent des arcs de cercles
 
 // fonction original qui fonctionne avec les codeuses
-int inertial(	/*DEBUG*/
+int inertial_run(	/*DEBUG*/
 		int isDebug,
 		/* INPUTS */
 		float w1_imp, // distance effectuée par la roue 1 en impulsion
@@ -48,7 +48,12 @@ int inertial(	/*DEBUG*/
 		float* theta_e,    // heading
 		/* OUTPUTS */
 		float* v_cg_i_ex, // vitesse
-		float* v_cg_i_ey  //vitesse
+		float* v_cg_i_ey,  //vitesse
+		/* CONSTANT*/
+		float r_wheel,    // rayon des roue en m
+		float r_axel,    // écartement des roues en m
+		float delta_t,    // pas de temps entre 2 lectures en s.
+		float holes      // impulsion par tour de roue
 	)
 {
     /* Outputs from module */
@@ -121,101 +126,135 @@ int inertial(	/*DEBUG*/
 
 
 
+//
+//int inertial_with_angle(	/*DEBUG*/
+//		int isDebug,
+//		/* INPUTS */
+//		float w1_mes, // tour de roue en radian
+//		float w2_mes, //
+//		/* INPUTS/OUTPUTS */
+//		float* p_cg_i_ex,  // X
+//		float* p_cg_i_ey,  // Y
+//		float* theta_e,    // heading
+//		/* OUTPUTS */
+//		float* v_cg_i_ex, // vitesse
+//		float* v_cg_i_ey  //vitesse
+//	)
+//{
+//    /* Outputs from module */
+//
+//    /* Local Variables */ float pi              = 3.14159265358979;
+//    float a_cg_bx_e = 0;
+//    float v_cg_by_e = 0;
+//    float w_cg_ib_e = 0;
+//
+//    float a_cg_i_ex = 0;
+//    float a_cg_i_ey = 0;
+//
+//    float del_p_i_ex = 0;
+//    float del_p_i_ey = 0;
+//    float div 	= -1;
+//
+///* Generate angle swept out since previous measurement by each wheel */
+///* ----------------------------------------------------------------- */
+////    w1_mes = w1_imp * ((2*pi) / holes); // in radian ? distance / wheel ray
+////    w2_mes = w2_imp * ((2*pi) / holes);
+//
+///* Update r2d2 dynamics */
+///* -------------------- */
+//    a_cg_bx_e = (r_wheel*r_wheel * (w1_mes*w1_mes - w2_mes*w2_mes)) / (2.0*r_axel); /* Normal Acceleration */
+//    v_cg_by_e = (r_wheel*(w1_mes + w2_mes))/2.0;                                    /* Tangential Velocity */
+//    w_cg_ib_e = (r_wheel/r_axel)*(w2_mes - w1_mes);                                 /* Rotation rate about axel centre */
+//
+///* Update rotation angle */
+///* --------------------- */
+//    *theta_e = *theta_e + w_cg_ib_e;
+//    div = *theta_e/(2*pi);
+//    *theta_e = *theta_e - floor(div)*2*pi;
+//    if(isDebug)
+//        printf("\ntheta_e: %lf\ndiv: %lf\nfloor(div): %lf\n",*theta_e,div,floor(div));
+//
+///* Transform normal acceleration from Body to Inertial Axes */
+///* -------------------------------------------------------- */
+//    a_cg_i_ex =      cos(*theta_e) * a_cg_bx_e;
+//    a_cg_i_ey = -1 * sin(*theta_e) * a_cg_bx_e;
+//
+///* Transform velocity from Body to Inertial Axes */
+///* --------------------------------------------- */
+//    *v_cg_i_ex =  sin(*theta_e) * v_cg_by_e;
+//    *v_cg_i_ey =  cos(*theta_e) * v_cg_by_e;
+//
+///* Update R2D2 cofg position in Inertial Axes */
+///* ------------------------------------------ */
+//    del_p_i_ex = (*v_cg_i_ex + 0.5 * a_cg_i_ex );
+//    del_p_i_ey = (*v_cg_i_ey + 0.5 * a_cg_i_ey );
+//
+//    *p_cg_i_ex = *p_cg_i_ex + del_p_i_ex;
+//    *p_cg_i_ey = *p_cg_i_ey + del_p_i_ey;
+//
+///* Create proper estimated velocity output */
+///* --------------------------------------- */
+//    *v_cg_i_ex = *v_cg_i_ex / delta_t;
+//    *v_cg_i_ey = *v_cg_i_ey / delta_t;
+//
+///* Output results to the screen */
+///* ---------------------------- */
+//    if(isDebug)
+//        printf("acceleration = %6.10f\n", a_cg_bx_e);
+//    return 0;
+//}
+//
+//
+//int inertial_with_distance(	/*DEBUG*/
+//		int isDebug,
+//		/* INPUTS */
+//		float w1_d, // distance effectuée par la roue 1
+//		float w2_d, // distance effectuée par la roue 2
+//		/* INPUTS/OUTPUTS */
+//		float* p_cg_i_ex,  // X
+//		float* p_cg_i_ey,  // Y
+//		float* theta_e,    // heading
+//		/* OUTPUTS */
+//		float* v_cg_i_ex, // vitesse
+//		float* v_cg_i_ey  //vitesse
+//	)
+//{
+//	float w1_mes = w1_d / r_wheel;
+//    float w2_mes = w2_d / r_wheel;
+//	return inertial_with_angle(isDebug, w1_mes, w2_mes, p_cg_i_ex, p_cg_i_ey, theta_e, v_cg_i_ex, v_cg_i_ey);
+//}
 
-int inertial_with_angle(	/*DEBUG*/
-		int isDebug,
-		/* INPUTS */
-		float w1_mes, // tour de roue en radian
-		float w2_mes, //
-		/* INPUTS/OUTPUTS */
-		float* p_cg_i_ex,  // X
-		float* p_cg_i_ey,  // Y
-		float* theta_e,    // heading
-		/* OUTPUTS */
-		float* v_cg_i_ex, // vitesse
-		float* v_cg_i_ey  //vitesse
-	)
+void inertial_init(inertial_t * inertial, float r_wheel, float r_axel, float delta_t, float holes)
 {
-    /* Outputs from module */
-
-    /* Local Variables */
-    float a_cg_bx_e = 0;
-    float v_cg_by_e = 0;
-    float w_cg_ib_e = 0;
-
-    float a_cg_i_ex = 0;
-    float a_cg_i_ey = 0;
-
-    float del_p_i_ex = 0;
-    float del_p_i_ey = 0;
-
-    float div 	= -1;
-
-/* Generate angle swept out since previous measurement by each wheel */
-/* ----------------------------------------------------------------- */
-//    w1_mes = w1_imp * ((2*pi) / holes); // in radian ? distance / wheel ray
-//    w2_mes = w2_imp * ((2*pi) / holes);
-
-/* Update r2d2 dynamics */
-/* -------------------- */
-    a_cg_bx_e = (r_wheel*r_wheel * (w1_mes*w1_mes - w2_mes*w2_mes)) / (2.0*r_axel); /* Normal Acceleration */
-    v_cg_by_e = (r_wheel*(w1_mes + w2_mes))/2.0;                                    /* Tangential Velocity */
-    w_cg_ib_e = (r_wheel/r_axel)*(w2_mes - w1_mes);                                 /* Rotation rate about axel centre */
-
-/* Update rotation angle */
-/* --------------------- */
-    *theta_e = *theta_e + w_cg_ib_e;
-    div = *theta_e/(2*pi);
-    *theta_e = *theta_e - floor(div)*2*pi;
-    if(isDebug)
-        printf("\ntheta_e: %lf\ndiv: %lf\nfloor(div): %lf\n",*theta_e,div,floor(div));
-
-/* Transform normal acceleration from Body to Inertial Axes */
-/* -------------------------------------------------------- */
-    a_cg_i_ex =      cos(*theta_e) * a_cg_bx_e;
-    a_cg_i_ey = -1 * sin(*theta_e) * a_cg_bx_e;
-
-/* Transform velocity from Body to Inertial Axes */
-/* --------------------------------------------- */
-    *v_cg_i_ex =  sin(*theta_e) * v_cg_by_e;
-    *v_cg_i_ey =  cos(*theta_e) * v_cg_by_e;
-
-/* Update R2D2 cofg position in Inertial Axes */
-/* ------------------------------------------ */
-    del_p_i_ex = (*v_cg_i_ex + 0.5 * a_cg_i_ex );
-    del_p_i_ey = (*v_cg_i_ey + 0.5 * a_cg_i_ey );
-
-    *p_cg_i_ex = *p_cg_i_ex + del_p_i_ex;
-    *p_cg_i_ey = *p_cg_i_ey + del_p_i_ey;
-
-/* Create proper estimated velocity output */
-/* --------------------------------------- */
-    *v_cg_i_ex = *v_cg_i_ex / delta_t;
-    *v_cg_i_ey = *v_cg_i_ey / delta_t;
-
-/* Output results to the screen */
-/* ---------------------------- */
-    if(isDebug)
-        printf("acceleration = %6.10f\n", a_cg_bx_e);
-    return 0;
+	inertial->r_wheel =r_wheel;
+	inertial->r_axel =r_axel;
+	inertial->delta_t =delta_t;
+	inertial->holes = holes;
+	inertial->isDebug = 0;
+	inertial->p_cg_i_ex = 0.0f;
+	inertial->p_cg_i_ey = 0.0f;
+	inertial->theta_e = 0.0f;
 }
 
-
-int inertial_with_distance(	/*DEBUG*/
-		int isDebug,
-		/* INPUTS */
-		float w1_d, // distance effectuée par la roue 1
-		float w2_d, // distance effectuée par la roue 2
-		/* INPUTS/OUTPUTS */
-		float* p_cg_i_ex,  // X
-		float* p_cg_i_ey,  // Y
-		float* theta_e,    // heading
-		/* OUTPUTS */
-		float* v_cg_i_ex, // vitesse
-		float* v_cg_i_ey  //vitesse
-	)
+void inertial_step(inertial_t *inertial, float w1_imp, float w2_imp, float* v_cg_i_ex, float* v_cg_i_ey)
 {
-	float w1_mes = w1_d / r_wheel;
-    float w2_mes = w2_d / r_wheel;
-	return inertial_with_angle(isDebug, w1_mes, w2_mes, p_cg_i_ex, p_cg_i_ey, theta_e, v_cg_i_ex, v_cg_i_ey);
+	inertial_run(
+			inertial->isDebug,
+			/* INPUTS */
+			w1_imp, // distance effectuée par la roue 1 en impulsion
+			w2_imp, // distance effectuée par la roue 2
+			/* INPUTS/OUTPUTS */
+			&inertial->p_cg_i_ex,  // X
+			&inertial->p_cg_i_ey,  // Y
+			&inertial->theta_e,    // heading
+			/* OUTPUTS */
+			v_cg_i_ex, // vitesse
+			v_cg_i_ey,  // vitesse
+			/* CONSTANT*/
+			inertial->r_wheel,
+			inertial->r_axel,
+			inertial->delta_t,
+			inertial->holes
+		);
 }
+
