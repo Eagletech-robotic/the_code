@@ -9,13 +9,15 @@
 #include "robotic/carre.h"
 #include <stdio.h>
 #include "robotic/pid.h"
+#include "iot01A/sensors.h"
+#include "robotic/inertial.h"
+#include "robotic/projection.h"
+#include <math.h>
 
 carre_t carre;
 
 pid_t pid_diff;
 pid_t pid_sum;
-pid_t pid_curve;
-
 
 float curve(float v1, float v2) {
 	return (v1-v2) / (v1+v2);
@@ -23,8 +25,7 @@ float curve(float v1, float v2) {
 
 void autopilot_init(config_t * config) {
 	pid_init(&pid_diff);
-	//pid_tune(&pid,    0.000132, 0.00006, 0.000000165); // Ku=0.00022 Tu = 110 ms
-	pid_tune(&pid_diff, 0.00033  , 0.0000000, 0.000001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v)
+	pid_tune(&pid_diff, 0.00033  , 0.0000000, 0.000001); // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v), ki fait diverger
 	pid_limits(&pid_diff, -2.0, 2.0);
 	float f = 1000.0 / config->time_step_ms;
 	pid_frequency(&pid_diff, f);
@@ -34,10 +35,6 @@ void autopilot_init(config_t * config) {
 	pid_limits(&pid_sum, -2.0, 2.0);
 	pid_frequency(&pid_sum, f);
 
-	pid_init(&pid_curve);
-	pid_tune(&pid_curve, 1.00 , 0.00, 0.6);
-	pid_limits(&pid_curve, -10000.0, 10000.0);
-	pid_frequency(&pid_curve, f);
 }
 
 // Fonction pour envoyer une valeur ITM
@@ -59,97 +56,123 @@ void autopilot_init(config_t * config) {
 // et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
 void autopilot(config_t * config, input_t * input, float v1, float v2, output_t* ret)
 {
-	//float sensor1 = input->encoder1 / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
-	//float sensor2 = input->encoder2 / (1.0*config->time_step_ms);
+	float sensor1 = input->encoder1;
+	float sensor2 = input->encoder2;
 
-	float sensor1 = input->encoder1;// / (1.0*config->time_step_ms); // pour que le pid ne dépendent pas du temps
-	float sensor2 = input->encoder2;// / (1.0*config->time_step_ms);
+	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2);
+	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2);
 
-	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2); // vitesse linéaire
-	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2); // diff utilisé pour une rotation sur place
+	ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
+	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 
-	//if (v1 + v2 !=0 && sensor1+sensor2 !=0) {
-	if(0) {
-		float cmd_curve = curve(v1,v2);
-		float sensor_curve = curve(sensor1, sensor2);
-		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
-		//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
-
-		//pid_print(&pid_curve);
-		//ITM_SendFloat(1,cmd_curve);
-		//ITM_SendFloat(2,sensor_curve);
-		float v = regul_sum / 2.0;
-		ret->vitesse1_ratio = v*(1+regul_curve);
-		ret->vitesse2_ratio = v*(1-regul_curve);
-	} else {
-		ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
-		ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
-	}
-	float cmd_curve = curve(v1,v2);
-	float sensor_curve = curve(sensor1, sensor2);
-	printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
+	//float cmd_curve = curve(v1,v2);
+	//float sensor_curve = curve(sensor1, sensor2);
+	//printf("%.4f %.4f\r\n", cmd_curve, sensor_curve);
 }
 
-// top_loop doit appeler la fonction et gérer les IOS
-void top_step(config_t* config, input_t *input, output_t* output ) {
-	carre_in_loop(&carre, output);
-	//const float ratio_speed_sensor = 0.0002;
-	output->vitesse1_ratio = 1000.0 ;
-	output->vitesse2_ratio = 2000.0 ; // àdroite dans le sens de la marche
+inertial_t inertial;
+//int first = 1;
+//float m_1[3];
 
-	//float r_ = (output->vitesse1_ratio -output->vitesseratio) /(output->vitesse1_ratio + output->vitesse2_ratio);
-//	//float sensor = input->encoder1 ;//- input->encoder2;œ
-//	//float cmd = output->vitesse1_ratio ;//- output->vitesse2_ratio;
-//
-//	//pid_command(&pid,cmd);
-//	//float regul = pid_compute(&pid,sensor);
-////	printf("  : %f %f\r\n", cmd, regul);
-//
-//	float sensor1 = input->encoder1; // todo : tout diviser par /config->time_step_ms pour gérer les changements de timing.
-//	float sensor2 = input->encoder2; //        et trouver les bonnes version Kp ki kd
-//
-////	float cmd_diff = output->vitesse1_ratio - output->vitesse2_ratio;
-////	float sensor_diff = sensor1 - sensor2;
-////	float regul_diff = pid_(&pid_diff, cmd_diff, sensor_diff);
-////	pid_print(&pid_diff);
-//
-//	float cmd_sum = output->vitesse1_ratio + output->vitesse2_ratio;
-//	float sensor_sum = sensor1 + sensor2;
-//	float regul_sum = pid_(&pid_sum, cmd_sum, sensor_sum);
-//	//pid_print(&pid_sum);
-//	//output->vitesse1_ratio =( (regul_sum + regul_diff) / 2.0);
-//		//output->vitesse2_ratio = ((regul_sum - regul_diff) / 2.0);
-//	float cmd_curve = curve(output->vitesse1_ratio ,output->vitesse2_ratio );
-//	if (sensor1+sensor2 != .0) {
-//		float sensor_curve = curve(sensor1, sensor2);
-//		float regul_curve = pid_(&pid_curve, cmd_curve, sensor_curve);
-//		//pid_print(&pid_curve);
-//
-//		float v = regul_sum / 2.0;//ratio_speed_sensor*(output->vitesse1_ratio + output->vitesse2_ratio) /2.0;
-//		output->vitesse1_ratio = v*(regul_curve+1);
-//		output->vitesse2_ratio = v*(1-regul_curve);
+//  doit appeler la fonction et gérer les IOS
+void top_step(config_t* config, input_t *input, output_t* output ) {
+	float gyrox,gyroy,gyroz;float accx,accy,accz;
+	float magx, magy, magz;
+	getInertial6D(&accx, &accy, &accz, &gyrox, &gyroy, &gyroz); //todo : à mettre dans input
+	getAxisMagnetometer(&magx, &magy, &magz);
+
+	float gyro = sqrtf(gyrox*gyrox+gyroy*gyroy+gyroz*gyroz);
+	int diffe = input->encoder1 -input->encoder2;
+	printf("%.2f   %d  %.2f\r\n", gyro, diffe, (1.0f*diffe)/gyro);
+
+	float M[3];
+	M[0] = magx;
+	M[1] = magy;
+	M[2] = magz;
+	//projectOnPlane(config->g,M, M2D);
+
+	//printf("%.2f %.2f %.2f  %.2f %.2f %.2f  %.2f %.2f\r\n", magx, magy, magz, accx,accy,accz, M2D[0], M2D[1]);
+	//printf("%.2f %.2f\r\n", M2D[0], M2D[1]);
+
+//	if (first) {
+//		m_1[0] = M[0];
+//		m_1[1] = M[1];
+//		m_1[2] = M[2];
+//		first=0;
 //	} else {
-//		//rotation sur place : asservissement en position sur les roues ? ou gérer l'asservissement en 1/r ?
-//		output->vitesse1_ratio *= ratio_speed_sensor;
-//		output->vitesse2_ratio *= ratio_speed_sensor;
+//		float a = angleBetweenVectors(m_1,M);
+//		printf("radian=%.3f \r\n",a);
 //	}
+	float acc[3];
+	acc[0]=accx;
+	acc[1]=accy;
+	acc[2]=accz;
+	float a = computeHeading(M, acc);
+//	printf("heading=%.3f \r\n",a);
+	//stat_nr(a); //157 198
+	//calibrate_nr(M);
+	//carre_in_loop(&carre, output);
+	carre_in_loop_with_heading(&carre, a, output);
+
 	output_t ret;
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio;
 	output->vitesse2_ratio=ret.vitesse2_ratio;
 
-	//printf("%.3f\r\n", output->vitesse1_ratio);
-	//float r = curve(input->encoder1,input->encoder2);
+	//printf("%.2f %.2f %li %li\r\n", output->vitesse1_ratio, output->vitesse2_ratio, input->encoder1, input->encoder2);
 
+	//float v_cg_i_ex ;
+	//float v_cg_i_ey;
+
+	//inertial_step(&inertial, input->encoder1, input->encoder2, &v_cg_i_ex, &v_cg_i_ey);
+	//printf("x= %.4f y=%.4f theta=%.4f\r\n",inertial.p_cg_i_ex, inertial.p_cg_i_ey,inertial.theta_e);
+	//float r = curve(input->encoder1,input->encoder2);
 	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
 }
 
+// TODO :
+// utiliser mag pour faire le carré
+// faire une projection pour passer en 2D
+// mesurer une différence d'angle entre 2 vecteur 2D (pour faire le carré et les virage à 90°)
+// regarder la lib arduino stm32 pour l'iot pour récupérer le code + rapide -> trop merdique
+// 2ms pour le mag, c'est long.
+
+// les senseurs sont déjà initialisés
+void measure_g(float g[3]) {
+	float gyrox,gyroy,gyroz;float accx,accy,accz;
+	g[0]=0.0f;
+	g[1]=0.0f;
+	g[2]=0.0f;
+	for (int i=0;i<10;i++) {
+		getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
+		g[0]+=accx;
+		g[1]+=accy;
+		g[2]+=accy;
+	}
+	g[0] /=10.0;
+	g[1] /=10.0;
+	g[2] /=10.0;
+	//printf("[g] %.2f %.2f %.2f \r\n",g[0],g[1],g[2]);
+}
 
 void top_init(config_t* config) {
-	config->time_step_ms = 2;
+	config->time_step_ms = 10; // il faudrait 250Mhz, les get par I2C sont trop lent
 	printf(":: %i\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
 	autopilot_init(config);
+	//init_inertial();
+	inertial_init(&inertial, 0.0065/2, 0.33, config->time_step_ms, 500*4*36);
+	init_magnetometer();
+	init_inertial(); //sensors.c todo devrait être sensors_init
 }
 
+//TODO :
+// virer le g dans input qui ne sert à rien
+// accelero/gyro/magneto du code ? Ou changer de carte pour retenter le heading dans l'input ?
+// VL53L0X dans l'input
+// connectivité externe en bluetooth
+// virer le code commenté
+//Elec
+// prévoir les commandes de servo + alim servo 6V
+// Alim 5V de la carte
+// Jack de départ
