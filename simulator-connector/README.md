@@ -21,5 +21,5 @@ emcc simulator-connector.c \
      ../helloworld2/Core/Src/robotic/pid.c \
      -I../helloworld2/Core/Inc/ \
      -lm \
-     -o simulator-connector.wasm && mv simulator-connector.wasm ../../simulator
+     -o simulator-connector.wasm && mv simulator-connector.wasm ../../simulator/public/
 ```
