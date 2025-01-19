@@ -15,10 +15,8 @@ To compile the simulator, move to this folder, then use the following command:
 
 ```bash
 emcc simulator-connector.c -o2 \
-     ../helloworld2/Core/Src/eaglesteward/falcon.c \
-     ../helloworld2/Core/Src/robotic/carre.c \
-     ../helloworld2/Core/Src/robotic/inertial.c \
-     ../helloworld2/Core/Src/robotic/pid.c \
+     ../helloworld2/Core/Src/eaglesteward/*.c \
+     ../helloworld2/Core/Src/robotic/*.c \
      -I../helloworld2/Core/Inc/ \
      -lm \
      -o simulator-connector.wasm &&
