@@ -9,7 +9,7 @@
 #include "robotic/carre.h"
 #include <stdio.h>
 #include "robotic/pid.h"
-#include "iot01A/sensors.h"
+// #include "iot01A/sensors.h"
 #include "robotic/inertial.h"
 #include "robotic/projection.h"
 #include <math.h>
@@ -76,19 +76,19 @@ inertial_t inertial;
 
 //  doit appeler la fonction et gérer les IOS
 void top_step(config_t* config, input_t *input, output_t* output ) {
-	float gyrox,gyroy,gyroz;float accx,accy,accz;
-	float magx, magy, magz;
-	getInertial6D(&accx, &accy, &accz, &gyrox, &gyroy, &gyroz); //todo : à mettre dans input
-	getAxisMagnetometer(&magx, &magy, &magz);
+	//float gyrox,gyroy,gyroz;float accx,accy,accz;
+	//float magx, magy, magz;
+	//getInertial6D(&accx, &accy, &accz, &gyrox, &gyroy, &gyroz); //todo : à mettre dans input
+	//getAxisMagnetometer(&magx, &magy, &magz);
 
-	float gyro = sqrtf(gyrox*gyrox+gyroy*gyroy+gyroz*gyroz);
-	int diffe = input->encoder1 -input->encoder2;
-	printf("%.2f   %d  %.2f\r\n", gyro, diffe, (1.0f*diffe)/gyro);
+	//float gyro = sqrtf(gyrox*gyrox+gyroy*gyroy+gyroz*gyroz);
+	//int diffe = input->encoder1 -input->encoder2;
+	//printf("%.2f   %d  %.2f\r\n", gyro, diffe, (1.0f*diffe)/gyro);
 
-	float M[3];
-	M[0] = magx;
-	M[1] = magy;
-	M[2] = magz;
+	//float M[3];
+	//M[0] = magx;
+	//M[1] = magy;
+	//M[2] = magz;
 	//projectOnPlane(config->g,M, M2D);
 
 	//printf("%.2f %.2f %.2f  %.2f %.2f %.2f  %.2f %.2f\r\n", magx, magy, magz, accx,accy,accz, M2D[0], M2D[1]);
@@ -103,16 +103,16 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 //		float a = angleBetweenVectors(m_1,M);
 //		printf("radian=%.3f \r\n",a);
 //	}
-	float acc[3];
-	acc[0]=accx;
-	acc[1]=accy;
-	acc[2]=accz;
-	float a = computeHeading(M, acc);
+	//float acc[3];
+	//acc[0]=accx;
+	//acc[1]=accy;
+	//acc[2]=accz;
+	//float a = computeHeading(M, acc);
 //	printf("heading=%.3f \r\n",a);
 	//stat_nr(a); //157 198
 	//calibrate_nr(M);
-	//carre_in_loop(&carre, output);
-	carre_in_loop_with_heading(&carre, a, output);
+	carre_in_loop(&carre, output);
+	//carre_in_loop_with_heading(&carre, a, output);
 
 	output_t ret;
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
@@ -138,22 +138,22 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 // 2ms pour le mag, c'est long.
 
 // les senseurs sont déjà initialisés
-void measure_g(float g[3]) {
-	float gyrox,gyroy,gyroz;float accx,accy,accz;
-	g[0]=0.0f;
-	g[1]=0.0f;
-	g[2]=0.0f;
-	for (int i=0;i<10;i++) {
-		getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
-		g[0]+=accx;
-		g[1]+=accy;
-		g[2]+=accy;
-	}
-	g[0] /=10.0;
-	g[1] /=10.0;
-	g[2] /=10.0;
-	//printf("[g] %.2f %.2f %.2f \r\n",g[0],g[1],g[2]);
-}
+//void measure_g(float g[3]) {
+//	float gyrox,gyroy,gyroz;float accx,accy,accz;
+//	g[0]=0.0f;
+//	g[1]=0.0f;
+//	g[2]=0.0f;
+//	for (int i=0;i<10;i++) {
+//		//getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
+//		g[0]+=accx;
+//		g[1]+=accy;
+//		g[2]+=accy;
+//	}
+//	g[0] /=10.0;
+//	g[1] /=10.0;
+//	g[2] /=10.0;
+//	//printf("[g] %.2f %.2f %.2f \r\n",g[0],g[1],g[2]);
+//}
 
 void top_init(config_t* config) {
 	config->time_step_ms = 10; // il faudrait 250Mhz, les get par I2C sont trop lent
@@ -162,8 +162,8 @@ void top_init(config_t* config) {
 	autopilot_init(config);
 	//init_inertial();
 	inertial_init(&inertial, 0.0065/2, 0.33, config->time_step_ms, 500*4*36);
-	init_magnetometer();
-	init_inertial(); //sensors.c todo devrait être sensors_init
+	//init_magnetometer();
+	//init_inertial(); //sensors.c todo devrait être sensors_init
 }
 
 //TODO :
