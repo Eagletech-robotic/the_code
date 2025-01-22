@@ -17,6 +17,7 @@ To compile the simulator, move to this folder, then use the following command:
 emcc simulator-connector.c -o2 \
      -D MODE_THIBAULT \
      ../helloworld2/Core/Src/eaglesteward/*.c \
+     ../helloworld2/Core/Src/eaglesteward/*.cpp \
      ../helloworld2/Core/Src/robotic/*.c \
      -I../helloworld2/Core/Inc/ \
      -lm \
