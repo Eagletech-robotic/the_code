@@ -118,7 +118,7 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio;
 	output->vitesse2_ratio=ret.vitesse2_ratio;
-
+	//printf("%.3f \r\n", input->tof_m);
 	//printf("%.2f %.2f %li %li\r\n", output->vitesse1_ratio, output->vitesse2_ratio, input->encoder1, input->encoder2);
 
 	//float v_cg_i_ex ;
@@ -129,13 +129,6 @@ void top_step(config_t* config, input_t *input, output_t* output ) {
 	//float r = curve(input->encoder1,input->encoder2);
 	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
 }
-
-// TODO :
-// utiliser mag pour faire le carré
-// faire une projection pour passer en 2D
-// mesurer une différence d'angle entre 2 vecteur 2D (pour faire le carré et les virage à 90°)
-// regarder la lib arduino stm32 pour l'iot pour récupérer le code + rapide -> trop merdique
-// 2ms pour le mag, c'est long.
 
 // les senseurs sont déjà initialisés
 //void measure_g(float g[3]) {
@@ -167,11 +160,13 @@ void top_init(config_t* config) {
 }
 
 //TODO :
-// virer le g dans input qui ne sert à rien
-// accelero/gyro/magneto du code ? Ou changer de carte pour retenter le heading dans l'input ?
-// VL53L0X dans l'input
+// VL53L0X dans l'input (tof)
 // connectivité externe en bluetooth
 // virer le code commenté
+// UART :
+//    - INS
+//    - servo pololu
+//     - bluetooth serial
 //Elec
 // prévoir les commandes de servo + alim servo 6V
 // Alim 5V de la carte

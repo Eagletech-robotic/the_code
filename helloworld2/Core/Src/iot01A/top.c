@@ -34,7 +34,6 @@ output_t output;
 
 // code executé au reset
 void top_init_driver(){
-	  //startToF();
 	  printf("\r\ntop Hello world !\r\n");
 	  input_init(&input);
 	  output_init(&output);
@@ -60,9 +59,7 @@ void top_init_driver(){
 	//  test du bouton bleue pour un autotest ?
 
 void top_in_loop() {
-	//printf("encoder œ%lu %lu\r\n", encoder_get_value(&htim5), encoder_get_value(&htim3));
 	input_get(&input);
-	//printf("\033[H"); // curseur en haut à gauche sur un shell
 	//input_print(&input);
 	top_step(&config, &input, &output );
 	//output_print(&output);
