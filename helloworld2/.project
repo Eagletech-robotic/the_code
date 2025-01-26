@@ -29,4 +29,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Core/Src/eaglesteward/nicolas.c</name>
+			<type>1</type>
+			<location>/home/nboulay/Documents/robot/eagletech/the_code/helloworld2/Core/Src/eaglesteward/nicolas.c</location>
+		</link>
+	</linkedResources>
 </projectDescription>
