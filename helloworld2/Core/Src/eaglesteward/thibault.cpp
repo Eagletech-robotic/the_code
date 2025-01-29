@@ -10,38 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-// #include "iot01A/top_driver.h"
-#include <inttypes.h>
-
-typedef struct output_t {
-    float vitesse1_ratio;     // ratio2
-    float vitesse2_ratio;     // ratio15
-    float servo_pelle_ratio;  // 0 à 1.0
-} output_t;
-
-void output_set(output_t* output);
-void output_init(output_t* output);
-
-void output_print(output_t* output);
-typedef struct input_t {
-    int is_jack_gone;
-    float tof;
-    float gyro[3];
-    float accelero[3];
-    float compass[3];
-    int last_wifi_data[10];  // pour de futur donnée par caméra
-    int32_t encoder1;
-    int32_t encoder2;
-} input_t;
-
-// fonction inutilisable dans le module eaglesteward
-void input_init(input_t* input);
-void input_get(input_t* input);
-void input_print(input_t* input);
-
-typedef struct config_t {
-    int time_step_ms;
-} config_t;
+#include "iot01A/top_driver.h"
 
 template <typename T, size_t Capacity>
 struct SizedArray : public std::array<T, Capacity> {
@@ -150,7 +119,8 @@ class Bleacher : public GameEntity {
     float potentialFunction(float dx, float dy) {
         float clamped_dx = dx / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
         float clamped_dy = dy / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
-        float value = -1 / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy) * (std::exp(-clamped_dx - clamped_dy));
+        float value = -1 / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy) *
+                      (std::exp(-clamped_dx - clamped_dy));
         return value * (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) / M_PI;
     }
 };
@@ -165,6 +135,7 @@ SizedArray<Bleacher, 40> bleachers = {
 
 SizedArray<GameEntity, 40> can;
 
+#ifdef DEBUG
 void exportToPLY(const char* filename,
                  int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
                  size_t height) {
@@ -219,6 +190,7 @@ void visualizePotentialField(int16_t potentialField[300 / SQUARE_SIZE_CM][200 / 
         std::cout << "\n";
     }
 }
+#endif
 
 void thibault_top_init(config_t* config) {
     for (size_t x = 0; x < 300 / SQUARE_SIZE_CM; x++) {
@@ -243,23 +215,83 @@ void thibault_top_init(config_t* config) {
         }
     }
 
+#ifdef DEBUG
     visualizePotentialField(potential_field, 300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
 
-    exportToPLY("../../../../potentialField.ply", potential_field, 300 / SQUARE_SIZE_CM,
-                200 / SQUARE_SIZE_CM);
+    exportToPLY("/home/thibault/Documents/potentialField.ply", potential_field,
+                300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
+#endif
 }
 
-void thibault_top_step(config_t* config, input_t* input, output_t* output) {
-    output->vitesse1_ratio = 0.5;
-    output->vitesse2_ratio = 0.5;
+void thibault_top_step(config_t* config, input_t* input, output_t* output, float x, float y) {
+    int index_x = x / SQUARE_SIZE_CM;
+    int index_y = y / SQUARE_SIZE_CM;
+
+    if (index_x >= 300 / SQUARE_SIZE_CM || index_y >= 200 / SQUARE_SIZE_CM) {
+        throw std::out_of_range("Coordinates out of range");
+    }
+
+    int potentials[8] = {
+        potential_field[index_x - 1][index_y - 1], potential_field[index_x - 1][index_y],
+        potential_field[index_x - 1][index_y + 1], potential_field[index_x][index_y - 1],
+        potential_field[index_x][index_y + 1],     potential_field[index_x + 1][index_y - 1],
+        potential_field[index_x + 1][index_y],     potential_field[index_x + 1][index_y + 1],
+    };
+    std::pair<int, int> best_potential = {0, potentials[0]};
+    for (int i = 0; i < 8; i++) {
+        if (potentials[i] < best_potential.second) {
+            best_potential = {i, potentials[i]};
+        }
+    }
+
+    std::printf("Best potential: %d\n", best_potential.first);
+
+    switch (best_potential.first) {
+        case 0:  // Top-left
+            output->vitesse1_ratio = 0.3;
+            output->vitesse2_ratio = 0.6;
+            break;
+        case 1:  // Top
+            output->vitesse1_ratio = 0.5;
+            output->vitesse2_ratio = 0.5;
+            break;
+        case 2:  // Top-right
+            output->vitesse1_ratio = 0.6;
+            output->vitesse2_ratio = 0.3;
+            break;
+        case 3:  // Left
+            output->vitesse1_ratio = 0.4;
+            output->vitesse2_ratio = 0.7;
+            break;
+        case 4:  // Right
+            output->vitesse1_ratio = 0.7;
+            output->vitesse2_ratio = 0.4;
+            break;
+        case 5:  // Bottom-left
+            output->vitesse1_ratio = 0.6;
+            output->vitesse2_ratio = 0.3;
+            break;
+        case 6:  // Bottom
+            output->vitesse1_ratio = 0.5;
+            output->vitesse2_ratio = 0.5;
+            break;
+        case 7:  // Bottom-right
+            output->vitesse1_ratio = 0.3;
+            output->vitesse2_ratio = 0.6;
+            break;
+        default:
+            throw std::logic_error("Invalid potential index");
+    }
 }
 
+
+#ifdef DEBUG
 int main() {
     config_t config;
     input_t input;
     output_t output;
 
     thibault_top_init(&config);
-
     return 0;
 }
+#endif
