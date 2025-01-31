@@ -135,6 +135,8 @@ SizedArray<Bleacher, 40> bleachers = {
 
 SizedArray<GameEntity, 40> can;
 
+extern "C" {
+
 #ifdef DEBUG
 void exportToPLY(const char* filename,
                  int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
@@ -223,9 +225,9 @@ void thibault_top_init(config_t* config) {
 #endif
 }
 
-void thibault_top_step(config_t* config, input_t* input, output_t* output, float x, float y) {
-    int index_x = x / SQUARE_SIZE_CM;
-    int index_y = y / SQUARE_SIZE_CM;
+void thibault_top_step(config_t* config, input_t* input, output_t* output) {
+    int index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
+    int index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
 
     if (index_x >= 300 / SQUARE_SIZE_CM || index_y >= 200 / SQUARE_SIZE_CM) {
         throw std::out_of_range("Coordinates out of range");
@@ -237,6 +239,7 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output, float
         potential_field[index_x][index_y + 1],     potential_field[index_x + 1][index_y - 1],
         potential_field[index_x + 1][index_y],     potential_field[index_x + 1][index_y + 1],
     };
+
     std::pair<int, int> best_potential = {0, potentials[0]};
     for (int i = 0; i < 8; i++) {
         if (potentials[i] < best_potential.second) {
@@ -284,7 +287,6 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output, float
     }
 }
 
-
 #ifdef DEBUG
 int main() {
     config_t config;
@@ -295,3 +297,5 @@ int main() {
     return 0;
 }
 #endif
+
+}  // extern "C"

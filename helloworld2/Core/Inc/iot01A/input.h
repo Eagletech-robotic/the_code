@@ -8,14 +8,17 @@
 #include <stdint.h>
 
 typedef struct input_t {
-	int is_jack_gone;
-	float tof_m;
-	//float gyro[3];
-	//float accelero[3];
-	//float compass[3];
-	int last_wifi_data[10]; // pour de futur donnée par caméra
-	int32_t encoder1;
-	int32_t encoder2;
+    int is_jack_gone;
+    float tof_m;
+    float x_mm;
+    float y_mm;
+    float orientation_degrees;
+    // float gyro[3];
+    // float accelero[3];
+    // float compass[3];
+    int32_t encoder1;
+    int32_t encoder2;
+    int last_wifi_data[10];  // pour de futur donnée par caméra
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward

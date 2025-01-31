@@ -14,7 +14,7 @@ Emscripten comes with various tools, including `emcc`.
 To compile the simulator, move to this folder, then use the following command:
 
 ```bash
-emcc simulator-connector.c -o2 \
+emcc simulator-connector.c -o3 -g -s ASSERTIONS=1 \
      -D MODE_THIBAULT \
      ../helloworld2/Core/Src/eaglesteward/*.c \
      ../helloworld2/Core/Src/eaglesteward/*.cpp \
