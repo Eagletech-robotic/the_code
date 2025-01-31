@@ -18,12 +18,15 @@ struct SizedArray : public std::array<T, Capacity> {
 
     SizedArray() = default;
 
-    SizedArray(std::initializer_list<T> list) {
+    SizedArray(std::initializer_list<T> list) { *this = list; }
+
+    SizedArray& operator=(std::initializer_list<T> list) {
         if (list.size() > Capacity) {
             throw std::out_of_range("Initializer list exceeds array capacity");
         }
         size = list.size();
         std::copy(list.begin(), list.end(), std::array<T, Capacity>::begin());
+        return *this;
     }
 
     T& operator[](size_t index) {
@@ -127,17 +130,12 @@ class Bleacher : public GameEntity {
 
 int16_t potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM]{};
 
-SizedArray<Bleacher, 40> bleachers = {
-    Bleacher{{100, 120, 0}}, Bleacher{{20, 100, 0}},  Bleacher{{228, 100, 0}},
-    Bleacher{{150, 50, 0}},  Bleacher{{150, 180, 0}}, Bleacher{{50, 50, 0}},
-    Bleacher{{100, 180, 0}},
-};
-
+SizedArray<Bleacher, 40> bleachers;
 SizedArray<GameEntity, 40> can;
 
 extern "C" {
 
-#ifdef DEBUG
+#ifdef STANDALONE
 void exportToPLY(const char* filename,
                  int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
                  size_t height) {
@@ -168,6 +166,7 @@ void exportToPLY(const char* filename,
     file.close();
     std::cout << "Exported potentialField to " << filename << '\n';
 }
+#endif
 
 void visualizePotentialField(int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM],
                              size_t width, size_t height) {
@@ -182,19 +181,29 @@ void visualizePotentialField(int16_t potentialField[300 / SQUARE_SIZE_CM][200 / 
         }
     }
 
+    std::string log = "";
+
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
             float normalized =
                 static_cast<float>(potentialField[x][y] - minValue) / (maxValue - minValue);
             int index = static_cast<int>(normalized * (gradient.size() - 1));
-            std::cout << gradient[index] << " ";
+            log += gradient[index];
+            log += ' ';
         }
-        std::cout << "\n";
+        log += '\n';
     }
+
+    printf("%s", log.c_str());
 }
-#endif
 
 void thibault_top_init(config_t* config) {
+    bleachers = {
+        Bleacher{{100, 120, 0}}, Bleacher{{20, 100, 0}},  Bleacher{{228, 100, 0}},
+        Bleacher{{150, 50, 0}},  Bleacher{{150, 180, 0}}, Bleacher{{50, 50, 0}},
+        Bleacher{{100, 180, 0}},
+    };
+
     for (size_t x = 0; x < 300 / SQUARE_SIZE_CM; x++) {
         for (size_t y = 0; y < 200 / SQUARE_SIZE_CM; y++) {
             potential_field[x][y] = 0;
@@ -217,7 +226,7 @@ void thibault_top_init(config_t* config) {
         }
     }
 
-#ifdef DEBUG
+#ifdef STANDALONE
     visualizePotentialField(potential_field, 300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
 
     exportToPLY("/home/thibault/Documents/potentialField.ply", potential_field,
@@ -226,6 +235,7 @@ void thibault_top_init(config_t* config) {
 }
 
 void thibault_top_step(config_t* config, input_t* input, output_t* output) {
+    printf("Value at 40 40: %d\n", potential_field[40][40]);
     int index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
     int index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
 
@@ -240,7 +250,7 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         potential_field[index_x + 1][index_y],     potential_field[index_x + 1][index_y + 1],
     };
 
-    std::pair<int, int> best_potential = {0, potentials[0]};
+    std::pair<int, int> best_potential = std::make_pair(0, potentials[0]);
     for (int i = 0; i < 8; i++) {
         if (potentials[i] < best_potential.second) {
             best_potential = {i, potentials[i]};
@@ -251,34 +261,42 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
 
     switch (best_potential.first) {
         case 0:  // Top-left
+            printf("Top-left\n");
             output->vitesse1_ratio = 0.3;
             output->vitesse2_ratio = 0.6;
             break;
         case 1:  // Top
+            printf("Top\n");
             output->vitesse1_ratio = 0.5;
             output->vitesse2_ratio = 0.5;
             break;
         case 2:  // Top-right
+            printf("Top-right\n");
             output->vitesse1_ratio = 0.6;
             output->vitesse2_ratio = 0.3;
             break;
         case 3:  // Left
+            printf("Left\n");
             output->vitesse1_ratio = 0.4;
             output->vitesse2_ratio = 0.7;
             break;
         case 4:  // Right
+            printf("Right\n");
             output->vitesse1_ratio = 0.7;
             output->vitesse2_ratio = 0.4;
             break;
         case 5:  // Bottom-left
+            printf("Bottom-left\n");
             output->vitesse1_ratio = 0.6;
             output->vitesse2_ratio = 0.3;
             break;
         case 6:  // Bottom
+            printf("Bottom\n");
             output->vitesse1_ratio = 0.5;
             output->vitesse2_ratio = 0.5;
             break;
         case 7:  // Bottom-right
+            printf("Bottom-right\n");
             output->vitesse1_ratio = 0.3;
             output->vitesse2_ratio = 0.6;
             break;
@@ -287,7 +305,7 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     }
 }
 
-#ifdef DEBUG
+#ifdef STANDALONE
 int main() {
     config_t config;
     input_t input;
