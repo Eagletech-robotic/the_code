@@ -172,9 +172,7 @@ void thibault_top_init(config_t* config) {
     };*/
     bleachers = {
         Bleacher{{100, 120, 0}},
-        Bleacher{{130, 75, 0}},
-        Bleacher{{180, 45, 0}},
-        Bleacher{{240, 30, 0}},
+
     };
 
     float* first = &potential_field[0][0];
@@ -210,10 +208,10 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     }
 
     float potentials[8] = {
-        potential_field[index_x][index_y + 1], potential_field[index_x + 1][index_y + 1],
-        potential_field[index_x + 1][index_y], potential_field[index_x + 1][index_y - 1],
-        potential_field[index_x][index_y - 1], potential_field[index_x - 1][index_y - 1],
-        potential_field[index_x - 1][index_y], potential_field[index_x - 1][index_y + 1],
+        potential_field[index_x][index_y - 1], potential_field[index_x + 1][index_y - 1],
+        potential_field[index_x + 1][index_y], potential_field[index_x + 1][index_y + 1],
+        potential_field[index_x][index_y + 1], potential_field[index_x - 1][index_y + 1],
+        potential_field[index_x - 1][index_y], potential_field[index_x - 1][index_y - 1],
     };
 
     std::pair<int, float> best_potential = std::make_pair(0, potentials[0]);
@@ -240,6 +238,7 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         output->vitesse2_ratio = 0.7;
     }
 
+    printf("X: %d Y: %d\n", index_x, index_y);
     printf("Current potential: %f\n", potential_field[index_x][index_y]);
     printf("Best potential: %f\n", best_potential.second);
     printf("Target angle: %f\n", target_angle_deg);
