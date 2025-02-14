@@ -98,11 +98,11 @@ class GameEntity {
 constexpr uint16_t BLEACHER_INFLUENCE_SIZE = 150;
 class Bleacher : public GameEntity {
    public:
-    const std::array<std::array<int16_t, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
+    const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
                      BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>&
-    potentialField() {
+    potential_field() {
         const int size = BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM;
-        static std::array<std::array<int16_t, size>, size> field;
+        static std::array<std::array<float, size>, size> field;
 
         float center_x = size / 2.0;
         float center_y = size / 2.0;
@@ -111,7 +111,7 @@ class Bleacher : public GameEntity {
             for (uint16_t y = 0; y < size; y++) {
                 float dx = std::abs(x - center_x);
                 float dy = std::abs(y - center_y);
-                field[x][y] = potentialFunction(dx, dy);
+                field[x][y] = potential_function(dx, dy);
             }
         }
 
@@ -119,7 +119,7 @@ class Bleacher : public GameEntity {
     }
 
    private:
-    float potentialFunction(float dx, float dy) {
+    float potential_function(float dx, float dy) {
         float clamped_dx = dx / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
         float clamped_dy = dy / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
         float value = -1 / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy) *
@@ -128,7 +128,7 @@ class Bleacher : public GameEntity {
     }
 };
 
-int16_t potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM]{};
+float potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM]{};
 
 SizedArray<Bleacher, 40> bleachers;
 SizedArray<GameEntity, 40> can;
@@ -136,9 +136,9 @@ SizedArray<GameEntity, 40> can;
 extern "C" {
 
 #ifdef STANDALONE
-void exportToPLY(const char* filename,
-                 int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
-                 size_t height) {
+void export_to_PLY(const char* filename,
+                   float potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
+                   size_t height) {
     std::ofstream file(filename);
 
     if (!file.is_open()) {
@@ -158,50 +158,58 @@ void exportToPLY(const char* filename,
     // Write vertices (x, y, z)
     for (size_t x = 0; x < width; ++x) {
         for (size_t y = 0; y < height; ++y) {
-            float z = potentialField[x][y];
+            float z = potential_field[x][y];
             file << x << " " << y << " " << z << "\n";
         }
     }
 
     file.close();
-    std::cout << "Exported potentialField to " << filename << '\n';
+    std::cout << "Exported potential_field to " << filename << '\n';
 }
 #endif
 
-void visualizePotentialField(int16_t potentialField[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM],
-                             size_t width, size_t height) {
-    const std::string gradient = " .,:;oO0@";
+void visualize_potential_field(float potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM],
+                               size_t width, size_t height) {
+    int colors[] = {
+        17, 19, 20, 26, 32, 38, 46, 82, 118, 154, 190, 226, 214, 208, 202, 196, 160, 124, 88, 52,
+    };
 
-    int16_t minValue = potentialField[0][0];
-    int16_t maxValue = potentialField[0][0];
+    float minValue = potential_field[0][0];
+    float maxValue = potential_field[0][0];
+
     for (size_t x = 0; x < width; ++x) {
         for (size_t y = 0; y < height; ++y) {
-            minValue = std::min(minValue, potentialField[x][y]);
-            maxValue = std::max(maxValue, potentialField[x][y]);
+            minValue = std::min(minValue, potential_field[x][y]);
+            maxValue = std::max(maxValue, potential_field[x][y]);
         }
     }
 
-    std::string log = "";
+    std::string log = "\n";
 
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
-            float normalized =
-                static_cast<float>(potentialField[x][y] - minValue) / (maxValue - minValue);
-            int index = static_cast<int>(normalized * (gradient.size() - 1));
-            log += gradient[index];
-            log += ' ';
+            float normalized = (potential_field[x][y] - minValue) / (maxValue - minValue);
+            int index = (int)(normalized * (sizeof(colors) / sizeof(colors[0]) - 1));
+            log += "\033[48;5;" + std::to_string(colors[index]) + "m  \033[0m";
         }
-        log += '\n';
+        log += "\n";
     }
 
-    printf("%s", log.c_str());
+    std::cout << log;
+    std::cout << "Min: " << minValue << ", Max: " << maxValue << std::endl;
 }
 
 void thibault_top_init(config_t* config) {
-    bleachers = {
+    /*bleachers = {
         Bleacher{{100, 120, 0}}, Bleacher{{20, 100, 0}},  Bleacher{{228, 100, 0}},
         Bleacher{{150, 50, 0}},  Bleacher{{150, 180, 0}}, Bleacher{{50, 50, 0}},
-        Bleacher{{100, 180, 0}},
+        Bleacher{{100, 0, 0}},
+    };*/
+    bleachers = {
+        Bleacher{{100, 120, 0}},
+        Bleacher{{130, 75, 0}},
+        Bleacher{{180, 45, 0}},
+        Bleacher{{240, 30, 0}},
     };
 
     for (size_t x = 0; x < 300 / SQUARE_SIZE_CM; x++) {
@@ -211,7 +219,7 @@ void thibault_top_init(config_t* config) {
     }
 
     for (auto& bleacher : bleachers) {
-        auto& field = bleacher.potentialField();
+        auto& field = bleacher.potential_field();
         for (uint16_t x = 0; x < field.size(); x++) {
             for (uint16_t y = 0; y < field.size(); y++) {
                 uint16_t xIndex = bleacher.x / SQUARE_SIZE_CM + x - field.size() / 2;
@@ -227,15 +235,14 @@ void thibault_top_init(config_t* config) {
     }
 
 #ifdef STANDALONE
-    visualizePotentialField(potential_field, 300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
+    visualize_potential_field(potential_field, 300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
 
-    exportToPLY("/home/thibault/Documents/potentialField.ply", potential_field,
-                300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
+    export_to_PLY("/home/thibault/Documents/potential_field.ply", potential_field,
+                  300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
 #endif
 }
 
 void thibault_top_step(config_t* config, input_t* input, output_t* output) {
-    printf("Value at 40 40: %d\n", potential_field[40][40]);
     int index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
     int index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
 
@@ -243,65 +250,41 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         throw std::out_of_range("Coordinates out of range");
     }
 
-    int potentials[8] = {
-        potential_field[index_x - 1][index_y - 1], potential_field[index_x - 1][index_y],
-        potential_field[index_x - 1][index_y + 1], potential_field[index_x][index_y - 1],
-        potential_field[index_x][index_y + 1],     potential_field[index_x + 1][index_y - 1],
-        potential_field[index_x + 1][index_y],     potential_field[index_x + 1][index_y + 1],
+    float potentials[8] = {
+        potential_field[index_x][index_y + 1], potential_field[index_x + 1][index_y + 1],
+        potential_field[index_x + 1][index_y], potential_field[index_x + 1][index_y - 1],
+        potential_field[index_x][index_y - 1], potential_field[index_x - 1][index_y - 1],
+        potential_field[index_x - 1][index_y], potential_field[index_x - 1][index_y + 1],
     };
 
-    std::pair<int, int> best_potential = std::make_pair(0, potentials[0]);
+    std::pair<int, float> best_potential = std::make_pair(0, potentials[0]);
     for (int i = 0; i < 8; i++) {
+        printf("Potential %d: %f\n", i, potentials[i]);
         if (potentials[i] < best_potential.second) {
             best_potential = {i, potentials[i]};
         }
     }
 
-    std::printf("Best potential: %d\n", best_potential.first);
+    printf("Current potential: %f\n", potential_field[index_x][index_y]);
+    printf("Best potential: %f\n", best_potential.second);
 
-    switch (best_potential.first) {
-        case 0:  // Top-left
-            printf("Top-left\n");
-            output->vitesse1_ratio = 0.3;
-            output->vitesse2_ratio = 0.6;
-            break;
-        case 1:  // Top
-            printf("Top\n");
-            output->vitesse1_ratio = 0.5;
-            output->vitesse2_ratio = 0.5;
-            break;
-        case 2:  // Top-right
-            printf("Top-right\n");
-            output->vitesse1_ratio = 0.6;
-            output->vitesse2_ratio = 0.3;
-            break;
-        case 3:  // Left
-            printf("Left\n");
-            output->vitesse1_ratio = 0.4;
-            output->vitesse2_ratio = 0.7;
-            break;
-        case 4:  // Right
-            printf("Right\n");
-            output->vitesse1_ratio = 0.7;
-            output->vitesse2_ratio = 0.4;
-            break;
-        case 5:  // Bottom-left
-            printf("Bottom-left\n");
-            output->vitesse1_ratio = 0.6;
-            output->vitesse2_ratio = 0.3;
-            break;
-        case 6:  // Bottom
-            printf("Bottom\n");
-            output->vitesse1_ratio = 0.5;
-            output->vitesse2_ratio = 0.5;
-            break;
-        case 7:  // Bottom-right
-            printf("Bottom-right\n");
-            output->vitesse1_ratio = 0.3;
-            output->vitesse2_ratio = 0.6;
-            break;
-        default:
-            throw std::logic_error("Invalid potential index");
+    float target_angle_deg = best_potential.first * 45;
+    printf("Target angle: %f\n", target_angle_deg);
+
+    float angle_diff = std::fmod(target_angle_deg - input->orientation_degrees, 360);
+    if (angle_diff < 0) angle_diff += 360;
+
+    printf("Angle diff: %f\n", angle_diff);
+
+    if (angle_diff <= 5 || angle_diff >= 355) {
+        output->vitesse1_ratio = 0.5;
+        output->vitesse2_ratio = 0.5;
+    } else if (angle_diff <= 180) {
+        output->vitesse1_ratio = 0.7;
+        output->vitesse2_ratio = 0.3;
+    } else {
+        output->vitesse1_ratio = 0.3;
+        output->vitesse2_ratio = 0.7;
     }
 }
 
