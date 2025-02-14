@@ -160,7 +160,7 @@ void visualize_potential_field(float potential_field[300 / SQUARE_SIZE_CM][200 /
         log += "\n";
     }
 
-    printf(log.c_str());
+    printf("%s", log.c_str());
     printf("Min: %f, Max: %f\n", minValue, maxValue);
 }
 
