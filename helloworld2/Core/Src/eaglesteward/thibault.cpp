@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -77,8 +75,7 @@ struct SizedArray : public std::array<T, Capacity> {
 
 constexpr uint8_t SQUARE_SIZE_CM = 4;
 
-class GameEntity {
-   public:
+struct GameEntity {
     uint16_t x;
     uint16_t y;
     uint16_t orientation_degrees;
@@ -107,8 +104,8 @@ class Bleacher : public GameEntity {
         float center_x = size / 2.0;
         float center_y = size / 2.0;
 
-        for (uint16_t x = 0; x < size; x++) {
-            for (uint16_t y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
                 float dx = std::abs(x - center_x);
                 float dy = std::abs(y - center_y);
                 field[x][y] = potential_function(dx, dy);
@@ -120,11 +117,12 @@ class Bleacher : public GameEntity {
 
    private:
     float potential_function(float dx, float dy) {
-        float clamped_dx = dx / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
-        float clamped_dy = dy / (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) * M_PI;
-        float value = -1 / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy) *
-                      (std::exp(-clamped_dx - clamped_dy));
-        return value * (BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM) / M_PI;
+        int scale = BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM;
+        float clamped_dx = dx / scale * M_PI;
+        float clamped_dy = dy / scale * M_PI;
+        float value = -std::exp(-clamped_dx - clamped_dy) /
+                      (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy);
+        return value * scale / M_PI;
     }
 };
 
@@ -134,39 +132,6 @@ SizedArray<Bleacher, 40> bleachers;
 SizedArray<GameEntity, 40> can;
 
 extern "C" {
-
-#ifdef STANDALONE
-void export_to_PLY(const char* filename,
-                   float potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM], size_t width,
-                   size_t height) {
-    std::ofstream file(filename);
-
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file for writing: " << filename << '\n';
-        return;
-    }
-
-    // Header for PLY file
-    file << "ply\n";
-    file << "format ascii 1.0\n";
-    file << "element vertex " << (width * height) << "\n";
-    file << "property float x\n";
-    file << "property float y\n";
-    file << "property float z\n";
-    file << "end_header\n";
-
-    // Write vertices (x, y, z)
-    for (size_t x = 0; x < width; ++x) {
-        for (size_t y = 0; y < height; ++y) {
-            float z = potential_field[x][y];
-            file << x << " " << y << " " << z << "\n";
-        }
-    }
-
-    file.close();
-    std::cout << "Exported potential_field to " << filename << '\n';
-}
-#endif
 
 void visualize_potential_field(float potential_field[300 / SQUARE_SIZE_CM][200 / SQUARE_SIZE_CM],
                                size_t width, size_t height) {
@@ -184,7 +149,7 @@ void visualize_potential_field(float potential_field[300 / SQUARE_SIZE_CM][200 /
         }
     }
 
-    std::string log = "\n";
+    std::string log = "";
 
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
@@ -195,8 +160,8 @@ void visualize_potential_field(float potential_field[300 / SQUARE_SIZE_CM][200 /
         log += "\n";
     }
 
-    std::cout << log;
-    std::cout << "Min: " << minValue << ", Max: " << maxValue << std::endl;
+    printf(log.c_str());
+    printf("Min: %f, Max: %f\n", minValue, maxValue);
 }
 
 void thibault_top_init(config_t* config) {
@@ -212,39 +177,33 @@ void thibault_top_init(config_t* config) {
         Bleacher{{240, 30, 0}},
     };
 
-    for (size_t x = 0; x < 300 / SQUARE_SIZE_CM; x++) {
-        for (size_t y = 0; y < 200 / SQUARE_SIZE_CM; y++) {
-            potential_field[x][y] = 0;
-        }
-    }
+    float* first = &potential_field[0][0];
+    std::fill(first, first + (300 / SQUARE_SIZE_CM) * (200 / SQUARE_SIZE_CM), 0);
 
     for (auto& bleacher : bleachers) {
         auto& field = bleacher.potential_field();
         for (uint16_t x = 0; x < field.size(); x++) {
             for (uint16_t y = 0; y < field.size(); y++) {
-                uint16_t xIndex = bleacher.x / SQUARE_SIZE_CM + x - field.size() / 2;
-                uint16_t yIndex = bleacher.y / SQUARE_SIZE_CM + y - field[0].size() / 2;
+                uint16_t x_index = x + bleacher.x / SQUARE_SIZE_CM - field.size() / 2;
+                uint16_t y_index = y + bleacher.y / SQUARE_SIZE_CM - field[0].size() / 2;
 
-                if (xIndex >= 300 / SQUARE_SIZE_CM || yIndex >= 200 / SQUARE_SIZE_CM) {
+                if (x_index >= 300 / SQUARE_SIZE_CM || y_index >= 200 / SQUARE_SIZE_CM) {
                     continue;
                 }
 
-                potential_field[xIndex][yIndex] += field[x][y];
+                potential_field[x_index][y_index] += field[x][y];
             }
         }
     }
 
 #ifdef STANDALONE
     visualize_potential_field(potential_field, 300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
-
-    export_to_PLY("/home/thibault/Documents/potential_field.ply", potential_field,
-                  300 / SQUARE_SIZE_CM, 200 / SQUARE_SIZE_CM);
 #endif
 }
 
 void thibault_top_step(config_t* config, input_t* input, output_t* output) {
-    int index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
-    int index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
+    uint16_t index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
+    uint16_t index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
 
     if (index_x >= 300 / SQUARE_SIZE_CM || index_y >= 200 / SQUARE_SIZE_CM) {
         throw std::out_of_range("Coordinates out of range");
@@ -265,16 +224,10 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         }
     }
 
-    printf("Current potential: %f\n", potential_field[index_x][index_y]);
-    printf("Best potential: %f\n", best_potential.second);
-
     float target_angle_deg = best_potential.first * 45;
-    printf("Target angle: %f\n", target_angle_deg);
 
     float angle_diff = std::fmod(target_angle_deg - input->orientation_degrees, 360);
     if (angle_diff < 0) angle_diff += 360;
-
-    printf("Angle diff: %f\n", angle_diff);
 
     if (angle_diff <= 5 || angle_diff >= 355) {
         output->vitesse1_ratio = 0.5;
@@ -286,6 +239,11 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         output->vitesse1_ratio = 0.3;
         output->vitesse2_ratio = 0.7;
     }
+
+    printf("Current potential: %f\n", potential_field[index_x][index_y]);
+    printf("Best potential: %f\n", best_potential.second);
+    printf("Target angle: %f\n", target_angle_deg);
+    printf("Angle diff: %f\n", angle_diff);
 }
 
 #ifdef STANDALONE
