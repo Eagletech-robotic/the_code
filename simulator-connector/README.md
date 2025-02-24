@@ -18,6 +18,8 @@ emcc simulator-connector.c -o3 -g -s ASSERTIONS=1 \
      -D THIBAULT_AUTOPILOT \
      ../helloworld2/Core/Src/eaglesteward/falcon.c \
      ../helloworld2/Core/Src/eaglesteward/thibault.cpp \
+     ../helloworld2/Core/Src/utils/*.c \
+     ../helloworld2/Core/Src/utils/*.cpp \
      -I../helloworld2/Core/Inc/ \
      -lm \
      -o simulator-connector.wasm &&
