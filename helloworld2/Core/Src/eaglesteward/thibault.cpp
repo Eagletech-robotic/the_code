@@ -16,11 +16,11 @@
 
 float potential_field[P_FIELD_W][P_FIELD_H]{};
 
-SizedArray<Bleacher, 40> bleachers;
+SizedArray<Bleacher, 10> bleachers;
 
 void add_walls() {
     const int wall_influence_size = 35 / SQUARE_SIZE_CM;
-    const int max_potential = 40;
+    const int max_potential = 35;
     for (int x = 0; x < P_FIELD_W; x++) {
         for (int y = 0; y < P_FIELD_H; y++) {
             if (x < wall_influence_size) {
@@ -44,16 +44,11 @@ void add_walls() {
 
 extern "C" {
 void thibault_top_init(config_t* config) {
-    /*bleachers = {
-        Bleacher{{100, 120, 0}}, Bleacher{{20, 100, 0}},  Bleacher{{228, 100, 0}},
-        Bleacher{{150, 50, 0}},  Bleacher{{150, 180, 0}}, Bleacher{{50, 50, 0}},
-        Bleacher{{100, 0, 0}},
-    };*/
     bleachers = {
-        Bleacher{{100, 120, 0}},
-        Bleacher{{130, 75, 0}},
-        Bleacher{{180, 45, 0}},
-        Bleacher{{240, 30, 0}},
+        Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
+        Bleacher{{77, 175, 0}}, Bleacher{{110, 105, 0}}, Bleacher{{190, 105, 0}},
+        Bleacher{{7, 67, 0}},   Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
+        Bleacher{{7, 160, 0}},
     };
 
     float* first = &potential_field[0][0];
