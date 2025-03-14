@@ -42,7 +42,6 @@ void add_walls() {
     }
 }
 
-extern "C" {
 void thibault_top_init(config_t* config) {
     bleachers = {
         Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
@@ -76,9 +75,7 @@ void thibault_top_init(config_t* config) {
     visualize_potential_field(potential_field, P_FIELD_W, P_FIELD_H);
 #endif
 }
-}  // extern "C"
 
-extern "C" {
 void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     uint16_t index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
     uint16_t index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
@@ -129,7 +126,6 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         printf("Angle diff: %f\n", angle_diff);
     }
 }
-}  // extern "C"
 
 #ifdef STANDALONE
 int main() {

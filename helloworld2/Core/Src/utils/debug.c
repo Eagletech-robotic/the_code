@@ -1,4 +1,3 @@
-
 #include "utils/debug.h"
 
 #include <float.h>

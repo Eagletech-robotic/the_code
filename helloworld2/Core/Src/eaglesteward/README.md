@@ -5,6 +5,6 @@ g++ -Wall -Wextra -o3 \
      helloworld2/Core/Src/utils/*.c \
      helloworld2/Core/Src/utils/*.cpp \
      -Ihelloworld2/Core/Inc/ \
-     -lm \
-     -o build/thibault
+     -o build/thibault \
+     && ./build/thibault
 ```
