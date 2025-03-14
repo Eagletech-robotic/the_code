@@ -18,6 +18,7 @@ float potential_field[P_FIELD_W][P_FIELD_H]{};
 
 SizedArray<Bleacher, 10> bleachers;
 
+extern "C" {
 void add_walls() {
     const int wall_influence_size = 35 / SQUARE_SIZE_CM;
     const int max_potential = 35;
@@ -75,7 +76,9 @@ void thibault_top_init(config_t* config) {
     visualize_potential_field(potential_field, P_FIELD_W, P_FIELD_H);
 #endif
 }
+}
 
+extern "C" {
 void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     uint16_t index_x = input->x_mm / 10.0 / SQUARE_SIZE_CM;
     uint16_t index_y = input->y_mm / 10.0 / SQUARE_SIZE_CM;
@@ -125,6 +128,7 @@ void thibault_top_step(config_t* config, input_t* input, output_t* output) {
         printf("Target angle: %f\n", target_angle_deg);
         printf("Angle diff: %f\n", angle_diff);
     }
+}
 }
 
 #ifdef STANDALONE
