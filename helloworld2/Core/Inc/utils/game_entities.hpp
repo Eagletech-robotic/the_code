@@ -8,17 +8,17 @@
 
 #include "utils/constants.h"
 
-constexpr uint16_t BLEACHER_INFLUENCE_SIZE = 150;
+constexpr int BLEACHER_INFLUENCE_SIZE = 150;
 
 // GameEntity struct
 struct GameEntity {
-    uint16_t x;
-    uint16_t y;
-    uint16_t orientation_degrees;
+    int x;
+    int y;
+    int orientation_degrees;
 
     GameEntity() = default;
 
-    GameEntity(uint16_t x, uint16_t y, uint16_t orientation_degrees);
+    GameEntity(int x, int y, int orientation_degrees);
 };
 
 // Bleacher class
