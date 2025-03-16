@@ -1,6 +1,8 @@
 // AI for a robot playing coupe de france de robotique, using gradient descent essentially. Since it
 // is robotics, we are not allowed any memory allocation.
 
+#include "thibault.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -9,8 +11,8 @@
 #include <string>
 
 #include "iot01A/top_driver.h"
-#include "utils/constants.h"
-#include "utils/debug.h"
+#include "utils/constants.hpp"
+#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
 
@@ -18,7 +20,6 @@ float potential_field[P_FIELD_W][P_FIELD_H]{};
 
 SizedArray<Bleacher, 10> bleachers;
 
-extern "C" {
 void add_walls() {
     constexpr int wall_influence_size = 35 / SQUARE_SIZE_CM;
     constexpr int max_potential = 35;
@@ -48,6 +49,8 @@ void add_walls() {
     }
 }
 
+extern "C" {
+
 void thibault_top_init(config_t* config) {
     bleachers = {
         Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
@@ -62,8 +65,10 @@ void thibault_top_init(config_t* config) {
         auto& field = bleacher.potential_field();
         for (int x = 0; x < field.size(); x++) {
             for (int y = 0; y < field.size(); y++) {
-                int const  x_index = x + bleacher.x / SQUARE_SIZE_CM - static_cast<int>(field.size()) / 2;
-                int const y_index = y + bleacher.y / SQUARE_SIZE_CM - static_cast<int>(field[0].size()) / 2;
+                int const x_index =
+                    x + bleacher.x / SQUARE_SIZE_CM - static_cast<int>(field.size()) / 2;
+                int const y_index =
+                    y + bleacher.y / SQUARE_SIZE_CM - static_cast<int>(field[0].size()) / 2;
 
                 if (x_index >= P_FIELD_W || y_index >= P_FIELD_H || x_index < 0 || y_index < 0) {
                     continue;
@@ -78,10 +83,8 @@ void thibault_top_init(config_t* config) {
     visualize_potential_field(potential_field, P_FIELD_W, P_FIELD_H);
 #endif
 }
-}
 
-extern "C" {
-void thibault_top_step(config_t* config, const input_t* input, output_t* output) {
+void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 

@@ -1,10 +1,10 @@
-#include "utils/debug.h"
+#include "utils/debug.hpp"
 
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 
-#include "utils/constants.h"
+#include "utils/constants.hpp"
 
 void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], const size_t width,
                                const size_t height) {

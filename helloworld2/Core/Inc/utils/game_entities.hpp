@@ -1,12 +1,9 @@
-// bleacher.hpp
-
 #ifndef BLEACHER_HPP
 #define BLEACHER_HPP
 
 #include <array>
-#include <cstdint>
 
-#include "utils/constants.h"
+#include "utils/constants.hpp"
 
 constexpr int BLEACHER_INFLUENCE_SIZE = 150;
 

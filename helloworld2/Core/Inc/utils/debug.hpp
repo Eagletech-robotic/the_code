@@ -1,12 +1,9 @@
 #ifndef VISUALIZE_POTENTIAL_FIELD_H
 #define VISUALIZE_POTENTIAL_FIELD_H
 
-#include <stddef.h>  // For size_t
-#include "utils/constants.h"
+#include <cstddef>  // For size_t
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "utils/constants.hpp"
 
 // Function to visualize a potential field using colored output in the terminal
 // Parameters:
@@ -15,9 +12,5 @@ extern "C" {
 // - height: Height of the field
 void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], size_t width,
                                size_t height);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // VISUALIZE_POTENTIAL_FIELD_H
