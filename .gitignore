@@ -55,6 +55,8 @@ dkms.conf
 build/
 Debug/
 Release/
+cmake-build-debug/
 
 # IDE
 .vscode/
+.idea/

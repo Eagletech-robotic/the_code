@@ -5,6 +5,8 @@
  *      Author: nboulay
  */
 
+#include "nicolas.h"
+
 #include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 #include "robotic/carre.h"
 #include <stdio.h>
