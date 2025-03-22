@@ -9,7 +9,7 @@
 #include "robotic/carre.h"
 #include <stdio.h>
 #include "robotic/pid.h"
-// #include "iot01A/sensors.h"
+#include "iot01A/sensors.h"
 #include "robotic/inertial.h"
 #include "robotic/projection.h"
 #include <math.h>
@@ -128,6 +128,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//printf("x= %.4f y=%.4f theta=%.4f\r\n",inertial.p_cg_i_ex, inertial.p_cg_i_ey,inertial.theta_e);
 	//float r = curve(input->encoder1,input->encoder2);
 	//printf(" real=%f (cmd=%f err=%.4f%%)\r\n", r, r_, (r_-r)*100.0/r_);
+	//printf("%.4f \r\n", input->tof_m);
 }
 
 // TODO :

@@ -61,6 +61,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define BLUE_BUTTON_Pin GPIO_PIN_13
 #define BLUE_BUTTON_GPIO_Port GPIOC
+#define BTLP1_RX_Pin GPIO_PIN_0
+#define BTLP1_RX_GPIO_Port GPIOC
+#define BTLP1_TX_Pin GPIO_PIN_1
+#define BTLP1_TX_GPIO_Port GPIOC
+#define JACK_Pin GPIO_PIN_3
+#define JACK_GPIO_Port GPIOC
 #define encoder1_1_Pin GPIO_PIN_0
 #define encoder1_1_GPIO_Port GPIOA
 #define encoder1_2_Pin GPIO_PIN_1
@@ -73,12 +79,18 @@ void Error_Handler(void);
 #define encoder2_1_GPIO_Port GPIOA
 #define encoder2_2_Pin GPIO_PIN_7
 #define encoder2_2_GPIO_Port GPIOA
-#define JACK_Pin GPIO_PIN_5
-#define JACK_GPIO_Port GPIOC
+#define INS3_TX_Pin GPIO_PIN_4
+#define INS3_TX_GPIO_Port GPIOC
+#define INS3_RX_Pin GPIO_PIN_5
+#define INS3_RX_GPIO_Port GPIOC
 #define sens1_Pin GPIO_PIN_2
 #define sens1_GPIO_Port GPIOB
 #define PWM1_Pin GPIO_PIN_15
 #define PWM1_GPIO_Port GPIOA
+#define PWM16_Pin GPIO_PIN_8
+#define PWM16_GPIO_Port GPIOB
+#define PWM17_Pin GPIO_PIN_9
+#define PWM17_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

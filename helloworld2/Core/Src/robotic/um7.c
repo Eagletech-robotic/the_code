@@ -355,7 +355,7 @@ int um7_decode(int current_byte) {
 
 //
 //
-//  Comande
+//  Commande
 //
 //
 
