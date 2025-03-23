@@ -113,6 +113,9 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 //	printf("heading=%.3f \r\n",a);
 	//stat_nr(a); //157 198
 	//calibrate_nr(M);
+	if(!input->is_jack_gone) {
+		return;
+	}
 	carre_in_loop(&carre, output);
 	//carre_in_loop_with_heading(&carre, a, output);
 

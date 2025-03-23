@@ -19,6 +19,8 @@ typedef struct input_t {
     int32_t encoder1;
     int32_t encoder2;
     int last_wifi_data[10];  // pour de futur donnée par caméra
+    // INS
+    // BT
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward

@@ -41,6 +41,12 @@ int32_t angle_get(int64_t new, int64_t old, int64_t max) {
 	return r;
 }
 
+int is_jack_done() {
+	 GPIO_PinState pinState = HAL_GPIO_ReadPin(JACK_GPIO_Port, JACK_Pin);
+
+	 return pinState == GPIO_PIN_SET;
+}
+
 void input_get(input_t *input) {
 	old[0]=raw[0];
 	old[1]=raw[1];
@@ -54,8 +60,9 @@ void input_get(input_t *input) {
 	input->encoder1 = -angle_get(raw[0],old[0],65535);
 	input->encoder2 = angle_get(raw[1],old[1],4294967295);
 	input->tof_m =  dist_mm / 1000.0;
+	input->is_jack_gone = is_jack_done();
 }
 
 void input_print(input_t *input) {
-	printf("in: %ld %ld ...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2);
+	printf("in: %ld %ld %d...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone);
 }
