@@ -1,5 +1,5 @@
 #pragma once
-
+#include <stdint.h>
 //////////////////////////////////////
 //      CONFIGURATION REGISTERS	    //
 //////////////////////////////////////
@@ -128,3 +128,15 @@
 #define SET_MAG_REFERENCE 0xB0
 #define CALIBRATE_ACCELEROMETERS 0xB1 // Reboots the UM7 and performs a crude calibration on the accelerometers. Keep flat.
 #define RESET_EKF 0xB3
+
+typedef struct um7_t {
+	int16_t yaw;
+	int16_t pitch;
+	int16_t roll;
+	float north_pos;
+	float east_pos;
+	float up_pos;
+} um7_t;
+
+int um7_decode(int current_byte);
+void um7_get_pos(um7_t *um7);

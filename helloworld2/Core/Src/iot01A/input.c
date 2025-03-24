@@ -11,18 +11,23 @@
 #include "iot01A/sensors.h"
 #include <stdio.h>
 #include <inttypes.h>
+#include "iot01A/async_uart.h"
 
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 1
 extern TIM_HandleTypeDef htim5; // encoder 2
 extern TIM_HandleTypeDef htim15; // pwm sur la led
+extern TIM_HandleTypeDef htim16; // pwm16 servo
+extern TIM_HandleTypeDef htim17; // pwm17 servo
+
 
 
 void input_init(input_t * input) {
 	startToF();
 	encoder_init(&htim5);
 	encoder_init(&htim3);
+	async_uart_init();
 }
 
 int64_t raw[2];
@@ -64,5 +69,6 @@ void input_get(input_t *input) {
 }
 
 void input_print(input_t *input) {
-	printf("in: %ld %ld %d...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone);
+	//printf("in: %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
+	printf("%.1f\r\n", input->tof_m*100);
 }

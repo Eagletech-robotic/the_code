@@ -355,10 +355,15 @@ int um7_decode(int current_byte) {
 
 //
 //
-//  Commande
 //
-//
+// Orientation yaw pitch roll
+// pos : north_pos, east_pos, up_pos,
 
-
-
-
+void um7_get_pos(um7_t *um7) {
+	um7->east_pos = east_pos;
+	um7->north_pos = north_pos;
+	um7->up_pos = up_pos;
+	um7->yaw = yaw;
+	um7->roll = roll;
+	um7->pitch = pitch;
+}
