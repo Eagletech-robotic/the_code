@@ -34,8 +34,8 @@ int64_t raw[2];
 int64_t old[2];
 
 // un compteur compte en 32 bit unsigned et cela fait des mauvaises surprises
-int32_t angle_get(int64_t new, int64_t old, int64_t max) {
-	int64_t r = new - old;
+int32_t angle_get(int64_t new_, int64_t old, int64_t max) {
+	int64_t r = new_ - old;
 	//printf("   %ld\r\n",(int)r);
 	// cas du passage par le zero
 	if(r > (max/2)) {
