@@ -68,7 +68,12 @@ void input_get(input_t *input) {
 	input->is_jack_gone = is_jack_done();
 }
 
+int count = 0;
 void input_print(input_t *input) {
 	//printf("in: %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
-	printf("%.1f\r\n", input->tof_m*100);
+	count ++;
+	if(count == 50) {
+		printf("%.1f\r\n", input->tof_m*100);
+		count = 0;
+	}
 }
