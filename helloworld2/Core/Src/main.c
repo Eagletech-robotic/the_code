@@ -92,9 +92,10 @@ static void MX_TIM17_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+extern "C"  {
+	int _write(int file, char *ptr, int len)
 
-int _write(int file, char *ptr, int len)
-{
+	{
 	//HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
 
 	//SWV ITM Data trace en mode debug
@@ -104,8 +105,8 @@ int _write(int file, char *ptr, int len)
 		ITM_SendChar(*ptr++);
 	}
 
-
-	return len;
+		return len;
+	}
 }
 volatile int time_to_start =0;
 // Callback: timer has rolled over
