@@ -11,6 +11,8 @@
 
 #include<stdint.h>
 #include "robotic/um7.h"
+#include <stdio.h>
+#include "main.h"
 typedef int byte;
 
 // Placeholder for parsing binary packets
@@ -166,6 +168,7 @@ void um7_save() {
 
 
 	case DREG_EULER_PHI_THETA : // data[6] and data[7] are unused. WORKS!!
+		//printf("PHI_THETA\n");
   		if (packet_is_batch) {
 			roll  = (int16_t)((data[0]<<8) | data[1]) / 91.02222;
     		pitch = (int16_t)((data[2]<<8) | data[3]) / 91.02222;
@@ -182,6 +185,7 @@ void um7_save() {
 
 
 	case DREG_POSITION_N :
+		printf("N\n");
 		if (packet_is_batch) {
 			north_pos = read_register_as_float(0);
 			east_pos = read_register_as_float(4);
@@ -366,4 +370,225 @@ void um7_get_pos(um7_t *um7) {
 	um7->yaw = yaw;
 	um7->roll = roll;
 	um7->pitch = pitch;
+	um7->east_v = east_vel;
+	um7->north_v = north_vel;
+	um7->up_v = up_vel;
+	um7->accel_x = accel_x;
+	um7->accel_y = accel_y;
+	um7->accel_z = accel_z;
+}
+
+void um7_print(um7_t *um7) {
+	printf(" %d  %.3f %.3f %.3f %.3f\n", um7->yaw, um7->accel_x, um7->accel_y, um7->accel_z, um7->north_v);
+}
+
+void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate ) {
+	uint8_t config_buffer[12];
+	config_buffer[0] = 's';
+	config_buffer[1] = 'n';
+	config_buffer[2] = 'p';
+	config_buffer[3] = 0x80; // PT byte = 1000 0000.
+	config_buffer[4] = CREG_COM_RATES4; // address
+
+	config_buffer[5] = 0; // B3 Reserved
+	config_buffer[6] = 0; // B2 Reserved
+	config_buffer[7] = 0; // B1 Reserved
+	config_buffer[8] = rate; // B0 All Processed rate
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES4 + rate;
+
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	HAL_UART_Transmit(huart, config_buffer, 11,0);
+	//serial_port->write(config_buffer, 11);
+}
+
+void um7_set_position_rate(UART_HandleTypeDef *huart, uint8_t rate) {
+	uint8_t config_buffer[12];
+	config_buffer[0] = 's';
+	config_buffer[1] = 'n';
+	config_buffer[2] = 'p';
+	config_buffer[3] = 0x80; // PT byte = 1000 0000.
+	config_buffer[4] = CREG_COM_RATES5; // address
+
+	config_buffer[5] = 0; // B3 Quaternion rate
+	config_buffer[6] = rate; // B2 Euler rate
+	config_buffer[7] = rate; // B1 Position rate
+	config_buffer[8] = rate; // B0 Velocity rate
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES5 + rate;
+
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	HAL_UART_Transmit(huart, config_buffer, 11,0);
+	//serial_port->write(config_buffer, 11);
+}
+
+void um7_set_pose_rate(UART_HandleTypeDef *huart,uint8_t rate) {
+	uint8_t config_buffer[12];
+	config_buffer[0] = 's';
+	config_buffer[1] = 'n';
+	config_buffer[2] = 'p';
+	config_buffer[3] = 0x80; // PT byte = 1000 0000.
+	config_buffer[4] = CREG_COM_RATES6; // address
+
+	config_buffer[5] = rate; // B3 Pose rate
+	config_buffer[6] = 0; // B2 (Reserved, 4b) | (Health rate, 4b)
+	config_buffer[7] = 0; // B1 Gyro bias rate
+	config_buffer[8] = 0; // B0 Reserved
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES6 + rate;
+
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	HAL_UART_Transmit(huart, config_buffer, 11,0);
+	//serial_port->write(config_buffer, 11);
+}
+
+void  um7_set_home_position(UART_HandleTypeDef *huart) {
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = SET_HOME_POSITION; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + SET_HOME_POSITION;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+}
+
+/*
+	Causes the UM7 to measure the gyro outputs and set the output trim registers to compensate for any non-zero bias.
+	The UM7 should be kept stationary while the zero operation is underway.
+	retourne ensuite que des zéros !!!
+*/
+void um7_zero_gyros(UART_HandleTypeDef *huart) { // Doesn't check for COMMAND_COMPLETE byte, only sends cmd
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = ZERO_GYROS; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + ZERO_GYROS;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+}
+
+/*
+	Sets the current yaw heading position as north.
+*/
+void  um7_set_mag_reference(UART_HandleTypeDef *huart) {
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = SET_MAG_REFERENCE; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + SET_MAG_REFERENCE;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+}
+
+/*
+	Reboots the UM7 and performs a crude calibration on the accelerometers. Best performed on a flat surface.
+*/
+void um7_calibrate_accelerometers(UART_HandleTypeDef *huart) {
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = CALIBRATE_ACCELEROMETERS; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + CALIBRATE_ACCELEROMETERS;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+}
+
+void um7_factory_reset(UART_HandleTypeDef *huart) {
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = RESET_TO_FACTORY; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + RESET_TO_FACTORY;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+	printf("FACTORY RESET UM7"); // default serial_port 0
+}
+
+/*
+	Resets the EKF. Extended Kalman Filter (EKF)
+*/
+void um7_reset_kalman_filter(UART_HandleTypeDef *huart) {
+	uint8_t cmd_buffer[7];
+	cmd_buffer[0] = 's';
+	cmd_buffer[1] = 'n';
+	cmd_buffer[2] = 'p';
+	cmd_buffer[3] = 0x00; // PT byte = 0000 0000 for command register
+	cmd_buffer[4] = RESET_EKF; // address
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + RESET_EKF;
+
+	cmd_buffer[6] = checksumsum & 0xFF;
+	cmd_buffer[5] = (checksumsum >> 8);
+
+	HAL_UART_Transmit(huart, cmd_buffer, 7,0);
+}
+
+void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q, bool mag) {
+	uint8_t config_buffer[11];
+	uint8_t b1 = 0, b0 = 0;
+
+	if (pps) b1 = 0b00000001;
+
+	if (zg) { b0 = 00000100;
+		if (q) { b0 = 00000110;
+			if (mag) b0 = 00000111;
+		}
+		if (mag) b0 = 00000101;
+	}
+	if (q) { b0 = 00000010;
+		if (mag) b0 = 00000011;
+	}
+	if (mag) b0 = 00000001;
+
+	config_buffer[0] = 's';
+	config_buffer[1] = 'n';
+	config_buffer[2] = 'p';
+	config_buffer[3] = 0x80; // PT byte = 1000 0000.
+	config_buffer[4] = CREG_MISC_SETTINGS; // address
+
+	config_buffer[5] = 0; // B3 Reserved
+	config_buffer[6] = 0; // B2 Reserved
+	config_buffer[7] = b1; // B1 (Reserved, 7b) | (PPS, 1b)
+	config_buffer[8] = b0; // B0 (Reserved, 5b) | (ZG, 1b) | (Q, 1b) | (MAG, 1b)
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_MISC_SETTINGS + b1 + b0;
+
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	HAL_UART_Transmit(huart, config_buffer, 11,0);
 }

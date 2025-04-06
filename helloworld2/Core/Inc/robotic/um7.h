@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "main.h"
 //////////////////////////////////////
 //      CONFIGURATION REGISTERS	    //
 //////////////////////////////////////
@@ -130,13 +131,30 @@
 #define RESET_EKF 0xB3
 
 typedef struct um7_t {
-	int16_t yaw;
+	int16_t yaw; //°
 	int16_t pitch;
 	int16_t roll;
 	float north_pos;
 	float east_pos;
 	float up_pos;
+	float north_v;
+	float east_v;
+	float up_v;
+	float accel_x; // vers le bas
+	float accel_y; // vers la droite dans le sens de la marche
+	float accel_z; // vers l'avant
 } um7_t;
 
 int um7_decode(int current_byte);
 void um7_get_pos(um7_t *um7);
+void um7_print(um7_t *um7) ;
+void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate );
+void um7_set_position_rate(UART_HandleTypeDef *huart, uint8_t rate);
+void um7_set_pose_rate(UART_HandleTypeDef *huart,uint8_t rate);
+void  um7_set_home_position(UART_HandleTypeDef *huart) ;
+void um7_zero_gyros(UART_HandleTypeDef *huart) ;
+void  um7_set_mag_reference(UART_HandleTypeDef *huart);
+void um7_calibrate_accelerometers(UART_HandleTypeDef *huart) ;
+void um7_factory_reset(UART_HandleTypeDef *huart) ;
+void um7_reset_kalman_filter(UART_HandleTypeDef *huart);
+void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q, bool mag);

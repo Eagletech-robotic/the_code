@@ -20,6 +20,20 @@ uint8_t RxData2;
 void async_uart_init() {
 	HAL_UART_Init(&hlpuart1);
 	HAL_UART_Init(&huart3);
+	//um7_factory_reset(&huart3) ;
+	//um7_zero_gyros(&huart3) ; // ne met que des zéro
+	//HAL_Delay(3000);
+	//um7_calibrate_accelerometers(&huart3) ; // que zero ensuite
+	//HAL_Delay(2000);
+	//um7_set_mag_reference(&huart3); //que des zéros
+	//HAL_Delay(2000);
+	//um7_set_home_position(&huart3); // ne fait rien sur euler et acc
+	//um7_set_misc_settings(&huart3, 0, 1, 1, 1);
+
+	um7_reset_kalman_filter(&huart3); // ne semble rien faire
+	um7_set_position_rate(&huart3, 10);
+	um7_set_pose_rate(&huart3, 10);
+
 	HAL_UART_Receive_IT(&hlpuart1, &RxData1, 1);
 	HAL_UART_Receive_IT(&huart3, &RxData2, 1);
 }
@@ -43,8 +57,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   {
     // Traitement de la donnée reçue sur UART2 : RxData2
 	  //printf("uart3\n");
-	  printf("%c\n", RxData2);
-	 // um7_decode(RxData2);
+	 um7_decode(RxData2);
     // Relancer la réception en IT
     HAL_UART_Receive_IT(&huart3, &RxData2, 1);
   }

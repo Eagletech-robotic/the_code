@@ -6,6 +6,7 @@
  *      Author: nboulay
  */
 #include <stdint.h>
+#include "robotic/um7.h"
 
 typedef struct input_t {
     int is_jack_gone;
@@ -21,6 +22,7 @@ typedef struct input_t {
     int last_wifi_data[10];  // pour de futur donnée par caméra
     // INS
     // BT
+    um7_t ins;
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward
