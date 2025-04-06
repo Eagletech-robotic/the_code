@@ -63,6 +63,9 @@ void carre_sequence(carre_t * c, output_t * output) {
 		// sequence terminée, on recommence
 		c->start_sequence_time_s = c->time_from_start_s;
 	}
+	// marche avant : TODO: mettre la vitesse positive en marche avant
+	output->vitesse2_ratio = -output->vitesse2_ratio;
+	output->vitesse1_ratio = -output->vitesse1_ratio;
 }
 
 //void carre_output_commit(carre_t * c) {

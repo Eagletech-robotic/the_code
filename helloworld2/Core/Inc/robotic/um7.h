@@ -131,7 +131,7 @@
 #define RESET_EKF 0xB3
 
 typedef struct um7_t {
-	int16_t yaw; //°
+	int16_t yaw;
 	int16_t pitch;
 	int16_t roll;
 	float north_pos;
@@ -140,9 +140,9 @@ typedef struct um7_t {
 	float north_v;
 	float east_v;
 	float up_v;
-	float accel_x; // vers le bas
-	float accel_y; // vers la droite dans le sens de la marche
-	float accel_z; // vers l'avant
+	float accel_x; // vers l'avant
+	float accel_y; // vers la gauche
+	float accel_z; // vers le haut
 } um7_t;
 
 int um7_decode(int current_byte);

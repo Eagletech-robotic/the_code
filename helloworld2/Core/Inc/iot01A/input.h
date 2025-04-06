@@ -11,9 +11,9 @@
 typedef struct input_t {
     int is_jack_gone;
     float tof_m;
-    float x_mm;
-    float y_mm;
-    float orientation_degrees;
+    float x_mm; // obsolète
+    float y_mm; // obsolète
+    float orientation_degrees; // obsolète
     // float gyro[3];
     // float accelero[3];
     // float compass[3];
