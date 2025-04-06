@@ -45,8 +45,8 @@ int carre_is_elapsed_time(carre_t * c, float t_s) {
 }
 
 void carre_sequence(carre_t * c, output_t * output) {
-	float v_r = 2000.0; //0.6;
-	float v_curve_r = 1500.0;
+	float v_r = 1000.0; //2000
+	float v_curve_r = 750.0; //1500
 	float t_curve_s = 0.65f;
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {
@@ -68,6 +68,28 @@ void carre_sequence(carre_t * c, output_t * output) {
 	output->vitesse1_ratio = -output->vitesse1_ratio;
 }
 
+//typedef struct line_t {
+//	int started;
+//	float start_x_m;
+//	float start_y_m;
+//	float start_theta_deg;
+//} line_t;
+//
+//void line_init(line_t *line) {
+//	line->start_x_m = 0.0f;
+//	line->start_y_m = 0.0f;
+//	line->start_theta_deg = 0.0f;
+//	line->first_call=1;
+//}
+//
+//// avance sur une ligne
+//// retourne true quand la ligne est faite, false sinon
+//int line_step(line * line, float v, float d_m, float x_m, float y_m, float theta_deg) {
+//	if(line->first_call) {
+//		line->
+//	}
+//}
+
 //void carre_output_commit(carre_t * c) {
 ////	printf("v : %f %f \r\n", c->output.ratio15, c->output.ratio2);
 //	output_set(&c->output);
@@ -77,6 +99,8 @@ void carre_in_loop(carre_t * c, output_t * output) {
 	c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
 	carre_sequence(c, output);
 }
+
+//////////////////// OLD stuff /// Delete ?
 
 void carre_in_loop_with_mag(carre_t * c, const float mag[3], output_t * output) {
 	c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
@@ -132,7 +156,7 @@ void carre_in_loop_with_heading(carre_t * c, const float heading, output_t * out
 	}
 }
 
-//////////////////// OLD stuff
+
 
 // calcul d'un déplacement selon un arc de cercle
 // x0 y0 est sur l'arc de cercle sinon le calcul n'a pas de sens

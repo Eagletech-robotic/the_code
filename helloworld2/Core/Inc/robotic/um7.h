@@ -158,3 +158,5 @@ void um7_calibrate_accelerometers(UART_HandleTypeDef *huart) ;
 void um7_factory_reset(UART_HandleTypeDef *huart) ;
 void um7_reset_kalman_filter(UART_HandleTypeDef *huart);
 void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q, bool mag);
+void um7_set_home_north(UART_HandleTypeDef *huart, float north);
+void um7_set_home_north_current(UART_HandleTypeDef *huart);

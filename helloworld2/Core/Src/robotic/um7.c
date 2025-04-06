@@ -16,7 +16,7 @@
 typedef int byte;
 
 // Placeholder for parsing binary packets
-int state;
+static int state;
 	// Unscoped enumeration
 enum {STATE_ZERO,STATE_S,STATE_SN,STATE_SNP,STATE_PT,STATE_DATA,STATE_CHK1,STATE_CHK0};
 uint32_t error;
@@ -379,7 +379,7 @@ void um7_get_pos(um7_t *um7) {
 }
 
 void um7_print(um7_t *um7) {
-	printf(" %d  %.3f %.3f %.3f %.3f\n", um7->yaw, um7->accel_x, um7->accel_y, um7->accel_z, um7->north_v);
+	printf("IMU %d  %.3f %.3f\n", um7->yaw, um7->accel_x, um7->accel_y);
 }
 
 void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate ) {
@@ -591,4 +591,34 @@ void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q,
 	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
 	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
 	HAL_UART_Transmit(huart, config_buffer, 11,0);
+}
+
+void  um7_set_home_north(UART_HandleTypeDef *huart, float north) {
+	combine n = { north };
+	uint8_t config_buffer[11];
+
+	config_buffer[0] = 's';
+	config_buffer[1] = 'n';
+	config_buffer[2] = 'p';
+	config_buffer[3] = 0x80; // PT byte = 1000 0000.
+	config_buffer[4] = CREG_HOME_NORTH; // address
+
+	config_buffer[5] = n.b[0]; // B3
+	config_buffer[6] = n.b[1]; // B2
+	config_buffer[7] = n.b[2]; // B1
+	config_buffer[8] = n.b[3]; // B0
+
+	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_HOME_NORTH + n.b[0] + n.b[1] + n.b[2] + n.b[3];
+
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+
+
+	HAL_UART_Transmit(huart, config_buffer, 11,0);
+}
+
+// ne marche pas
+void um7_set_home_north_current(UART_HandleTypeDef *huart) {
+	um7_set_home_north(huart, yaw);
 }

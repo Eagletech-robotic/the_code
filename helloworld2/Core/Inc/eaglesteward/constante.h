@@ -12,5 +12,5 @@
 #include <math.h>
 
 #define WHEEL_BASE_M   0.33 // entraxe, distance entre les centres des roues ou des chenilles.
-#define WHEEL_CIRCUMFERENCE_M  .065*M_PI  // périmètre exact de la roue (ou roue menante si c’est un char à chenilles).
+#define WHEEL_CIRCUMFERENCE_M  .069*M_PI  // périmètre exact de la roue (ou roue menante si c’est un char à chenilles).
 #define TICKS_PER_REV 72000 // nombre d’impulsion d'odo par tour de roue

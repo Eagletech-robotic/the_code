@@ -13,6 +13,7 @@ typedef struct carre_t {
 	float start_sequence_time_s;  // compteur remis à la date de début de la séquence
 	float timer_period_s;
 	float mag[3];
+
 } carre_t;
 
 void carre_in_loop(carre_t * c, output_t * output);
