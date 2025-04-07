@@ -19,17 +19,17 @@ void motorInit() {
 void motorSet(float ratio1, float ratio2)
 {
 	if(ratio1 > 0.0f) {
-		HAL_GPIO_WritePin(sens1_GPIO_Port, sens1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(sens1_GPIO_Port, sens1_Pin, GPIO_PIN_RESET);
 	} else {
 		ratio1 = -ratio1;
-		HAL_GPIO_WritePin(sens1_GPIO_Port, sens1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(sens1_GPIO_Port, sens1_Pin, GPIO_PIN_SET);
 	}
 
 	if(ratio2 > 0.0f){
-		HAL_GPIO_WritePin(sens2_GPIO_Port, sens2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(sens2_GPIO_Port, sens2_Pin, GPIO_PIN_RESET);
 	} else {
 		ratio2 = - ratio2;
-		HAL_GPIO_WritePin(sens2_GPIO_Port, sens2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(sens2_GPIO_Port, sens2_Pin, GPIO_PIN_SET);
 	}
 	PWMset( ratio1, ratio2);
 }

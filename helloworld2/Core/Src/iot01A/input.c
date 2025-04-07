@@ -29,8 +29,9 @@ void input_init(input_t * input) {
 	async_uart_init();
 }
 
-int64_t raw[2];
-int64_t old[2];
+int64_t encoder_raw[2];
+int64_t encoder_old[2];
+float yaw_raw, yaw_old;
 
 // un compteur compte en 32 bit unsigned et cela fait des mauvaises surprises
 int32_t angle_get(int64_t new_, int64_t old, int64_t max) {
@@ -52,21 +53,24 @@ int is_jack_gone() {
 }
 
 void input_get(input_t *input) {
-	old[0]=raw[0];
-	old[1]=raw[1];
-	raw[0]=encoder_get_value(&htim3);
-	raw[1]=encoder_get_value(&htim5);
+	encoder_old[0]=encoder_raw[0];
+	encoder_old[1]=encoder_raw[1];
+	encoder_raw[0]=encoder_get_value(&htim3);
+	encoder_raw[1]=encoder_get_value(&htim5);
+	yaw_old = yaw_raw;
 	int dist_mm;
 	startToF();
 	getDistance(&dist_mm);
 
 	//printf("  : %ld %ld\r\n", (int)raw[0], (int)raw[1]);
-	input->encoder1 = angle_get(raw[0],old[0],65535);
-	input->encoder2 = -angle_get(raw[1],old[1],4294967295);
+	input->encoder1 = angle_get(encoder_raw[0],encoder_old[0],65535);
+	input->encoder2 = -angle_get(encoder_raw[1],encoder_old[1],4294967295);
 	input->tof_m =  dist_mm / 1000.0;
 	input->is_jack_gone = is_jack_gone();
 	um7_get_pos(&input->ins);
-	input->orientation_degrees= input->ins.yaw;
+	yaw_raw = input->ins.yaw;
+	input->delta_yaw_deg = yaw_raw - yaw_old;
+	//printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
 static int count = 0;
@@ -75,6 +79,7 @@ void input_print(input_t *input) {
 	count ++;
 	if(count == 250) {
 		//printf("%.1f\r\n", input->tof_m*100);
+		//printf("%d\r\n", input->ins.yaw);
 		//um7_print(&input->ins);
 		count = 0;
 	}

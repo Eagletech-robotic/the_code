@@ -64,7 +64,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	float delta_theta_deg = 0.0f;
 	const float alpha_orientation_ratio = 0.0f;
 	fusion_odo_imu_fuse(&fusion_odo_imu,
-			input->ins.accel_x, input->ins.accel_x, input->ins.yaw,
+			input->ins.accel_x, input->ins.accel_x, input->delta_yaw_deg,
 			input->encoder1, input->encoder2, config->time_step_ms/1000.0,
 			state.theta_deg,
 			&delta_x_m, &delta_y_m, &delta_theta_deg,
@@ -81,7 +81,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 		return;
 	}
 
-	//gestiond de la trajectoire
+	//gestion de la trajectoire
 	carre_in_loop(&carre, output);
 	//carre_in_loop_with_heading(&carre, state.theta_deg,output);
 
@@ -90,6 +90,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio;
 	output->vitesse2_ratio=ret.vitesse2_ratio;
+
 }
 
 void nicolas_top_init(config_t* config) {

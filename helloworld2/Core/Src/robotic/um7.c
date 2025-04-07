@@ -379,7 +379,7 @@ void um7_get_pos(um7_t *um7) {
 }
 
 void um7_print(um7_t *um7) {
-	printf("IMU %d  %.3f %.3f\n", um7->yaw, um7->accel_x, um7->accel_y);
+	printf("I %d  %.2f %.2f\n", um7->yaw, um7->accel_x, um7->accel_y);
 }
 
 void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate ) {
@@ -414,8 +414,8 @@ void um7_set_position_rate(UART_HandleTypeDef *huart, uint8_t rate) {
 
 	config_buffer[5] = 0; // B3 Quaternion rate
 	config_buffer[6] = rate; // B2 Euler rate
-	config_buffer[7] = rate; // B1 Position rate
-	config_buffer[8] = rate; // B0 Velocity rate
+	config_buffer[7] = 0; // B1 Position rate
+	config_buffer[8] = 0; // B0 Velocity rate
 
 	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES5 + rate;
 

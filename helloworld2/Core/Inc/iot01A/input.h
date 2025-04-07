@@ -14,6 +14,7 @@ typedef struct input_t {
     float x_mm; // obsolète
     float y_mm; // obsolète
     float orientation_degrees; // obsolète
+    float delta_yaw_deg; // différence avec l'appel précedent de ins.yaw
     // float gyro[3];
     // float accelero[3];
     // float compass[3];

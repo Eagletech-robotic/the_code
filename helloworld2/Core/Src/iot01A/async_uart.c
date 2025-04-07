@@ -31,8 +31,8 @@ void async_uart_init() {
 	//um7_set_misc_settings(&huart3, 0, 1, 1, 1);
 
 	um7_reset_kalman_filter(&huart3); // ne semble rien faire
-	um7_set_position_rate(&huart3, 10);
-	um7_set_pose_rate(&huart3, 10);
+	um7_set_position_rate(&huart3, 250);
+	//um7_set_pose_rate(&huart3, 10);
 
 	HAL_UART_Receive_IT(&hlpuart1, &RxData1, 1);
 	HAL_UART_Receive_IT(&huart3, &RxData2, 1);
