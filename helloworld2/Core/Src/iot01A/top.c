@@ -16,6 +16,7 @@
 #include "iot01A/config.h"
 #include "iot01A/top.h"
 #include "iot01A/motor.h"
+#include "iot01A/behaviortree.h"
 
 //TODO : to move to input or ouput
 extern TIM_HandleTypeDef htim1; //
@@ -39,6 +40,7 @@ void top_init_driver(){
 	  output_init(&output);
 	  top_init(&config);
 	  motorInit();
+	  behaviortree_test();
 }
 
 // code executer à la fréquence du timer systick
