@@ -32,6 +32,7 @@ void input_init(input_t * input) {
 int64_t encoder_raw[2];
 int64_t encoder_old[2];
 float yaw_raw, yaw_old;
+int first_cycle= 100;
 
 // un compteur compte en 32 bit unsigned et cela fait des mauvaises surprises
 int32_t angle_get(int64_t new_, int64_t old, int64_t max) {
@@ -69,6 +70,10 @@ void input_get(input_t *input) {
 	input->is_jack_gone = is_jack_gone();
 	um7_get_pos(&input->ins);
 	yaw_raw = input->ins.yaw;
+	if(first_cycle) {// sinon il y a toujours le décalage avec old à zero
+		yaw_old = yaw_raw;
+		first_cycle--; //plusieurs cycle pour attendre les données
+	}
 	input->delta_yaw_deg = yaw_raw - yaw_old;
 	//printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
