@@ -62,7 +62,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	float delta_x_m = 0.0f;
 	float delta_y_m = 0.0f;
 	float delta_theta_deg = 0.0f;
-	const float alpha_orientation_ratio = 0.0f;
+	const float alpha_orientation_ratio = 0.5f; // O.O -> IMU seul
 	fusion_odo_imu_fuse(&fusion_odo_imu,
 			input->ins.accel_x, input->ins.accel_x, input->delta_yaw_deg,
 			input->encoder1, input->encoder2, config->time_step_ms/1000.0,
@@ -98,7 +98,6 @@ void nicolas_top_init(config_t* config) {
 	printf("cycle : %i ms\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
 	autopilot_init(config);
-	fusion_odo_imu_init(&fusion_odo_imu);
 }
 
 //TODO :

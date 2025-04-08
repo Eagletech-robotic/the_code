@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <math.h>
 
-void fusion_odo_imu_init(fusion_odo_imu_t *fusion_odo_imu) {
-	fusion_odo_imu->previous_float_yaw_imu_deg = 0.0;
-}
+//void fusion_odo_imu_init(fusion_odo_imu_t *fusion_odo_imu) {
+//	fusion_odo_imu->previous_float_yaw_imu_deg = 0.0;
+//}
 
 /**
  * @brief
