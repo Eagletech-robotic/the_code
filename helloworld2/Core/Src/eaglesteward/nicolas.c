@@ -15,6 +15,7 @@
 #include "eaglesteward/constante.h"
 #include "robotic/fusion_odo_imu.h"
 #include "iot01A/state.h"
+#include "robotic/controller_stanley.h"
 
 carre_t carre;
 
