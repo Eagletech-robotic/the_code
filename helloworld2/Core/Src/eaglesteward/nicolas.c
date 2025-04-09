@@ -14,8 +14,9 @@
 #include <math.h>
 #include "eaglesteward/constante.h"
 #include "robotic/fusion_odo_imu.h"
-#include "iot01A/state.h"
+#include "eaglesteward/state.h"
 #include "robotic/controller_stanley.h"
+#include "eaglesteward/behaviortree.h"
 
 carre_t carre;
 
@@ -24,6 +25,8 @@ pid_t pid_sum;
 
 fusion_odo_imu_t fusion_odo_imu;
 state_t state;
+
+//// Autopilote
 
 float curve(float v1, float v2) {
 	return (v1-v2) / (v1+v2);
