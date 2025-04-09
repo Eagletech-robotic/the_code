@@ -5,13 +5,8 @@
  *      Author: nboulay
  */
 #pragma once
-typedef struct fusion_odo_imu_t {
-	float previous_float_yaw_imu_deg;
-} fusion_odo_imu_t;
 
-void fusion_odo_imu_init(fusion_odo_imu_t *fusion_odo_imu) ;
 void fusion_odo_imu_fuse(
-    struct fusion_odo_imu_t *fusion_odo_imu,
     float ax_imu_g, float ay_imu_g,  // non utilisés ici, mais disponibles si vous souhaitez pondérer
     float yaw_imu_deg,
     int delta_motor_left_ticks, int delta_motor_right_ticks,

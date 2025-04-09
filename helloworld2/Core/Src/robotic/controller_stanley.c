@@ -21,8 +21,9 @@
  * @param wheelBase_m : Entraxe du robot (distance entre les deux roues).
  * @param arrivalThreshold : Distance en-dessous de laquelle on considère être “arrivé”.
  * @param out_vitesse_droit, out_vitesse_gauche : Résultats, vitesses des roues (m/s).
+ * @return true si on est arrivé à target
  */
-void stanley_controller(
+int stanley_controller(
     float robot_x_m, float robot_y_m, float robot_theta_deg,
     float x_start_m, float y_start_m,
     float x_target_m, float y_target_m,
@@ -80,7 +81,7 @@ void stanley_controller(
 
         *out_vitesse_gauche = v_left;
         *out_vitesse_droit  = v_right;
-        return;
+        return dist_to_target < 0.03;
     }
 
     //------------------------------------------------------------------
@@ -155,4 +156,5 @@ void stanley_controller(
 
     *out_vitesse_gauche = v_left;
     *out_vitesse_droit  = v_right;
+    return 0;
 }

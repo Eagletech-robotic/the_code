@@ -23,7 +23,6 @@ carre_t carre;
 pid_t pid_diff;
 pid_t pid_sum;
 
-fusion_odo_imu_t fusion_odo_imu;
 state_t state;
 
 //// Autopilote
@@ -60,34 +59,82 @@ void autopilot(config_t * config, input_t * input, float v1, float v2, output_t*
 	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 }
 
+//// Comportement
+
+Status gotoTarget(float start_x_m, float start_y_m,
+			float target_x_m, float target_y_m,
+			float next_x_m, float next_y_m,
+			int target,
+			input_t* input, output_t* output, state_t* state) {
+
+	if (state->target != target) {
+		return Status::SUCCESS;
+	}
+
+	int isArrived = stanley_controller(
+	    state->x_m, state->y_m, state->theta_deg,
+	    start_x_m, start_y_m,
+	    target_x_m, target_y_m,
+	    next_y_m, next_y_m,
+	    1000.0f, //Vmax
+	    300.0f,  // Wmax
+	    1.0f,   // k
+	    WHEEL_BASE_M,
+	    0.1f, // arrivalThreshold avant virage
+	    &output->vitesse1_ratio, // moteur droit
+		&output->vitesse2_ratio
+	);
+	if(isArrived) {
+		state->target++;
+		return Status::SUCCESS;
+	}
+	return Status::RUNNING;
+}
+
+// execution une fois par cycle de tout l'arbre
+void infinite_rectangle(config_t* config, input_t *input, output_t* output, state_t * state ) {
+    auto seq = sequence(
+    		[](input_t* input, output_t* output, state_t* state) { return gotoTarget(0.0, 0.0,  1.0, 0.0,  1.0, 1.0,  0, input, output, state);},
+			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(1.0, 0.0,  1.0, 1.0,  0.0, 1.0,  1, input, output, state);},
+			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(1.0, 1.0,  0.0, 1.0,  0.0, 0.0,  2, input, output, state);},
+			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(0.0, 1.0,  0.0, 0.0,  1.0, 0.0,  3, input, output, state);},
+			[](input_t*, output_t*, state_t* state) { state->target = 0; return Status::RUNNING;}
+    );
+
+   seq(input, output, state);
+}
+
+void calcul_position(state_t *state, input_t *input, config_t *config) {
+ //gestion de la position
+float delta_x_m = 0.0f;
+float delta_y_m = 0.0f;
+float delta_theta_deg = 0.0f;
+const float alpha_orientation_ratio = 0.5f;
+ // O.O -> IMU seul
+fusion_odo_imu_fuse(
+		input->ins.accel_x, input->ins.accel_x, input->delta_yaw_deg,
+		input->encoder1, input->encoder2,
+		config->time_step_ms / 1000.0, state->theta_deg,
+		&delta_x_m, &delta_y_m, &delta_theta_deg,
+		alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEEL_BASE_M);
+state->x_m += delta_x_m;
+state->y_m += delta_y_m;
+state->theta_deg += delta_theta_deg;
+print_state(state);
+}
+
 //  doit appeler la fonction et gérer les IOS
 void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//gestion de la position
-	float delta_x_m = 0.0f;
-	float delta_y_m = 0.0f;
-	float delta_theta_deg = 0.0f;
-	const float alpha_orientation_ratio = 0.5f; // O.O -> IMU seul
-	fusion_odo_imu_fuse(&fusion_odo_imu,
-			input->ins.accel_x, input->ins.accel_x, input->delta_yaw_deg,
-			input->encoder1, input->encoder2, config->time_step_ms/1000.0,
-			state.theta_deg,
-			&delta_x_m, &delta_y_m, &delta_theta_deg,
-			alpha_orientation_ratio,
-			TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEEL_BASE_M);
-
-	state.x_m += delta_x_m;
-	state.y_m += delta_y_m;
-	state.theta_deg += delta_theta_deg;
-	print_state(&state);
-
+	calcul_position(&state, input, config);
 	//gestion du jack
 	if(!input->is_jack_gone) {
 		return;
 	}
 
 	//gestion de la trajectoire
-	carre_in_loop(&carre, output);
-	//carre_in_loop_with_heading(&carre, state.theta_deg,output);
+	carre_in_loop(&carre, output); // simpliste
+	infinite_rectangle(config, input, output, &state);
 
 	// asservissement en vitesse
 	output_t ret;
