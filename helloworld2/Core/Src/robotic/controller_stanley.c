@@ -67,21 +67,21 @@ int stanley_controller(
         while (heading_error < -M_PI) heading_error += 2.0f * (float)M_PI;
 
         // 2.4) On avance très lentement (ou pas du tout) et on tourne pour s'orienter
-        float v = 0.0f; // on peut mettre un petit v = 0.1f si on veut continuer d'avancer
+        float v = 0.0f; // on peut mettre un petit v = 100.0f si on veut continuer d'avancer
         // Contrôle proportionnel sur l'erreur d'angle
-        float w = heading_error; // (on pourrait mettre un gain, ex. w = 1.5f * heading_error)
+        float w = heading_error * 2000.0*wheelBase_m * 0.5f; // (on pourrait mettre un gain, ex. w = 1.5f * heading_error)
 
         // Saturation en vitesse angulaire
         if (w > Wmax) w = Wmax;
         if (w < -Wmax) w = -Wmax;
 
         // Calcul des vitesses roues
-        float v_left  = v - (w * wheelBase_m / 2.0f);
-        float v_right = v + (w * wheelBase_m / 2.0f);
+        float v_left  = v - w ;
+        float v_right = v + w ;
 
         *out_vitesse_gauche = v_left;
         *out_vitesse_droit  = v_right;
-        return dist_to_target < 0.03;
+        return heading_error < 0.1;
     }
 
     //------------------------------------------------------------------

@@ -13,7 +13,7 @@
 #include <inttypes.h>
 #include "iot01A/async_uart.h"
 #include "robotic/um7.h"
-
+#include "robotic/myprintf.h"
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 1
@@ -80,7 +80,7 @@ void input_get(input_t *input) {
 
 static int count = 0;
 void input_print(input_t *input) {
-	//printf("in: %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
+	myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
 	count ++;
 	if(count == 250) {
 		//printf("%.1f\r\n", input->tof_m*100);
