@@ -3,7 +3,8 @@
 typedef struct output_t {
 	float vitesse1_ratio; //ratio2
 	float vitesse2_ratio; //ratio15
-	float servo_pelle_ratio; // 0 à 1.0
+	float servo_pelle_ratio; // 0.05 -> 1ms 0.1 -> 2ms, 0 off
+	float servo_en_plus;
 } output_t;
 
 void output_set(output_t *output);

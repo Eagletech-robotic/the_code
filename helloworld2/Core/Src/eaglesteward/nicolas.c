@@ -18,6 +18,8 @@
 #include "robotic/controller_stanley.h"
 #include "eaglesteward/behaviortree.h"
 #include "robotic/myprintf.h"
+#include "eaglesteward/pelle.h"
+
 carre_t carre;
 
 pid_t pid_diff;
@@ -142,6 +144,15 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio; // roue droite
 	output->vitesse2_ratio=ret.vitesse2_ratio; // roue gauche
+
+	output->vitesse1_ratio=0;
+	output->vitesse2_ratio=0;
+
+	if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
+		pelle_out(output);
+	} else {
+		pelle_in(output);
+	}
 }
 
 void nicolas_top_init(config_t* config) {

@@ -6,6 +6,7 @@
  */
 #include"main.h"
 #include<stdio.h>
+#include"iot01A/pwm.h"
 
 // Gestion des pwm pour le moteur
 // Pour une fréquence de 50 khz, cela donne un compteur qui va jusqu'à 1600. (80 Mhz / 50 khz) sans prescaler
