@@ -5,7 +5,7 @@
 
 #include "utils/constants.hpp"
 
-constexpr int BLEACHER_INFLUENCE_SIZE = 150;
+constexpr int BLEACHER_INFLUENCE_SIZE = 400;
 
 // GameEntity struct
 struct GameEntity {
