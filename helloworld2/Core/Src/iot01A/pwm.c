@@ -13,7 +13,9 @@
 // PWM1 : TIM2_CH1
 // PWM2 : TIM2_CH3
 
-extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim2; //moteur
+extern TIM_HandleTypeDef htim16; //PWM16
+extern TIM_HandleTypeDef htim17; //PWM17
 
 uint32_t ratio_to_step(float ratio, uint32_t period) {
 	uint32_t step = ratio* (1.0f*period);
@@ -44,5 +46,27 @@ void PWMset( float ratio1, float ratio2) {
 void PWMstart() {
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+}
+
+void PWMSet_lp(TIM_HandleTypeDef *htim, float ratio) {
+	uint32_t period = htim->Init.Period;
+
+    htim->Instance->CCR1 = ratio_to_step(ratio, period);
+}
+
+void PWMSet_16(float ratio) {
+	PWMSet_lp(&htim16, ratio);
+}
+
+void PWMSet_17(float ratio) {
+	PWMSet_lp(&htim17, ratio);
+}
+
+uint32_t ratio(float ratio, uint32_t period) {
+	uint32_t step = ratio* (1.0f*period);
+
+	return step;
 }
 

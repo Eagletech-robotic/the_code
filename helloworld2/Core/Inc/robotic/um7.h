@@ -131,9 +131,9 @@
 #define RESET_EKF 0xB3
 
 typedef struct um7_t {
-	int16_t yaw;
-	int16_t pitch;
-	int16_t roll;
+	float yaw;
+	float pitch;
+	float roll;
 	float north_pos;
 	float east_pos;
 	float up_pos;

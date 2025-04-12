@@ -21,7 +21,7 @@ static int state;
 enum {STATE_ZERO,STATE_S,STATE_SN,STATE_SNP,STATE_PT,STATE_DATA,STATE_CHK1,STATE_CHK0};
 uint32_t error;
 // EULER Variables
-	int16_t roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate;
+	float roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate;
 	float euler_time;
 
 	// QUATERNION Variables
@@ -172,7 +172,7 @@ void um7_save() {
   		if (packet_is_batch) {
 			roll  = (int16_t)((data[0]<<8) | data[1]) / 91.02222;
     		pitch = (int16_t)((data[2]<<8) | data[3]) / 91.02222;
-  			yaw   = (int16_t)((data[4]<<8) | data[5]) / 91.02222;
+  			yaw   = ((data[4]<<8) | data[5])*1.0f / 91.02222f;
 			roll_rate  = (int16_t)((data[8] << 8) | data[9]) / 16.0;
 			pitch_rate = (int16_t)((data[10] << 8) | data[11]) / 16.0;
 			yaw_rate   = (int16_t)((data[12] << 8) | data[13]) / 16.0;
@@ -379,7 +379,7 @@ void um7_get_pos(um7_t *um7) {
 }
 
 void um7_print(um7_t *um7) {
-	printf("I %d  %.2f %.2f\n", um7->yaw, um7->accel_x, um7->accel_y);
+	printf("I %f  %.2f %.2f\n", um7->yaw, um7->accel_x, um7->accel_y);
 }
 
 void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate ) {

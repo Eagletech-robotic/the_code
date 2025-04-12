@@ -69,7 +69,7 @@ Status gotoTarget(float start_x_m, float start_y_m,
 	if (state->target != target) {
 		return Status::SUCCESS;
 	}
-	myprintf("B%d\r\n", state->target);
+	//myprintf("B%d\r\n", state->target);
 	int isArrived = stanley_controller(
 	    state->x_m, state->y_m, state->theta_deg,
 	    start_x_m, start_y_m,
@@ -119,7 +119,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	state->x_m += delta_x_m;
 	state->y_m += delta_y_m;
 	state->theta_deg += delta_theta_deg;
-	print_state(state);
+	//print_state(state);
 }
 
 //  doit appeler la fonction et gérer les IOS

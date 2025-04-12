@@ -74,13 +74,13 @@ void input_get(input_t *input) {
 		yaw_old = yaw_raw;
 		first_cycle--; //plusieurs cycle pour attendre les données
 	}
-	input->delta_yaw_deg = yaw_raw - yaw_old;
+	input->delta_yaw_deg = -(yaw_raw - yaw_old); // sign du yaw inversé ?
 	//printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
 static int count = 0;
 void input_print(input_t *input) {
-	myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
+	//myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
 	count ++;
 	if(count == 250) {
 		//printf("%.1f\r\n", input->tof_m*100);
