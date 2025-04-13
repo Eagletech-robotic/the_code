@@ -2,20 +2,21 @@
 // is robotics, we are not allowed any memory allocation.
 
 #include "thibault.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
+#include "eaglesteward/pelle.h"
 #include "eaglesteward/state.h"
 #include "iot01A/top_driver.h"
+#include "robotic/myprintf.h"
 #include "utils/constants.hpp"
 #include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
-#include "robotic/myprintf.h"
-#include "eaglesteward/pelle.h"
 
 float potential_field[P_FIELD_W][P_FIELD_H]{};
 
@@ -88,7 +89,7 @@ Bleacher{{7, 160, 0}},*/
 
 }  // extern "C"
 
-std::pair<Bleacher, int> get_closest_bleacher(const float x_mm, const float y_mm) {
+std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_mm) {
     Bleacher closest;
     float closest_distance = 9999;
     for (const auto bleacher : bleachers) {
@@ -131,7 +132,7 @@ extern "C" {
 void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
     input->x_mm = -state->y_m * 1000 + 1225;
     input->y_mm = -state->x_m * 1000 + 1775;
-    input->orientation_degrees = - state->theta_deg;
+    input->orientation_degrees = -state->theta_deg;
     thibault_top_step(input, state, output);
 }
 
@@ -144,8 +145,22 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     }
 
     constexpr float VITESSE_RATIO_MAX = 1.2f;
+    constexpr float STOP_DISTANCE = 27.5f;
 
     myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
+
+    const auto [closest_bleacher, closest_bleacher_distance] =
+        get_closest_bleacher(input->x_mm, input->y_mm);
+    if (closest_bleacher_distance <= STOP_DISTANCE) {
+        pelle_in(output);
+        output->vitesse1_ratio = 0;
+        output->vitesse2_ratio = 0;
+        return;
+    }
+    if (closest_bleacher_distance < 45.0f) {
+        move_to_target(input, output, closest_bleacher.x * 10, closest_bleacher.y * 10);
+        return;
+    }
 
     const int LOOKAHEAD_DISTANCE = 5;
     const float SLOPE_THRESHOLD = 0.35f;
