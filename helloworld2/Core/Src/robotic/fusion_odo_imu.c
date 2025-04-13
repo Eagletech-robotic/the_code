@@ -11,14 +11,11 @@
 // L'IMU donne une orientation absolue pas trop mauvaise
 // l'odomètre donne une position très précise si il n'y a pas de glissement
 // L'idéal serait de faire une fusion de capteur avec un filtre de kalmann.
-// ici je fais plus simple, j'utilise l'orientation de l'IMU et l'avancement de l'odomètre
+// ici je fais plus simple, j'utilise une fusion linéiaire l'orientation de l'IMU et l'avancement de l'odomètre
 
 #include <stdio.h>
 #include <math.h>
 #include "robotic/myprintf.h"
-//void fusion_odo_imu_init(fusion_odo_imu_t *fusion_odo_imu) {
-//	fusion_odo_imu->previous_float_yaw_imu_deg = 0.0;
-//}
 
 /**
  * @brief
@@ -94,9 +91,9 @@ void fusion_odo_imu_fuse(
         alpha_orientation_ratio         * delta_theta_odom_deg +
         (1.0f - alpha_orientation_ratio) * delta_yaw_imu_deg;
     	//if (delta_theta_odom_deg != 0.0f || delta_yaw_imu_deg != 0.0f)
-    if(delta_theta_odom_deg != 0.0f)
+    if(delta_yaw_imu_deg != 0.0f)
        {
-    		printf("§ %.5f %.5f\n", delta_theta_odom_deg, delta_yaw_imu_deg);
+    		//printf("§ %f %f\n", delta_theta_odom_deg, delta_yaw_imu_deg);
 		}
     // On fournit en sortie la variation d'angle du cycle
     *delta_theta_deg = fused_delta_theta_deg;

@@ -10,8 +10,8 @@
 #define myprintf(fmt, ...)           \
     do {                                     \
         static int counter_##__LINE__ = 0;   \
-        counter_##__LINE__++;                \
         if (counter_##__LINE__ % 250 == 0) { \
             printf(fmt, ##__VA_ARGS__);      \
         }                                    \
+		counter_##__LINE__++;                \
     } while(0)

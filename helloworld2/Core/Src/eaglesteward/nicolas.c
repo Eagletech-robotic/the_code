@@ -105,6 +105,20 @@ void infinite_rectangle(config_t* config, input_t *input, output_t* output, stat
    seq(input, output, state);
 }
 
+float normalize_angle_deg(float angle_deg)
+{
+    // Remet dans [-360, 360] (fmod renvoie un résultat dans (-360, 360], sauf si angle_deg est un multiple exact de 360)
+    angle_deg = fmodf(angle_deg, 360.0f);
+
+    // Maintenant, on s'assure que c'est dans [-180, 180)
+    if (angle_deg >= 180.0f) {
+        angle_deg -= 360.0f;
+    } else if (angle_deg < -180.0f) {
+        angle_deg += 360.0f;
+    }
+    return angle_deg;
+}
+
 void calcul_position(state_t *state, input_t *input, config_t *config) {
 	//gestion de la position
 	float delta_x_m = 0.0f;
@@ -121,7 +135,8 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	state->x_m += delta_x_m;
 	state->y_m += delta_y_m;
 	state->theta_deg += delta_theta_deg;
-	//print_state(state);
+	state->theta_deg = normalize_angle_deg (state->theta_deg);
+	print_state(state);
 }
 
 extern UART_HandleTypeDef huart3;
@@ -131,6 +146,8 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	calcul_position(&state, input, config);
 	//gestion du jack
 	if(!input->is_jack_gone) {
+		output->vitesse1_ratio=0;
+		output->vitesse2_ratio=0;
 		return;
 	}
 
