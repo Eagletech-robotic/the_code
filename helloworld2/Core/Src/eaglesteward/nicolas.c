@@ -163,6 +163,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//gestion de la trajectoire
 	//carre_in_loop(&carre, output); // simpliste
 	//infinite_rectangle(config, input, output, &state);
+	pelle_in(output);
 	thibault_top_step_bridge(input, &state, output);
 
 	//myprintf("O %.2f %.2f\n\r", output->vitesse1_ratio,output->vitesse2_ratio);

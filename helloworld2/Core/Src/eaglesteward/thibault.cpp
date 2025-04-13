@@ -163,7 +163,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     }
 
     const int LOOKAHEAD_DISTANCE = 5;
-    const float SLOPE_THRESHOLD = 0.35f;
+    const float SLOPE_THRESHOLD = 0.25f;
     const float dx = potential_field[index_x + LOOKAHEAD_DISTANCE][index_y] -
                      potential_field[index_x - LOOKAHEAD_DISTANCE][index_y];
     const float dy = potential_field[index_x][index_y + LOOKAHEAD_DISTANCE] -
