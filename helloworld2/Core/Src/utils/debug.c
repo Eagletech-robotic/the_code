@@ -32,5 +32,12 @@ void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], cons
         printf("\n");
     }
 
+    // for (size_t y = 0; y < height; ++y) {
+    //     for (size_t x = 0; x < width; ++x) {
+    //         printf("%1.0f,", potential_field[x][y]);
+    //     }
+    //     printf("\n");
+    // }
+
     printf("Min: %f, Max: %f\n", minValue, maxValue);
 }
