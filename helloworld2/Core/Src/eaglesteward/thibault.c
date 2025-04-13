@@ -114,15 +114,15 @@ void move_to_target(const input_t* input, output_t* output, const float target_x
 
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff <= 0) {
-            output->vitesse1_ratio = 0.0f;
-            output->vitesse2_ratio = .5f;
-        } else {
-            output->vitesse1_ratio = .5f;
+            output->vitesse1_ratio = 0.5f;
             output->vitesse2_ratio = 0.0f;
+        } else {
+            output->vitesse1_ratio = 0.0f;
+            output->vitesse2_ratio = 0.5f;
         }
     } else {
-        output->vitesse1_ratio = 0.5f + angle_diff / 180.0f;
-        output->vitesse2_ratio = 0.5f - angle_diff / 180.0f;
+        output->vitesse1_ratio = 0.5f - angle_diff / 180.0f;
+        output->vitesse2_ratio = 0.5f + angle_diff / 180.0f;
     }
 }
 
@@ -167,15 +167,15 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff <= 0) {
-                output->vitesse1_ratio = 0.0f;
-                output->vitesse2_ratio = 1.0f;
-            } else {
-                output->vitesse1_ratio = 1.0f;
+                output->vitesse1_ratio = 0.5f;
                 output->vitesse2_ratio = 0.0f;
+            } else {
+                output->vitesse1_ratio = 0.0f;
+                output->vitesse2_ratio = 0.5f;
             }
         } else {
-            output->vitesse1_ratio = 0.5f + angle_diff / 180.0f;
-            output->vitesse2_ratio = 0.5f - angle_diff / 180.0f;
+            output->vitesse1_ratio = 0.5f - angle_diff / 180.0f;
+            output->vitesse2_ratio = 0.5f + angle_diff / 180.0f;
         }
 
         /*printf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
