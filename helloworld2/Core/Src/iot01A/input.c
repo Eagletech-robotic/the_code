@@ -14,6 +14,8 @@
 #include "iot01A/async_uart.h"
 #include "robotic/um7.h"
 #include "robotic/myprintf.h"
+#include <math.h>
+
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 1
