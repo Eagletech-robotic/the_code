@@ -152,7 +152,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     const auto [closest_bleacher, closest_bleacher_distance] =
         get_closest_bleacher(input->x_mm, input->y_mm);
     if (closest_bleacher_distance <= STOP_DISTANCE) {
-        pelle_in(output);
+        pelle_out(output);
         output->vitesse1_ratio = 0;
         output->vitesse2_ratio = 0;
         return;
