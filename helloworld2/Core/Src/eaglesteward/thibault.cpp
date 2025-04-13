@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "eaglesteward/state.h"
 #include "iot01A/top_driver.h"
 #include "utils/constants.hpp"
 #include "utils/debug.hpp"
@@ -53,10 +54,11 @@ extern "C" {
 
 void thibault_top_init(config_t* config) {
     bleachers = {
-        Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
-        Bleacher{{77, 175, 0}}, Bleacher{{110, 105, 0}}, Bleacher{{190, 105, 0}},
-        Bleacher{{7, 67, 0}},   Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
-        Bleacher{{7, 160, 0}},
+        Bleacher{{7, 67, 0}}, /*
+Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
+Bleacher{{77, 175, 0}},  Bleacher{{190, 105, 0}},
+Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
+Bleacher{{7, 160, 0}},*/
     };
 
     add_walls();
@@ -78,8 +80,6 @@ void thibault_top_init(config_t* config) {
             }
         }
     }
-
-    potential_field[10][10] = 0;
 
 #ifdef STANDALONE
     visualize_potential_field(potential_field, P_FIELD_W, P_FIELD_H);
@@ -120,17 +120,21 @@ void move_to_target(const input_t* input, output_t* output, const float target_x
             output->vitesse1_ratio = 1.0f;
             output->vitesse2_ratio = 0.0f;
         }
-        printf("!!!!!");
     } else {
         output->vitesse1_ratio = 0.5f + angle_diff / 180.0f;
         output->vitesse2_ratio = 0.5f - angle_diff / 180.0f;
-        printf("##### %f", angle_diff);
     }
 }
 
 extern "C" {
 
-void thibault_top_step(config_t* config, const input_t* input, output_t* output) {
+void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
+    input->x_mm = -state->y_m * 1000 + 1225;
+    input->y_mm = -state->x_m * 1000 + 1775;
+    thibault_top_step(input, state, output);
+}
+
+void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 
@@ -138,10 +142,10 @@ void thibault_top_step(config_t* config, const input_t* input, output_t* output)
         throw std::out_of_range("Coordinates out of range");
     }
 
-    printf("x: %f, y: %f", input->x_mm, input->y_mm);
+    //printf("x: %f, y: %f", input->x_mm, input->y_mm);
 
-    const int LOOKAHEAD_DISTANCE = 10;
-    const float SLOPE_THRESHOLD = 0.1f;
+    const int LOOKAHEAD_DISTANCE = 5;
+    const float SLOPE_THRESHOLD = 0.35f;
     const float dx = potential_field[index_x + LOOKAHEAD_DISTANCE][index_y] -
                      potential_field[index_x - LOOKAHEAD_DISTANCE][index_y];
     const float dy = potential_field[index_x][index_y + LOOKAHEAD_DISTANCE] -
@@ -173,11 +177,11 @@ void thibault_top_step(config_t* config, const input_t* input, output_t* output)
             output->vitesse2_ratio = 0.5f - angle_diff / 180.0f;
         }
 
-        printf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
+        /*printf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
         printf("Current orientation: %f\n", input->orientation_degrees);
         printf("Current potential: %f\n", potential_field[index_x][index_y]);
         printf("Target angle: %f\n", target_angle_deg);
-        printf("Angle diff: %f\n", angle_diff);
+        printf("Angle diff: %f\n", angle_diff);*/
     }
 }
 
