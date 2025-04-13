@@ -49,7 +49,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   if (huart == &huart3)
   {
     // Traitement de la donnée reçue sur UART1 : RxData1
-	  printf("lpuart1\n");
+	printf("Falcon online !\n");
     // Relancer la réception en IT
     HAL_UART_Receive_IT(&huart3, &RxData1, 1);
   }

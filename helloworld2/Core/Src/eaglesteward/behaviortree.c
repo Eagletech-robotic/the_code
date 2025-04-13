@@ -7,24 +7,24 @@
 
 #include <tuple>
 #include <type_traits>
-#include <iostream>
+//#include <iostream> // code gros, ralenti le download sur cible
 #include "eaglesteward/behaviortree.h"
-
+#include <stdio.h>
 
 
 Status behavior_as_function(input_t*, output_t*, state_t*) {
-	std::cout << "function\n";
+	printf("function\n");
 	return Status::SUCCESS;
 }
 
 int behaviortree_test() {
     auto ok = [](input_t*, output_t*, state_t*) {
-        std::cout << "OK\n";
+        printf("OK\n");
         return Status::SUCCESS;
     };
 
     auto wait = [](input_t*, output_t*, state_t*) {
-        std::cout << "WAIT\n";
+        puts("WAIT\n");
         return Status::RUNNING;
     };
 
@@ -38,28 +38,28 @@ int behaviortree_test() {
     seq(&in, &out, &state);
 
      auto fail = [](input_t*, output_t*, state_t*) {
-        std::cout << "FAIL\n";
+        puts("FAIL\n");
         return Status::FAILURE;
     };
 
     auto running = [](input_t*, output_t*, state_t*) {
-        std::cout << "RUNNING\n";
+        puts("RUNNING\n");
         return Status::RUNNING;
     };
 
     auto success = [](input_t*, output_t*, state_t*) {
-        std::cout << "SUCCESS\n";
+        puts("SUCCESS\n");
         return Status::SUCCESS;
     };
 
     auto sel = alternative(fail, seq,running, success, [](input_t*, output_t*, state_t*) {
-        std::cout << "SUCCESS\n";
+       puts("SUCCESS\n");
         return Status::SUCCESS;
     }); // on s'arrête sur le 2e
 
     Status s = sel(&in, &out, &state);
-    std::cout << "Final: " << static_cast<int>(s) << "\n";
-
+    //std::cout << "Final: " << static_cast<int>(s) << "\n";
+    printf("Final : %d\n",static_cast<int>(s) );
     return 0;
 }
 

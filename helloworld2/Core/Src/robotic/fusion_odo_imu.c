@@ -94,7 +94,7 @@ void fusion_odo_imu_fuse(
         alpha_orientation_ratio         * delta_theta_odom_deg +
         (1.0f - alpha_orientation_ratio) * delta_yaw_imu_deg;
     	//if (delta_theta_odom_deg != 0.0f || delta_yaw_imu_deg != 0.0f)
-    if(delta_yaw_imu_deg != 0.0f)
+    if(delta_theta_odom_deg != 0.0f)
        {
     		printf("§ %.5f %.5f\n", delta_theta_odom_deg, delta_yaw_imu_deg);
 		}
