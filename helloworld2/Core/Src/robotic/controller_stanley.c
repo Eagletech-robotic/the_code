@@ -226,8 +226,8 @@ int controller_pid(
     //   w ~ Kp_angle * angle_error
     // Ajustez ces gains au besoin
     //----------------------------------------------------------------------
-    const float Kp_dist = 1.0f;   // Gain proportionnel distance
-    const float Kp_angle = 2.0f;  // Gain proportionnel angle
+    const float Kp_dist = 5.0f;   // Gain proportionnel distance
+    const float Kp_angle = 3.0f;  // Gain proportionnel angle
 
     float v = Kp_dist   * distance;             // m/s
     float w = Kp_angle  * (error_angle_rad);    // rad/s
@@ -257,8 +257,8 @@ int controller_pid(
     //----------------------------------------------------------------------
     // 6) Sorties
     //----------------------------------------------------------------------
-    *out_vitesse_gauche = v_left*1330; // 1m/s en impulsion/4ms
-    *out_vitesse_droit  = v_right*1330;
+    *out_vitesse_gauche = v_left;
+    *out_vitesse_droit  = v_right;
 
     return 0; // en cours
 }

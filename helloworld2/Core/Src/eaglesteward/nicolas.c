@@ -19,6 +19,7 @@
 #include "eaglesteward/behaviortree.h"
 #include "robotic/myprintf.h"
 #include "eaglesteward/pelle.h"
+#include "thibault.hpp"
 
 carre_t carre;
 
@@ -49,10 +50,15 @@ void autopilot_init(config_t * config) {
 
 // pour éviter de créer une nouvelle structure et pour évite de perdre le flux d'information, il faut envoyer un ouput vierge
 // et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
-void autopilot(config_t * config, input_t * input, float v1, float v2, output_t* ret)
+void autopilot(config_t * config, input_t * input, float v1_m_s, float v2_m_s, output_t* ret)
 {
 	float sensor1 = input->encoder1;
 	float sensor2 = input->encoder2;
+
+	//72000/(3.14*0.069)/250
+	float ticks_per_m = (config->time_step_ms/ 1000.0f) * TICKS_PER_REV /(WHEEL_CIRCUMFERENCE_M) ; //~1330
+	float v1 = v1_m_s * ticks_per_m;
+	float v2 = v2_m_s * ticks_per_m;
 
 	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2);
 	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2);
@@ -88,9 +94,9 @@ Status gotoTarget(float start_x_m, float start_y_m,
 	int isArrived = controller_pid(
 		state->x_m, state->y_m, state->theta_deg,
 		target_x_m, target_y_m,
-	    1000.0f,
+	    0.8f,
 		WHEEL_BASE_M,
-	    0.03,
+	    0.08,
 		&output->vitesse1_ratio, // moteur droit
 		&output->vitesse2_ratio
 	);
@@ -153,12 +159,6 @@ extern UART_HandleTypeDef huart3;
 void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//gestion de la position
 	calcul_position(&state, input, config);
-	//gestion du jack
-	if(!input->is_jack_gone) {
-		output->vitesse1_ratio=0;
-		output->vitesse2_ratio=0;
-		return;
-	}
 
 	//gestion de la trajectoire
 	//carre_in_loop(&carre, output); // simpliste
@@ -167,18 +167,22 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//myprintf("O %.2f %.2f\n\r", output->vitesse1_ratio,output->vitesse2_ratio);
 
 	// asservissement en vitesse
-	output_t ret;
+	output_t ret; // vitesse en m/s converti en ticks/cycle
 	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
 	output->vitesse1_ratio=ret.vitesse1_ratio; // roue droite
 	output->vitesse2_ratio=ret.vitesse2_ratio; // roue gauche
-
-	//output->vitesse1_ratio=0;
-	//output->vitesse2_ratio=0;
 
 	if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
 		pelle_out(output);
 	} else {
 		pelle_in(output);
+	}
+
+	//gestion du jack
+	if(!input->is_jack_gone) {
+		output->vitesse1_ratio=0;
+		output->vitesse2_ratio=0;
+		return;
 	}
 }
 

@@ -62,7 +62,7 @@ void top_in_loop() {
 	input_get(&input);
 	input_print(&input);
 	top_step(&config, &input, &output );
-	//output_print(&output);
+//	output_print(&output);
 	output_set(&output);
 	fflush(stdout); // forcer la sortie pour mieux la lire
 }

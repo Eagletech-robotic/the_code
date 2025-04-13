@@ -7,7 +7,7 @@
 #include "iot01A/motor.h"
 #include <stdio.h>
 #include "iot01A/pwm.h"
-
+#include "robotic/myprintf.h"
 void output_init(output_t * output){
 	output->vitesse1_ratio = 0.0f;
 	output->vitesse2_ratio = 0.0f;
@@ -29,6 +29,6 @@ void output_set(output_t *output) {
 }
 
 void output_print(output_t * output) {
-	//printf("out: %.4f\t%.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
-	printf("o: %.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio);
+	myprintf("O %.4f\t%.4f\t%.4f\n",output->vitesse1_ratio, output->vitesse2_ratio, output->servo_pelle_ratio);
+	//myprintf("o: %.4f\t%.4f\r\n",output->vitesse1_ratio, output->vitesse2_ratio);
 }
