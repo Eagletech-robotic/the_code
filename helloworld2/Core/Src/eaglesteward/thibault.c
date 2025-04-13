@@ -16,6 +16,7 @@
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
 #include "robotic/myprintf.h"
+#include "eaglesteward/pelle.h"
 
 float potential_field[P_FIELD_W][P_FIELD_H]{};
 
@@ -156,6 +157,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
         std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         output->vitesse1_ratio = 0;
         output->vitesse2_ratio = 0;
+        pelle_out(output);
     } else {
         const float target_angle_deg = std::atan2(-dx, dy) / M_PI * 180.0f;
 
