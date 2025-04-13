@@ -145,7 +145,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     }
 
     constexpr float VITESSE_RATIO_MAX = 1.2f;
-    constexpr float STOP_DISTANCE = 27.5f;
+    constexpr float STOP_DISTANCE = 275;
 
     myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
 
