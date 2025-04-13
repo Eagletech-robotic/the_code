@@ -7,7 +7,7 @@
 #include "main.h"
 #include "robotic/um7.h"
 #include <stdio.h>
-
+#include <string.h>
 // lecture de um7 + configuration du port série en interruption
 // lecture du BT
 
@@ -72,33 +72,14 @@ static int volatile uart_busy = 0; // sorte de mutex pour l'utilisation du print
 extern "C"  {
 #endif
 	int _write(int file, char *ptr, int len) {
-		//SWV ITM Data trace en mode debug
-		int DataIdx;
-		//while(uart_busy==1);
-		for (DataIdx = 0; DataIdx < len; DataIdx++)
-		{
-			ITM_SendChar(ptr[DataIdx]); // interface debug
-			buff[DataIdx] = ptr[DataIdx];
+		if(len > sizeof(buff)) { // évite le débordement de buffer. Si le buffer est trop grand, de toute façon il n'y a pas le temps de transmission
+			len = sizeof(buff);
 		}
-
-		uart_busy = 1;
+		memcpy(buff,ptr,len);
 		HAL_UART_Transmit_IT(&huart3, buff, len); // interface BT
 		return len;
 	}
 #ifdef __cplusplus
 }
 #endif
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
- {
-   /* Vérifie quelle UART a reçu un octet */
-   if (huart == &huart3)
-   {
-	   uart_busy =0;
-   }
-   else if (huart == &hlpuart1)
-   {
-
-   }
- }
 
