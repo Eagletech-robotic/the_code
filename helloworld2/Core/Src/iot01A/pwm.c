@@ -21,7 +21,7 @@ extern TIM_HandleTypeDef htim17; //PWM17
 uint32_t ratio_to_step(float ratio, uint32_t period) {
 	uint32_t step = ratio* (1.0f*period);
 
-	const float minimum_to_move = 60; //à 55 cela tourne à peine à vide
+	const float minimum_to_move = 55; //à 55 cela tourne à peine à vide
 
 	step = (period-minimum_to_move)*ratio + minimum_to_move;
 

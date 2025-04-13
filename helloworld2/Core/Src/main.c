@@ -92,22 +92,22 @@ static void MX_TIM17_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-extern "C"  {
-	int _write(int file, char *ptr, int len)
-
-	{
-	//HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
-
-	//SWV ITM Data trace en mode debug
-	int DataIdx;
-	for (DataIdx = 0; DataIdx < len; DataIdx++)
-	{
-		ITM_SendChar(*ptr++);
-	}
-
-		return len;
-	}
-}
+//extern "C"  {
+//	int _write(int file, char *ptr, int len)
+//
+//	{
+//	//HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
+//	HAL_UART_Transmit(&huart3, (uint8_t *)ptr, len, 0xFFFF);
+//	//SWV ITM Data trace en mode debug
+//	int DataIdx;
+//	for (DataIdx = 0; DataIdx < len; DataIdx++)
+//	{
+//		ITM_SendChar(*ptr++);
+//	}
+//
+//		return len;
+//	}
+//}
 volatile int time_to_start =0;
 // Callback: timer has rolled over
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)

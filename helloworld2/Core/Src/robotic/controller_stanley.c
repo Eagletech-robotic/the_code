@@ -158,3 +158,107 @@ int stanley_controller(
     *out_vitesse_droit  = v_right;
     return 0;
 }
+
+
+/**
+ * @brief Contrôleur différentiel simple pour conduire le robot (x, y, theta)
+ *        vers la cible (x_target_m, y_target_m).
+ *
+ *        Hypothèses :
+ *         - On fait un simple contrôle proportionnel pour la distance et l'angle.
+ *         - En différentiel, (v, w) -> (vG, vD).
+ *         - Si la distance à la cible < arrivalThreshold, on s'arrête (v=0).
+ *
+ * @param robot_x_m       Position X actuelle du robot (m)
+ * @param robot_y_m       Position Y actuelle du robot (m)
+ * @param robot_theta_deg Orientation actuelle du robot (en degrés)
+ * @param x_target_m      Cible X (m)
+ * @param y_target_m      Cible Y (m)
+ * @param Vmax            Vitesse linéaire max (m/s)
+ * @param wheelBase_m     Entraxe du robot (distance entre roues) (m)
+ * @param arrivalThreshold Distance en dessous de laquelle on considère le robot "arrivé"
+ * @param out_vitesse_droit  [out] Vitesse roue droite (m/s)
+ * @param out_vitesse_gauche [out] Vitesse roue gauche (m/s)
+ *
+ * @return int  1 si le robot est dans le rayon d'arrivée, sinon 0
+ */
+int controller_pid(
+    float robot_x_m, float robot_y_m, float robot_theta_deg,
+    float x_target_m, float y_target_m,
+    float Vmax,
+    float wheelBase_m,
+    float arrivalThreshold,
+    float *out_vitesse_droit,
+    float *out_vitesse_gauche
+)
+{
+    //----------------------------------------------------------------------
+    // 1) Calcul de la distance à la cible
+    //----------------------------------------------------------------------
+    float dx = x_target_m - robot_x_m;
+    float dy = y_target_m - robot_y_m;
+    float distance = sqrtf(dx * dx + dy * dy);
+
+    // Si on est dans la zone d'arrivée, on s'arrête
+    if (distance <= arrivalThreshold)
+    {
+        *out_vitesse_droit  = 0.0f;
+        *out_vitesse_gauche = 0.0f;
+        return 1; // arrivé
+    }
+
+    //----------------------------------------------------------------------
+    // 2) Calcul de l'angle vers la cible
+    //----------------------------------------------------------------------
+    float desired_angle_rad = atan2f(dy, dx); // en radians
+    float robot_angle_rad   = robot_theta_deg * (float)M_PI / 180.0f;
+
+    float error_angle_rad = desired_angle_rad - robot_angle_rad;
+
+    // Normalisation dans [-pi, +pi]
+    while (error_angle_rad >  M_PI) error_angle_rad -= 2.0f * (float)M_PI;
+    while (error_angle_rad < -M_PI) error_angle_rad += 2.0f * (float)M_PI;
+
+    //----------------------------------------------------------------------
+    // 3) Contrôle proportionnel distance & angle
+    //----------------------------------------------------------------------
+    //   v ~ Kp_dist * distance
+    //   w ~ Kp_angle * angle_error
+    // Ajustez ces gains au besoin
+    //----------------------------------------------------------------------
+    const float Kp_dist = 1.0f;   // Gain proportionnel distance
+    const float Kp_angle = 2.0f;  // Gain proportionnel angle
+
+    float v = Kp_dist   * distance;             // m/s
+    float w = Kp_angle  * (error_angle_rad);    // rad/s
+
+    // Saturation linéaire
+    if (v > Vmax)  v = Vmax;
+
+    //----------------------------------------------------------------------
+    // 4) Conversion (v, w) -> (vGauche, vDroite)
+    //----------------------------------------------------------------------
+    //  vG = v - (w * (wheelBase/2))
+    //  vD = v + (w * (wheelBase/2))
+    float v_left  = v - (w * (wheelBase_m * 0.5f));
+    float v_right = v + (w * (wheelBase_m * 0.5f));
+
+    //----------------------------------------------------------------------
+    // 5) Éventuellement saturer si l'une des roues dépasse ±Vmax
+    //----------------------------------------------------------------------
+    float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
+    if (max_abs > Vmax)
+    {
+        float scale = Vmax / max_abs;
+        v_left  *= scale;
+        v_right *= scale;
+    }
+
+    //----------------------------------------------------------------------
+    // 6) Sorties
+    //----------------------------------------------------------------------
+    *out_vitesse_gauche = v_left*1330; // 1m/s en impulsion/4ms
+    *out_vitesse_droit  = v_right*1330;
+
+    return 0; // en cours
+}
