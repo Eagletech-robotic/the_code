@@ -20,3 +20,13 @@ int stanley_controller(
     float *out_vitesse_droit,
     float *out_vitesse_gauche
 );
+
+int controller_pid(
+    float robot_x_m, float robot_y_m, float robot_theta_deg,
+    float x_target_m, float y_target_m,
+    float Vmax,
+    float wheelBase_m,
+    float arrivalThreshold,
+    float *out_vitesse_droit,
+    float *out_vitesse_gauche
+);

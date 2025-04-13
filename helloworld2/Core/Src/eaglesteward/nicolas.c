@@ -71,18 +71,27 @@ Status gotoTarget(float start_x_m, float start_y_m,
 	if (state->target != target) {
 		return Status::SUCCESS;
 	}
-	//myprintf("B%d\r\n", state->target);
-	int isArrived = stanley_controller(
-	    state->x_m, state->y_m, state->theta_deg,
-	    start_x_m, start_y_m,
-	    target_x_m, target_y_m,
-	    next_y_m, next_y_m,
-	    1000.0f, //Vmax
-	    500.0f,  // Wmax
-	    1.0f,   // k
-	    WHEEL_BASE_M,
-	    0.1f, // arrivalThreshold avant virage
-	    &output->vitesse1_ratio, // moteur droit
+	myprintf("B%d\r\n", state->target);
+//	int isArrived = stanley_controller(
+//	    state->x_m, state->y_m, state->theta_deg,
+//	    start_x_m, start_y_m,
+//	    target_x_m, target_y_m,
+//	    next_y_m, next_y_m,
+//	    1000.0f, //Vmax
+//	    500.0f,  // Wmax
+//	    1.0f,   // k
+//	    WHEEL_BASE_M,
+//	    0.1f, // arrivalThreshold avant virage
+//	    &output->vitesse1_ratio, // moteur droit
+//		&output->vitesse2_ratio
+//	);
+	int isArrived = controller_pid(
+		state->x_m, state->y_m, state->theta_deg,
+		target_x_m, target_y_m,
+	    1000.0f,
+		WHEEL_BASE_M,
+	    0.03,
+		&output->vitesse1_ratio, // moteur droit
 		&output->vitesse2_ratio
 	);
 	if(isArrived) {
@@ -99,7 +108,7 @@ void infinite_rectangle(config_t* config, input_t *input, output_t* output, stat
 			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(0.6, 0.0,  0.6, 0.6,  0.0, 0.6,  1, input, output, state);},
 			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(0.6, 0.6,  0.0, 0.6,  0.0, 0.0,  2, input, output, state);},
 			[](input_t* input, output_t* output, state_t* state) { return gotoTarget(0.0, 0.6,  0.0, 0.0,  0.6, 0.0,  3, input, output, state);},
-			[](input_t*, output_t*, state_t* state) { state->target = 0; return Status::RUNNING;}
+			[](input_t*, output_t*, state_t* state) { state->target = 0; return Status::SUCCESS;}
     );
 
    seq(input, output, state);
@@ -163,8 +172,8 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse1_ratio=ret.vitesse1_ratio; // roue droite
 	output->vitesse2_ratio=ret.vitesse2_ratio; // roue gauche
 
-	output->vitesse1_ratio=0;
-	output->vitesse2_ratio=0;
+	//output->vitesse1_ratio=0;
+	//output->vitesse2_ratio=0;
 
 	if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
 		pelle_out(output);
