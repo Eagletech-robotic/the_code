@@ -160,13 +160,6 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//gestion de la position
 	calcul_position(&state, input, config);
 
-	//gestion du jack
-	if(!input->is_jack_gone) {
-			output->vitesse1_ratio=0;
-			output->vitesse2_ratio=0;
-			return;
-	}
-
 	//gestion de la trajectoire
 	//carre_in_loop(&carre, output); // simpliste
 	//infinite_rectangle(config, input, output, &state);
@@ -180,16 +173,15 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	output->vitesse1_ratio=ret.vitesse1_ratio; // roue droite
 	output->vitesse2_ratio=ret.vitesse2_ratio; // roue gauche
 
-	if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
-		pelle_out(output);
-	} else {
-		pelle_in(output);
-	}
-
-	//gestion du jack
+	//gestion du jack / debug
 	if(!input->is_jack_gone) {
 		output->vitesse1_ratio=0;
 		output->vitesse2_ratio=0;
+		if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
+				pelle_out(output);
+		} else {
+				pelle_in(output);
+		}
 		return;
 	}
 }
