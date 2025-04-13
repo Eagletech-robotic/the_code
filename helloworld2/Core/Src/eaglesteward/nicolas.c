@@ -160,9 +160,17 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	//gestion de la position
 	calcul_position(&state, input, config);
 
+	//gestion du jack
+	if(!input->is_jack_gone) {
+			output->vitesse1_ratio=0;
+			output->vitesse2_ratio=0;
+			return;
+	}
+
 	//gestion de la trajectoire
 	//carre_in_loop(&carre, output); // simpliste
-	infinite_rectangle(config, input, output, &state);
+	//infinite_rectangle(config, input, output, &state);
+	thibault_top_step_bridge(input, &state, output);
 
 	//myprintf("O %.2f %.2f\n\r", output->vitesse1_ratio,output->vitesse2_ratio);
 
@@ -191,6 +199,7 @@ void nicolas_top_init(config_t* config) {
 	printf("cycle : %i ms\r\n",config->time_step_ms);
 	carre_init(&carre, config->time_step_ms / 1000.0);
 	autopilot_init(config);
+	thibault_top_init(config);
 }
 
 //TODO :

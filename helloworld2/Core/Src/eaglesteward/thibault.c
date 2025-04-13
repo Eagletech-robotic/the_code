@@ -2,7 +2,6 @@
 // is robotics, we are not allowed any memory allocation.
 
 #include "thibault.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -16,6 +15,7 @@
 #include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
+#include "robotic/myprintf.h"
 
 float potential_field[P_FIELD_W][P_FIELD_H]{};
 
@@ -115,9 +115,9 @@ void move_to_target(const input_t* input, output_t* output, const float target_x
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff <= 0) {
             output->vitesse1_ratio = 0.0f;
-            output->vitesse2_ratio = 1.0f;
+            output->vitesse2_ratio = .5f;
         } else {
-            output->vitesse1_ratio = 1.0f;
+            output->vitesse1_ratio = .5f;
             output->vitesse2_ratio = 0.0f;
         }
     } else {
@@ -131,6 +131,7 @@ extern "C" {
 void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
     input->x_mm = -state->y_m * 1000 + 1225;
     input->y_mm = -state->x_m * 1000 + 1775;
+    input->orientation_degrees = - state->theta_deg;
     thibault_top_step(input, state, output);
 }
 
@@ -142,7 +143,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
         throw std::out_of_range("Coordinates out of range");
     }
 
-    //printf("x: %f, y: %f", input->x_mm, input->y_mm);
+    myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
 
     const int LOOKAHEAD_DISTANCE = 5;
     const float SLOPE_THRESHOLD = 0.35f;
