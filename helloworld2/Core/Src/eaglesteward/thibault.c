@@ -54,7 +54,7 @@ extern "C" {
 
 void thibault_top_init(config_t* config) {
     bleachers = {
-        Bleacher{{7, 67, 0}}, /*
+        Bleacher{{293, 67, 0}}, /*
 Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
 Bleacher{{77, 175, 0}},  Bleacher{{190, 105, 0}},
 Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
@@ -167,11 +167,11 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff <= 0) {
-                output->vitesse1_ratio = 0.5f;
+                output->vitesse1_ratio = 0.6f;
                 output->vitesse2_ratio = 0.0f;
             } else {
                 output->vitesse1_ratio = 0.0f;
-                output->vitesse2_ratio = 0.5f;
+                output->vitesse2_ratio = 0.6f;
             }
         } else {
             output->vitesse1_ratio = 0.5f - angle_diff / 180.0f;
