@@ -54,7 +54,7 @@ extern "C" {
 
 void thibault_top_init(config_t* config) {
     bleachers = {
-        Bleacher{{7, 67, 0}}, /*
+        Bleacher{{293, 67, 0}}, /*
 Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
 Bleacher{{77, 175, 0}},  Bleacher{{190, 105, 0}},
 Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
