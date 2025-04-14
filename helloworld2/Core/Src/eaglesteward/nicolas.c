@@ -157,6 +157,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 extern UART_HandleTypeDef huart3;
 //  doit appeler la fonction et gérer les IOS
 void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
+	myprintf("\x1B[2J"); // efface l'écran de debug
 	//gestion de la position
 	calcul_position(&state, input, config);
 
