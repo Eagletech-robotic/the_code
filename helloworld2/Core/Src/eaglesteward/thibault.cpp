@@ -199,11 +199,11 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
             output->vitesse2_ratio = VITESSE_RATIO_MAX / max * left;
         }
 
-        /*printf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
-        printf("Current orientation: %f\n", input->orientation_degrees);
-        printf("Current potential: %f\n", potential_field[index_x][index_y]);
-        printf("Target angle: %f\n", target_angle_deg);
-        printf("Angle diff: %f\n", angle_diff);*/
+        myprintf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
+        myprintf("Current orientation: %f\n", input->orientation_degrees);
+        myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
+        myprintf("Target angle: %f\n", target_angle_deg);
+        myprintf("Angle diff: %f\n", angle_diff);
     }
 }
 

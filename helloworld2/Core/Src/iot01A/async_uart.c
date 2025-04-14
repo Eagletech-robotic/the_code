@@ -66,20 +66,82 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 // --- Envoie du printf vers le BT et le debug
 
-uint8_t buff[100];
-static int volatile uart_busy = 0; // sorte de mutex pour l'utilisation du printf sur it
-#ifdef __cplusplus
+#define TX_BUFFER_SIZE 256
+
+// Déclaration du buffer circulaire et des variables d'index
+volatile uint8_t txBuffer[TX_BUFFER_SIZE];
+volatile int txHead = 0;
+volatile int txTail = 0;
+volatile int txBusy = 0;  // Indique si une transmission est en cours
+
+/**
+  * @brief  Ajoute des données au buffer circulaire et démarre la transmission si nécessaire.
+  * @param  pData : pointeur vers les données à transmettre.
+  * @param  len : nombre d'octets à transmettre.
+  * @retval None
+  */
 extern "C"  {
-#endif
-	int _write(int file, char *ptr, int len) {
-		if(len > sizeof(buff)) { // évite le débordement de buffer. Si le buffer est trop grand, de toute façon il n'y a pas le temps de transmission
-			len = sizeof(buff);
-		}
-		memcpy(buff,ptr,len);
-		HAL_UART_Transmit_IT(&huart3, buff, len); // interface BT
-		return len;
-	}
-#ifdef __cplusplus
+int _write(int file, char *pData, int len)
+{
+    for(int i = 0; i < len; i++)
+    {
+        // Calcul de l'index suivant dans le buffer circulaire
+        int nextHead = (txHead + 1) % TX_BUFFER_SIZE;
+
+        // Vérification de la saturation du buffer (on pourrait gérer cette erreur différemment)
+        if(nextHead == txTail)
+        {
+            // Le buffer est plein, ici vous pouvez soit retourner, attendre, ou traiter l'erreur
+            return len; // ou gérer l'overflow
+        }
+
+        // Place l'octet dans le buffer et incrémente l'index "head"
+        txBuffer[txHead] = pData[i];
+        txHead = nextHead;
+    }
+
+    // Si aucune transmission n'est en cours, la démarrer
+    if(txBusy == 0)
+    {
+        txBusy = 1;
+        // Envoyer le premier octet depuis le buffer
+        uint8_t byte = txBuffer[txTail];
+        // Incrémenter le pointeur de lecture
+        txTail = (txTail + 1) % TX_BUFFER_SIZE;
+        // Lancer la transmission non bloquante en mode interruption
+        if(HAL_UART_Transmit_IT(&huart3, &byte, 1) != HAL_OK)
+        {
+            // Traitement d'erreur si besoin
+        }
+    }
+    return len;
 }
-#endif
+}
+/**
+  * @brief  Callback appelée lors de la fin d'une transmission par interruption.
+  * @param  huart: gestionnaire d'UART concerné.
+  * @retval None
+  */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart == &huart3)
+    {
+        // Si des données restent dans le buffer, poursuivre la transmission
+        if(txTail != txHead)
+        {
+            uint8_t nextByte = txBuffer[txTail];
+            txTail = (txTail + 1) % TX_BUFFER_SIZE;
+            HAL_UART_Transmit_IT(huart, &nextByte, 1);
+        }
+        else
+        {
+            // Le buffer est vide, transmission terminée
+            txBusy = 0;
+        }
+    }
+}
+void USART3_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart3);
+}
 
