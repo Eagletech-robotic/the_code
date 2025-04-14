@@ -5,7 +5,7 @@
  *      Author: nboulay
  */
 #include <stdio.h>
-#include "nicolas.h"
+#include "eaglesteward/nicolas.h"
 
 #include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 #include "robotic/carre.h"
@@ -19,7 +19,7 @@
 #include "eaglesteward/behaviortree.h"
 #include "robotic/myprintf.h"
 #include "eaglesteward/pelle.h"
-#include "thibault.hpp"
+#include "eaglesteward/thibault.hpp"
 
 carre_t carre;
 

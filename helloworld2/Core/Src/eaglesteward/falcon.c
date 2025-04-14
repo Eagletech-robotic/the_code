@@ -5,7 +5,7 @@
 #ifdef THIBAULT_AUTOPILOT
 #include "thibault.hpp"
 #else
-#include "nicolas.h"
+#include "eaglesteward/nicolas.h"
 #endif
 
 void top_init(config_t* config) {
