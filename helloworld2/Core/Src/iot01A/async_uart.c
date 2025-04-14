@@ -12,7 +12,7 @@
 // lecture du BT
 
 extern UART_HandleTypeDef hlpuart1;  // UM7 min 19400BAUD 115200 1N8
-extern UART_HandleTypeDef huart3;    // BT 9600 1N8 puis 200k ?
+extern UART_HandleTypeDef huart3;    // BT 9600 1N8 puis 115200 ?
 
 uint8_t RxData1;
 uint8_t RxData2;
@@ -59,7 +59,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   else if (huart == &hlpuart1)
   {
     // Traitement de la donnée reçue sur UART2 : RxData2
-	  //printf("uart3\n");
 	 um7_decode(RxData2);
     // Relancer la réception en IT
     HAL_UART_Receive_IT(&hlpuart1, &RxData2, 1);

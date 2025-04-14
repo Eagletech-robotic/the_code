@@ -12,6 +12,7 @@ typedef struct state_t {
 	float y_m;
 	float theta_deg;
 	int target; // for rectangle test
+	float filtered_tof_m;
 } state_t;
 
 void print_state(state_t * state);

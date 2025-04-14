@@ -67,6 +67,16 @@ void autopilot(config_t * config, input_t * input, float v1_m_s, float v2_m_s, o
 	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
 }
 
+// --- Filtre de TOF
+
+float tof_filter(float sensors, float val) {
+	if (sensors == 0.0f || sensors == 2.0f) {
+		return val;
+	}
+
+	return 0.7f * val + (0.3f *sensors);
+}
+
 //// Comportement
 
 Status gotoTarget(float start_x_m, float start_y_m,
@@ -158,6 +168,7 @@ extern UART_HandleTypeDef huart3;
 //  doit appeler la fonction et gérer les IOS
 void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	myprintf("\x1B[2J"); // efface l'écran de debug
+	state.filtered_tof_m = tof_filter(input->tof_m, state.filtered_tof_m);
 	//gestion de la position
 	calcul_position(&state, input, config);
 
