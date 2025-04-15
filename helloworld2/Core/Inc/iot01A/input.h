@@ -6,7 +6,7 @@
  *      Author: nboulay
  */
 #include <stdint.h>
-#include "robotic/um7.h" //TODO à virer
+//#include "robotic/um7.h" //TODO à virer
 
 typedef struct input_t {
     int is_jack_gone;
@@ -23,7 +23,12 @@ typedef struct input_t {
     int last_wifi_data[10];  // pour de futur donnée par caméra
     // INS
     // BT
-    um7_t ins;
+   // um7_t ins;
+    float imu_yaw_deg;
+    float imu_accel_x_mss; // vers l'avant
+    float imu_accel_y_mss; // vers la gauche
+    float imu_accel_z_mss; // vers le haut
+    int blue_button;
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward

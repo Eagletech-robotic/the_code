@@ -130,8 +130,10 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
+	/*mise en sortie la plus rapide possible des signaux PWM*/
+	HAL_GPIO_WritePin(PWM1_GPIO_Port, PWM1_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(PWM2_GPIO_Port, PWM2_Pin, GPIO_PIN_RESET);
+	/* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 

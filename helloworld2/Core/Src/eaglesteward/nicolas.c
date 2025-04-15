@@ -152,7 +152,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	const float alpha_orientation_ratio = 0.5f;
 	// O.O -> IMU seul
 	fusion_odo_imu_fuse(
-			input->ins.accel_x, input->ins.accel_x, input->delta_yaw_deg,
+			input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg,
 			input->encoder2, input->encoder1, // gauche , droite
 			config->time_step_ms / 1000.0, state->theta_deg,
 			&delta_x_m, &delta_y_m, &delta_theta_deg,
@@ -164,7 +164,6 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	print_state(state);
 }
 
-extern UART_HandleTypeDef huart3;
 //  doit appeler la fonction et gérer les IOS
 void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	myprintf("\x1B[2J"); // efface l'écran de debug
@@ -190,7 +189,7 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	if(!input->is_jack_gone) {
 		output->vitesse1_ratio=0;
 		output->vitesse2_ratio=0;
-		if(HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)) {
+		if(input->blue_button) {
 				pelle_out(output);
 		} else {
 				pelle_in(output);

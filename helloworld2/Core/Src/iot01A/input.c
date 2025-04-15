@@ -70,13 +70,19 @@ void input_get(input_t *input) {
 	input->encoder2 = -angle_get(encoder_raw[1],encoder_old[1],4294967295);
 	input->tof_m =  dist_mm / 1000.0;
 	input->is_jack_gone = is_jack_gone();
-	um7_get_pos(&input->ins);
-	yaw_raw = input->ins.yaw;
+	um7_t um7;
+	um7_get_pos(&um7);
+	yaw_raw = um7.yaw;
 	if(first_cycle) {// sinon il y a toujours le décalage avec old à zero
 		yaw_old = yaw_raw;
 		first_cycle--; //plusieurs cycle pour attendre les données
 	}
 	input->delta_yaw_deg = -(yaw_raw - yaw_old); // sign du yaw inversé ?
+	input->imu_yaw_deg = yaw_raw;
+	input->imu_accel_x_mss = um7.accel_x;
+	input->imu_accel_y_mss = um7.accel_y;
+	input->imu_accel_z_mss = um7.accel_z;
+	input->blue_button = HAL_GPIO_ReadPin (BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin);
 	//printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
