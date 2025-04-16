@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "iot01A/pwm.h"
 #include "robotic/myprintf.h"
+#include "iot01A/led.h"
 void output_init(output_t * output){
 	output->vitesse1_ratio = 0.0f;
 	output->vitesse2_ratio = 0.0f;
@@ -26,6 +27,7 @@ void output_set(output_t *output) {
 
 	PWMSet_16(output->servo_pelle_ratio);
 	PWMSet_17(output->servo_en_plus);
+	led_1(output->led_ratio);
 }
 
 void output_print(output_t * output) {

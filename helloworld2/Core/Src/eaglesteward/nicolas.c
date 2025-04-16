@@ -190,9 +190,9 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 		output->vitesse1_ratio=0;
 		output->vitesse2_ratio=0;
 		if(input->blue_button) {
-				pelle_out(output);
+			pelle_out(output);
 		} else {
-				pelle_in(output);
+			pelle_in(output);
 		}
 		return;
 	}

@@ -92,22 +92,7 @@ static void MX_TIM17_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//extern "C"  {
-//	int _write(int file, char *ptr, int len)
-//
-//	{
-//	//HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
-//	HAL_UART_Transmit(&huart3, (uint8_t *)ptr, len, 0xFFFF);
-//	//SWV ITM Data trace en mode debug
-//	int DataIdx;
-//	for (DataIdx = 0; DataIdx < len; DataIdx++)
-//	{
-//		ITM_SendChar(*ptr++);
-//	}
-//
-//		return len;
-//	}
-//}
+
 volatile int time_to_start =0;
 // Callback: timer has rolled over
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -171,81 +156,26 @@ int main(void)
 
   // Start timer
   HAL_TIM_Base_Start_IT(&htim1);
-  //init temperature and humidity sensor
-  //initHTS221();
   HAL_Delay(1);
-  //int16_t accx,accy,accz;
-  //float magx,magy,magz;
-  //int16_t gyrox,gyroy,gyroz;
-  //float accx,accy,accz,gyrox,gyroy,gyroz;
-  //init mems
-  //init_accelerometer();
-  //init_inertial();
-  //init_magnetometer();
-  //init_gyroscope();
-  //motorInit();
-
-  //HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   led_init();
-
-  //float temp,hum;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
- // float ratio=0.0f;
- // float step=0.1f;
+
   while (1)
   {
+	  led_1(0.0);
+	  while(! top_is_time_to_start()) {}
 
-	 while(! top_is_time_to_start()) {}
+	  /* USER CODE END WHILE */
 
-    /* USER CODE END WHILE */
+	  /* USER CODE BEGIN 3 */
+	  //led_1(1);
+	  top_in_loop();
+	  time_to_start = 0;
 
-    /* USER CODE BEGIN 3 */
-	 	 top_in_loop();
-	  //	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
-	    led_1(.5);
-	 	//carre_in_loop(&carre);
-
-	 	 //pwm led
-		//htim15.Instance->CCR1 = (htim15.Instance->CCR1 +160 ) % 1000;
-
-//	  	int distance;
-
-	  	// prend 10 ms !!!!
-		//getAxisAccelerometer(&accx,&accy,&accz);
-//	  	getInertial6D(&accx, &accy, &accz, &gyroz, &gyroy, &gyrox);
-//		getAxisMagnetometer(&magx,&magy,&magz);
-//		getHumidity(&hum);
-//		getTemperature(&temp);
-//	    getDistance(&distance);
-	    //getAxisGyro(&gyrox, &gyroy, &gyroz);
-
-
-//	    printf("distance : %i \r\n",distance);
-//	    printf("acc : %f %f %f\r\n", accx, accy, accz);
-//	    printf("gyro : %f %f %f\r\n", gyrox, gyroy, gyroz);
-//	    printf("mag : %f %f %f (%f)\r\n", magx, magy, magz, sqrtf(magx*magx+magy*magy+magz*magz));
-//	    printf("humidity : %f\r\n", hum);
-//	    printf("temperature : %f\r\n", temp);
-
-//	    ratio += step;
-//	    if (ratio > 1.0f) {
-//	    	step = -0.1f;
-//	    }
-//	    if(ratio < -1.0f)
-//	    {
-//	    	step = +0.1f;
-//	    }
-//	    //PWMset(ratio,1.0f-ratio);
-//	    motorSet(ratio,ratio);
-//	  	HAL_Delay(200);
-//	  	startToF();
-
-	  	time_to_start = 0;
-	  	led_1(0.0);
   }
   /* USER CODE END 3 */
 }
