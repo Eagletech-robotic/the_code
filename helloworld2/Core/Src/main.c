@@ -118,7 +118,7 @@ int main(void)
 	/*mise en sortie la plus rapide possible des signaux PWM*/
 	HAL_GPIO_WritePin(PWM1_GPIO_Port, PWM1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(PWM2_GPIO_Port, PWM2_Pin, GPIO_PIN_RESET);
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -169,9 +169,9 @@ int main(void)
 	  led_1(0.0);
 	  while(! top_is_time_to_start()) {}
 
-	  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-	  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 	  //led_1(1);
 	  top_in_loop();
 	  time_to_start = 0;

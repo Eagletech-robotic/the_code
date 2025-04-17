@@ -20,6 +20,7 @@
 #include "robotic/myprintf.h"
 #include "eaglesteward/pelle.h"
 #include "eaglesteward/thibault.hpp"
+#include "robotic/angle.h"
 
 carre_t carre;
 
@@ -130,20 +131,6 @@ void infinite_rectangle(config_t* config, input_t *input, output_t* output, stat
    seq(input, output, state);
 }
 
-float normalize_angle_deg(float angle_deg)
-{
-    // Remet dans [-360, 360] (fmod renvoie un résultat dans (-360, 360], sauf si angle_deg est un multiple exact de 360)
-    angle_deg = fmodf(angle_deg, 360.0f);
-
-    // Maintenant, on s'assure que c'est dans [-180, 180)
-    if (angle_deg >= 180.0f) {
-        angle_deg -= 360.0f;
-    } else if (angle_deg < -180.0f) {
-        angle_deg += 360.0f;
-    }
-    return angle_deg;
-}
-
 void calcul_position(state_t *state, input_t *input, config_t *config) {
 	//gestion de la position
 	float delta_x_m = 0.0f;
@@ -160,7 +147,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	state->x_m += delta_x_m;
 	state->y_m += delta_y_m;
 	state->theta_deg += delta_theta_deg;
-	state->theta_deg = normalize_angle_deg (state->theta_deg);
+	state->theta_deg = angle_normalize_deg (state->theta_deg);
 	print_state(state);
 }
 
@@ -173,9 +160,9 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 
 	//gestion de la trajectoire
 	//carre_in_loop(&carre, output); // simpliste
-	//infinite_rectangle(config, input, output, &state);
+	infinite_rectangle(config, input, output, &state);
 	pelle_in(output);
-	thibault_top_step_bridge(input, &state, output);
+	//thibault_top_step_bridge(input, &state, output);
 
 	//myprintf("O %.2f %.2f\n\r", output->vitesse1_ratio,output->vitesse2_ratio);
 

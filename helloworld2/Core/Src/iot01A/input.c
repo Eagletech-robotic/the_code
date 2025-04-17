@@ -15,6 +15,7 @@
 #include "robotic/um7.h"
 #include "robotic/myprintf.h"
 #include <math.h>
+#include "robotic/angle.h"
 
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
@@ -77,7 +78,9 @@ void input_get(input_t *input) {
 		yaw_old = yaw_raw;
 		first_cycle--; //plusieurs cycle pour attendre les données
 	}
-	input->delta_yaw_deg = -(yaw_raw - yaw_old); // sign du yaw inversé ?
+	input->delta_yaw_deg = angle_normalize_deg(-(yaw_raw - yaw_old)); // sign du yaw inversé ?
+
+
 	input->imu_yaw_deg = yaw_raw;
 	input->imu_accel_x_mss = um7.accel_x;
 	input->imu_accel_y_mss = um7.accel_y;

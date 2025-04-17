@@ -75,6 +75,8 @@ void Error_Handler(void);
 #define PWM2_GPIO_Port GPIOA
 #define sens2_Pin GPIO_PIN_4
 #define sens2_GPIO_Port GPIOA
+#define PWM1_Pin GPIO_PIN_5
+#define PWM1_GPIO_Port GPIOA
 #define encoder2_1_Pin GPIO_PIN_6
 #define encoder2_1_GPIO_Port GPIOA
 #define encoder2_2_Pin GPIO_PIN_7
@@ -85,8 +87,6 @@ void Error_Handler(void);
 #define INS3_RX_GPIO_Port GPIOC
 #define sens1_Pin GPIO_PIN_2
 #define sens1_GPIO_Port GPIOB
-#define PWM1_Pin GPIO_PIN_15
-#define PWM1_GPIO_Port GPIOA
 #define PWM16_Pin GPIO_PIN_8
 #define PWM16_GPIO_Port GPIOB
 #define PWM17_Pin GPIO_PIN_9
