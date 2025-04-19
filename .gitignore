@@ -51,8 +51,9 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# report de build
+# Build directories
 build/
+build-*/
 Debug/
 Release/
 cmake-build-debug/

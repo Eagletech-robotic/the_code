@@ -81,10 +81,6 @@ Bleacher{{7, 160, 0}},*/
             }
         }
     }
-
-#ifdef STANDALONE
-    visualize_potential_field(potential_field, P_FIELD_W, P_FIELD_H);
-#endif
 }
 
 }  // extern "C"
@@ -209,12 +205,3 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
 }  // extern "C"
 
-#ifdef STANDALONE
-int main() {
-    config_t config;
-
-    thibault_top_init(&config);
-
-    return 0;
-}
-#endif
