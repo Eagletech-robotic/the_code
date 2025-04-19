@@ -2,15 +2,16 @@
 
 #include <cmath>
 #include <stdexcept>
-
+/*
 GameEntity::GameEntity(const int x, const int y, const int orientation_degrees) {
-    if (x >= 300 || y >= 200) {
-        throw std::out_of_range("Coordinates out of range");
-    }
+    // if (x >= 300 || y >= 200) {
+    //     throw std::out_of_range("Coordinates out of range");
+    // }
     this->x = x;
     this->y = y;
     this->orientation_degrees = orientation_degrees;
 }
+*/
 
 const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
                  BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>&

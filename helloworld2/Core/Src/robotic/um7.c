@@ -13,6 +13,8 @@
 #include "robotic/um7.h"
 #include <stdio.h>
 #include "main.h"
+#include <string.h>
+#include <stdbool.h>
 typedef int byte;
 
 // Placeholder for parsing binary packets
@@ -72,22 +74,14 @@ byte config_buffer[11];
 char firmware[4];
 byte checksum1;		                            // First byte of checksum
 byte checksum0;		                            // Second byte of checksum
-uint16_t checksummer  = (checksum1<<8) | checksum0; // Combine the checksums
-unsigned short checksum10;			    // Checksum received from packet
-unsigned short computed_checksum;	            // Checksum computed from bytes received
+unsigned short checksum10;			    // Checksum received from packet (restored)
+unsigned short computed_checksum;	            // Checksum computed from bytes received (restored)
 
+// Define union for float/byte conversion (Keep restored floatval, as errors indicated it was needed)
 typedef union {
 	float val;
 	uint8_t bytes[4];
 } floatval;
-
-/*
-
-*/
-union combine {
-	float f;
-	uint8_t b[4];
-};
 
 float read_register_as_float(int firstByte) { // For one register as an IEEE floatpoint
 	floatval temp;
@@ -350,7 +344,11 @@ int um7_decode(int current_byte) {
 	case STATE_CHK0:
 		state = STATE_ZERO;		// Entering state CHK0, save the byte as checksum0.  Next state will be state Zero.
 		checksum0 = current_byte;
-		return um7_checksum();
+		if (um7_checksum()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	return false;
 }
@@ -593,9 +591,11 @@ void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q,
 }
 
 void  um7_set_home_north(UART_HandleTypeDef *huart, float north) {
-	combine n = { north };
+	union {
+	    float f;
+	    uint8_t b[4];
+	} n = { .f = north }; // Define union inline and initialize
 	uint8_t config_buffer[11];
-
 	config_buffer[0] = 's';
 	config_buffer[1] = 'n';
 	config_buffer[2] = 'p';
@@ -609,12 +609,10 @@ void  um7_set_home_north(UART_HandleTypeDef *huart, float north) {
 
 	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_HOME_NORTH + n.b[0] + n.b[1] + n.b[2] + n.b[3];
 
-	// Parsing checksumsum
-	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	config_buffer[9] = (uint8_t)((checksumsum & 0xff00) >> 8); // Checksum1
+	config_buffer[10] = (uint8_t)(checksumsum & 0xff); // Checksum0
 
-
-	HAL_UART_Transmit(huart, config_buffer, 11,0);
+	HAL_UART_Transmit(huart, config_buffer, 11, 100);
 }
 
 // ne marche pas

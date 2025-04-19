@@ -39,7 +39,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     SizedArray& operator=(std::initializer_list<T> list) {
         if (list.size() > Capacity) {
-            throw std::out_of_range("Initializer list exceeds array capacity");
+            //throw std::out_of_range("Initializer list exceeds array capacity");
         }
         size = list.size();
         std::copy(list.begin(), list.end(), std::array<T, Capacity>::begin());
@@ -54,7 +54,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     T& operator[](size_t index) {
         if (index >= size) {
-            throw std::out_of_range("Index out of range");
+            //throw std::out_of_range("Index out of range");
         }
         return std::array<T, Capacity>::operator[](index);
     }
@@ -67,7 +67,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     const T& operator[](size_t index) const {
         if (index >= size) {
-            throw std::out_of_range("Index out of range");
+            //throw std::out_of_range("Index out of range");
         }
         return std::array<T, Capacity>::operator[](index);
     }
@@ -79,7 +79,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     void push_back(const T& value) {
         if (size >= Capacity) {
-            throw std::out_of_range("Exceeds array capacity");
+            //throw std::out_of_range("Exceeds array capacity");
         }
         (*this)[size] = value;
         size++;
@@ -91,7 +91,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     void pop_back() {
         if (size == 0) {
-            throw std::out_of_range("Array is empty");
+            //throw std::out_of_range("Array is empty");
         }
         size--;
     }

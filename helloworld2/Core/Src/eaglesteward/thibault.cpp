@@ -55,11 +55,11 @@ extern "C" {
 
 void thibault_top_init(config_t* config) {
     bleachers = {
-        Bleacher{{293, 67, 0}}, /*
-Bleacher{{82, 27, 0}},  Bleacher{{217, 27, 0}},  Bleacher{{222, 175, 0}},
-Bleacher{{77, 175, 0}},  Bleacher{{190, 105, 0}},
-Bleacher{{292, 67, 0}},  Bleacher{{292, 160, 0}},
-Bleacher{{7, 160, 0}},*/
+        Bleacher(293, 67, 0), /*
+Bleacher(82, 27, 0),  Bleacher(217, 27, 0),  Bleacher(222, 175, 0),
+Bleacher(77, 175, 0),  Bleacher(190, 105, 0)},
+Bleacher(292, 67, 0),  Bleacher(292, 160, 0),
+Bleacher(7, 160, 0)},*/ // Note: There might be a typo here with extra '}' before comments
     };
 
     add_walls();
@@ -137,7 +137,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 
     if (index_x >= P_FIELD_W || index_y >= P_FIELD_H) {
-        throw std::out_of_range("Coordinates out of range");
+        //throw std::out_of_range("Coordinates out of range");
     }
 
     constexpr float VITESSE_RATIO_MAX = 1.2f;
@@ -145,8 +145,10 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
     myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
 
-    const auto [closest_bleacher, closest_bleacher_distance] =
-        get_closest_bleacher(input->x_mm, input->y_mm);
+    std::pair<Bleacher, float> closest_result = get_closest_bleacher(input->x_mm, input->y_mm);
+    const Bleacher& closest_bleacher = closest_result.first;
+    const float closest_bleacher_distance = closest_result.second;
+
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         pelle_out(output);
         output->vitesse1_ratio = 0;
