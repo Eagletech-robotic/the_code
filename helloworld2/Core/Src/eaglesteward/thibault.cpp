@@ -86,16 +86,16 @@ Bleacher(7, 160, 0),*/
 }  // extern "C"
 
 std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_mm) {
-    Bleacher closest;
+    Bleacher* closest = &bleachers[0];
     float closest_distance = 9999;
     for (const auto bleacher : bleachers) {
         float delta_x = std::abs(x_mm - bleacher.x * 10);
         float delta_y = std::abs(y_mm - bleacher.y * 10);
         float distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
-        if (distance < closest_distance) closest_distance = distance, closest = bleacher;
+        if (distance < closest_distance) closest_distance = distance, *closest = bleacher;
     }
 
-    return {closest, closest_distance};
+    return {*closest, closest_distance};
 }
 
 void move_to_target(const input_t* input, output_t* output, const float target_x_mm,
@@ -137,7 +137,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 
     if (index_x >= P_FIELD_W || index_y >= P_FIELD_H) {
-        //throw std::out_of_range("Coordinates out of range");
+        // throw std::out_of_range("Coordinates out of range");
     }
 
     constexpr float VITESSE_RATIO_MAX = 1.2f;
@@ -206,4 +206,3 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 }
 
 }  // extern "C"
-

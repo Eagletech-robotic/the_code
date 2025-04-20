@@ -15,7 +15,7 @@ if(NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
         ${UTILS_SOURCES}
     )
 
@@ -29,7 +29,7 @@ if(EMSCRIPTEN)
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/falcon.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
         ${UTILS_SOURCES}
     )
 
