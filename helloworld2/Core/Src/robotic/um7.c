@@ -13,8 +13,6 @@
 #include "robotic/um7.h"
 #include <stdio.h>
 #include "main.h"
-#include <string.h>
-#include <stdbool.h>
 typedef int byte;
 
 // Placeholder for parsing binary packets
@@ -87,8 +85,8 @@ typedef union {
 
 */
 union combine {
-    float f;
-    uint8_t b[4];
+	float f;
+	uint8_t b[4];
 };
 
 float read_register_as_float(int firstByte) { // For one register as an IEEE floatpoint
@@ -611,9 +609,10 @@ void  um7_set_home_north(UART_HandleTypeDef *huart, float north) {
 
 	uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_HOME_NORTH + n.b[0] + n.b[1] + n.b[2] + n.b[3];
 
-        // Parsing checksumsum
-        config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-        config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+	// Parsing checksumsum
+	config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+	config_buffer[9] = (checksumsum >> 8); // Checksum HIGH byte
+
 
 	HAL_UART_Transmit(huart, config_buffer, 11,0);
 }
