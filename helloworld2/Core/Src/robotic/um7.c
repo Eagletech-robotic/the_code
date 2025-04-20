@@ -83,6 +83,14 @@ typedef union {
 	uint8_t bytes[4];
 } floatval;
 
+/*
+
+*/
+union combine {
+    float f;
+    uint8_t b[4];
+};
+
 float read_register_as_float(int firstByte) { // For one register as an IEEE floatpoint
 	floatval temp;
 	temp.bytes[3] = data[(firstByte)];
@@ -587,10 +595,7 @@ void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q,
 }
 
 void  um7_set_home_north(UART_HandleTypeDef *huart, float north) {
-	union {
-	    float f;
-	    uint8_t b[4];
-	} n = { .f = north }; // Define union inline and initialize
+	combine n = { north };
 	uint8_t config_buffer[11];
 
 	config_buffer[0] = 's';
