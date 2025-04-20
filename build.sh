@@ -82,7 +82,7 @@ build_native() {
     
     mkdir -p build
     cd build
-    cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_STM32=OFF
+    cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
     make -j$(nproc) # Build all native targets defined
     cd ..
     
@@ -100,7 +100,7 @@ build_wasm() {
     
     mkdir -p build-wasm
     cd build-wasm
-    emcmake cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_STM32=OFF
+    emcmake cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
     emmake make -j$(nproc) # Build all WASM targets defined
     cd ..
     
