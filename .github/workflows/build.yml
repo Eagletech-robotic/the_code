@@ -23,6 +23,26 @@ jobs:
       - name: Make build script executable
         run: chmod +x ./build.sh
 
+      - name: Check for existing build artifacts
+        run: |
+          echo "--- Checking for existing build artifacts ---"
+          
+          echo "### Checking build directories existence ###"
+          [ -d "build" ] && echo "build/ directory exists" || echo "build/ directory does not exist"
+          [ -d "build-wasm" ] && echo "build-wasm/ directory exists" || echo "build-wasm/ directory does not exist"
+          [ -d "build-stm32" ] && echo "build-stm32/ directory exists" || echo "build-stm32/ directory does not exist"
+          
+          echo "### Checking for CMake cache files ###"
+          [ -f "build/CMakeCache.txt" ] && echo "build/CMakeCache.txt exists" || echo "build/CMakeCache.txt does not exist"
+          [ -f "build-wasm/CMakeCache.txt" ] && echo "build-wasm/CMakeCache.txt exists" || echo "build-wasm/CMakeCache.txt does not exist"
+          [ -f "build-stm32/CMakeCache.txt" ] && echo "build-stm32/CMakeCache.txt exists" || echo "build-stm32/CMakeCache.txt does not exist"
+          
+          echo "### List content of build directories if they exist ###"
+          [ -d "build" ] && echo "build/ contents:" && ls -la build/ || echo "build/ not found"
+          [ -d "build-wasm" ] && echo "build-wasm/ contents:" && ls -la build-wasm/ || echo "build-wasm/ not found"
+          [ -d "build-stm32" ] && echo "build-stm32/ contents:" && ls -la build-stm32/ || echo "build-stm32/ not found"
+        shell: bash
+
       - name: Environment Diagnostics
         run: |
           echo "--- Running Environment Diagnostics ---"
