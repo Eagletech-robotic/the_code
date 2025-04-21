@@ -1,7 +1,7 @@
 #ifndef VISUALIZE_POTENTIAL_FIELD_H
 #define VISUALIZE_POTENTIAL_FIELD_H
 
-#include <cstddef>  // For size_t
+#include <cstddef> // For size_t
 
 #include "utils/constants.hpp"
 
@@ -10,7 +10,6 @@
 // - potential_field: 2D array of floats representing the potential field
 // - width: Width of the field
 // - height: Height of the field
-void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], size_t width,
-                               size_t height);
+void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], size_t width, size_t height);
 
-#endif  // VISUALIZE_POTENTIAL_FIELD_H
+#endif // VISUALIZE_POTENTIAL_FIELD_H

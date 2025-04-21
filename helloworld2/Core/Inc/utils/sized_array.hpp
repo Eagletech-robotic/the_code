@@ -15,9 +15,8 @@
  * @tparam T Type of the elements.
  * @tparam Capacity Maximum number of elements the array can hold.
  */
-template <typename T, size_t Capacity>
-struct SizedArray : public std::array<T, Capacity> {
-    size_t size = 0;  ///< Current number of elements in the array.
+template <typename T, size_t Capacity> struct SizedArray : public std::array<T, Capacity> {
+    size_t size = 0; ///< Current number of elements in the array.
 
     /**
      * @brief Default constructor initializes an empty array.
@@ -37,9 +36,9 @@ struct SizedArray : public std::array<T, Capacity> {
      * @return Reference to this SizedArray.
      * @throws std::out_of_range if list size exceeds Capacity.
      */
-    SizedArray& operator=(std::initializer_list<T> list) {
+    SizedArray &operator=(std::initializer_list<T> list) {
         if (list.size() > Capacity) {
-            //throw std::out_of_range("Initializer list exceeds array capacity");
+            // throw std::out_of_range("Initializer list exceeds array capacity");
         }
         size = list.size();
         std::copy(list.begin(), list.end(), std::array<T, Capacity>::begin());
@@ -52,9 +51,9 @@ struct SizedArray : public std::array<T, Capacity> {
      * @return Reference to element at index.
      * @throws std::out_of_range if index is out of range.
      */
-    T& operator[](size_t index) {
+    T &operator[](size_t index) {
         if (index >= size) {
-            //throw std::out_of_range("Index out of range");
+            // throw std::out_of_range("Index out of range");
         }
         return std::array<T, Capacity>::operator[](index);
     }
@@ -65,9 +64,9 @@ struct SizedArray : public std::array<T, Capacity> {
      * @return Const reference to element at index.
      * @throws std::out_of_range if index is out of range.
      */
-    const T& operator[](size_t index) const {
+    const T &operator[](size_t index) const {
         if (index >= size) {
-            //throw std::out_of_range("Index out of range");
+            // throw std::out_of_range("Index out of range");
         }
         return std::array<T, Capacity>::operator[](index);
     }
@@ -77,9 +76,9 @@ struct SizedArray : public std::array<T, Capacity> {
      * @param value Element to add.
      * @throws std::out_of_range if the array is at full capacity.
      */
-    void push_back(const T& value) {
+    void push_back(const T &value) {
         if (size >= Capacity) {
-            //throw std::out_of_range("Exceeds array capacity");
+            // throw std::out_of_range("Exceeds array capacity");
         }
         (*this)[size] = value;
         size++;
@@ -91,7 +90,7 @@ struct SizedArray : public std::array<T, Capacity> {
      */
     void pop_back() {
         if (size == 0) {
-            //throw std::out_of_range("Array is empty");
+            // throw std::out_of_range("Array is empty");
         }
         size--;
     }
@@ -111,25 +110,19 @@ struct SizedArray : public std::array<T, Capacity> {
      * @brief Returns a const iterator to the beginning.
      * @return Const iterator to the first element.
      */
-    typename std::array<T, Capacity>::const_iterator begin() const {
-        return std::array<T, Capacity>::begin();
-    }
+    typename std::array<T, Capacity>::const_iterator begin() const { return std::array<T, Capacity>::begin(); }
 
     /**
      * @brief Returns an iterator to the end (up to current size).
      * @return Iterator to one past the last element.
      */
-    typename std::array<T, Capacity>::iterator end() {
-        return std::array<T, Capacity>::begin() + size;
-    }
+    typename std::array<T, Capacity>::iterator end() { return std::array<T, Capacity>::begin() + size; }
 
     /**
      * @brief Returns a const iterator to the end (up to current size).
      * @return Const iterator to one past the last element.
      */
-    typename std::array<T, Capacity>::const_iterator end() const {
-        return std::array<T, Capacity>::begin() + size;
-    }
+    typename std::array<T, Capacity>::const_iterator end() const { return std::array<T, Capacity>::begin() + size; }
 };
 
-#endif  // SIZED_ARRAY_H
+#endif // SIZED_ARRAY_H

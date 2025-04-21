@@ -6,8 +6,7 @@
 
 #include "utils/constants.hpp"
 
-void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], const size_t width,
-                               const size_t height) {
+void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], const size_t width, const size_t height) {
     int const colors[] = {
         17, 19, 20, 26, 32, 38, 46, 82, 118, 154, 190, 226, 214, 208, 202, 196, 160, 124, 88, 52,
     };
@@ -17,8 +16,10 @@ void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], cons
 
     for (size_t x = 0; x < width; ++x) {
         for (size_t y = 0; y < height; ++y) {
-            if (potential_field[x][y] < minValue) minValue = potential_field[x][y];
-            if (potential_field[x][y] > maxValue) maxValue = potential_field[x][y];
+            if (potential_field[x][y] < minValue)
+                minValue = potential_field[x][y];
+            if (potential_field[x][y] > maxValue)
+                maxValue = potential_field[x][y];
         }
     }
 
