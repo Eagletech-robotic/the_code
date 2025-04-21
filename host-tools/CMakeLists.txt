@@ -21,6 +21,8 @@ if(NOT EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O2")
+
+    target_compile_definitions(thibault_debug PRIVATE MYPRINTF_ALWAYS)
 endif()
 
 # Simulator connector (WASM binary)
@@ -33,7 +35,7 @@ if(EMSCRIPTEN)
         ${UTILS_SOURCES}
     )
 
-    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE)
+    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
 
     # Emscripten flags
     set_target_properties(simulator_connector PROPERTIES

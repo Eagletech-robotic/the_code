@@ -8,7 +8,10 @@
 #pragma once
 #include <stdio.h>
 
-#ifdef SLOW_MYPRINTF
+#ifdef MYPRINTF_ALWAYS
+// Standard printf. For use on a PC.
+#define myprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
 // Print every n messages. For use on MCU.
 #define myprintf(fmt, ...)                                                                                             \
     do {                                                                                                               \
@@ -18,7 +21,4 @@
         }                                                                                                              \
         counter_##__LINE__++;                                                                                          \
     } while (0)
-#else
-// Standard printf. For use on a PC.
-#define myprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
 #endif
