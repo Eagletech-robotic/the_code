@@ -51,21 +51,21 @@ void carre_sequence(carre_t * c, output_t * output) {
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {
 		// ligne de droite
-		output->vitesse2_ratio = v_r;
-		output->vitesse1_ratio = v_r;
+		output->motor_left_ratio = v_r;
+		output->motor_right_ratio = v_r;
 	} else if (carre_is_elapsed_time(c,t_line_s+t_curve_s)) {
 		// demi courbe
 		float v1,v2;
 		r_to_v(.2,v_curve_r,&v1,&v2);
-		output->vitesse2_ratio = v1;
-		output->vitesse1_ratio = v2;
+		output->motor_left_ratio = v1;
+		output->motor_right_ratio = v2;
 	} else {
 		// sequence terminée, on recommence
 		c->start_sequence_time_s = c->time_from_start_s;
 	}
 	// marche avant : TODO: mettre la vitesse positive en marche avant
-	output->vitesse2_ratio = -output->vitesse2_ratio;
-	output->vitesse1_ratio = -output->vitesse1_ratio;
+	output->motor_left_ratio = -output->motor_left_ratio;
+	output->motor_right_ratio = -output->motor_right_ratio;
 }
 
 //typedef struct line_t {
@@ -111,8 +111,8 @@ void carre_in_loop_with_mag(carre_t * c, const float mag[3], output_t * output) 
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {
 		// ligne de droite
-		output->vitesse2_ratio = v_r;
-		output->vitesse1_ratio = v_r;
+		output->motor_left_ratio = v_r;
+		output->motor_right_ratio = v_r;
 		c->mag[0] = mag[0];
 		c->mag[1] = mag[1];
 		c->mag[2] = mag[2];
@@ -121,8 +121,8 @@ void carre_in_loop_with_mag(carre_t * c, const float mag[3], output_t * output) 
 		// demi courbe
 		float v1,v2;
 		r_to_v(.2,v_curve_r,&v1,&v2);
-		output->vitesse2_ratio = v1;
-		output->vitesse1_ratio = v2;
+		output->motor_left_ratio = v1;
+		output->motor_right_ratio = v2;
 	} else {
 		// sequence terminée, on recommence
 		c->start_sequence_time_s = c->time_from_start_s;
@@ -139,16 +139,16 @@ void carre_in_loop_with_heading(carre_t * c, const float heading, output_t * out
 	float t_line_s = 0.5;
 	if (carre_is_elapsed_time(c, t_line_s)) {
 		// ligne de droite
-		output->vitesse2_ratio = v_r;
-		output->vitesse1_ratio = v_r;
+		output->motor_left_ratio = v_r;
+		output->motor_right_ratio = v_r;
 		c->mag[0] = heading;
 		printf("d\r\n");
 	} else if (fabs(c->mag[0] - heading) < 5.0) {
 		// demi courbe
 		float v1,v2;
 		r_to_v(.3,v_curve_r,&v1,&v2);
-		output->vitesse2_ratio = v1;
-		output->vitesse1_ratio = v2;
+		output->motor_left_ratio = v1;
+		output->motor_right_ratio = v2;
 	} else {
 		// sequence terminée, on recommence
 		c->start_sequence_time_s = c->time_from_start_s;

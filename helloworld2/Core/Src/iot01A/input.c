@@ -67,8 +67,8 @@ void input_get(input_t *input) {
 	getDistance(&dist_mm);
 
 	//printf("  : %ld %ld\r\n", (int)raw[0], (int)raw[1]);
-	input->encoder1 = angle_get(encoder_raw[0],encoder_old[0],65535);
-	input->encoder2 = -angle_get(encoder_raw[1],encoder_old[1],4294967295);
+	input->encoder_left = -angle_get(encoder_raw[1],encoder_old[1],4294967295);
+	input->encoder_right = angle_get(encoder_raw[0],encoder_old[0],65535);
 	input->tof_m =  dist_mm / 1000.0;
 	input->is_jack_gone = is_jack_gone();
 	um7_t um7;
@@ -91,7 +91,7 @@ void input_get(input_t *input) {
 
 static int count = 0;
 void input_print(input_t *input) {
-	//myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder1, (int32_t)input->encoder2, input->is_jack_gone, input->tof_m);
+	//myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right, input->is_jack_gone, input->tof_m);
 	count ++;
 	if(count == 250) {
 		//printf("%.1f\r\n", input->tof_m*100);

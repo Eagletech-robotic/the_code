@@ -17,8 +17,8 @@ int stanley_controller(
     float kStanley,
     float wheelBase_m,
     float arrivalThreshold,
-    float *out_vitesse_droit,
-    float *out_vitesse_gauche
+    float *out_speed_left,
+    float *out_speed_right
 );
 
 int controller_pid(
@@ -27,6 +27,6 @@ int controller_pid(
     float Vmax,
     float wheelBase_m,
     float arrivalThreshold,
-    float *out_vitesse_droit,
-    float *out_vitesse_gauche
+    float *out_speed_left,
+    float *out_speed_right
 );

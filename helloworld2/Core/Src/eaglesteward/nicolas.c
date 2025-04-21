@@ -51,21 +51,21 @@ void autopilot_init(config_t * config) {
 
 // pour éviter de créer une nouvelle structure et pour évite de perdre le flux d'information, il faut envoyer un ouput vierge
 // et recopier les données utiles. Cela évite de se perdre dans les mise à jours de valeurs
-void autopilot(config_t * config, input_t * input, float v1_m_s, float v2_m_s, output_t* ret)
+void autopilot(config_t * config, input_t * input, float v_gauche_m_s, float v_droite_m_s, output_t* ret)
 {
-	float sensor1 = input->encoder1;
-	float sensor2 = input->encoder2;
+	float sensor_left = input->encoder_left;
+	float sensor_right = input->encoder_right;
 
 	//72000/(3.14*0.069)/250
 	float ticks_per_m = (config->time_step_ms/ 1000.0f) * TICKS_PER_REV /(WHEEL_CIRCUMFERENCE_M) ; //~1330
-	float v1 = v1_m_s * ticks_per_m;
-	float v2 = v2_m_s * ticks_per_m;
+	float ratio_gauche = v_gauche_m_s * ticks_per_m;
+	float ratio_droite = v_droite_m_s * ticks_per_m;
 
-	float regul_sum = pid_(&pid_sum, v1+v2, sensor1 + sensor2);
-	float regul_diff = pid_(&pid_diff, v1-v2, sensor1 - sensor2);
+	float regul_sum = pid_(&pid_sum, ratio_droite + ratio_gauche, sensor_right + sensor_left);
+	float regul_diff = pid_(&pid_diff, ratio_droite - ratio_gauche, sensor_right - sensor_left);
 
-	ret->vitesse1_ratio = (regul_sum + regul_diff) / 2.0;
-	ret->vitesse2_ratio = (regul_sum - regul_diff) / 2.0;
+	ret->motor_left_ratio = (regul_sum - regul_diff) / 2.0;
+	ret->motor_right_ratio = (regul_sum + regul_diff) / 2.0;
 }
 
 // --- Filtre de TOF
@@ -99,8 +99,8 @@ Status gotoTarget(float start_x_m, float start_y_m,
 //	    1.0f,   // k
 //	    WHEEL_BASE_M,
 //	    0.1f, // arrivalThreshold avant virage
-//	    &output->vitesse1_ratio, // moteur droit
-//		&output->vitesse2_ratio
+//	    &output->motor_left_ratio,
+//	    &output->motor_right_ratio
 //	);
 	int isArrived = controller_pid(
 		state->x_m, state->y_m, state->theta_deg,
@@ -108,8 +108,8 @@ Status gotoTarget(float start_x_m, float start_y_m,
 	    0.8f,
 		WHEEL_BASE_M,
 	    0.08,
-		&output->vitesse1_ratio, // moteur droit
-		&output->vitesse2_ratio
+		&output->motor_left_ratio,
+		&output->motor_right_ratio
 	);
 	if(isArrived) {
 		state->target++;
@@ -140,7 +140,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 	// O.O -> IMU seul
 	fusion_odo_imu_fuse(
 			input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg,
-			input->encoder2, input->encoder1, // gauche , droite
+			input->encoder_left, input->encoder_right,
 			config->time_step_ms / 1000.0, state->theta_deg,
 			&delta_x_m, &delta_y_m, &delta_theta_deg,
 			alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEEL_BASE_M);
@@ -164,18 +164,18 @@ void nicolas_top_step(config_t* config, input_t *input, output_t* output ) {
 	pelle_in(output);
 	//thibault_top_step_bridge(input, &state, output);
 
-	//myprintf("O %.2f %.2f\n\r", output->vitesse1_ratio,output->vitesse2_ratio);
+	//myprintf("O %.2f %.2f\n\r", output->motor_left_ratio, output->motor_right_ratio);
 
 	// asservissement en vitesse
 	output_t ret; // vitesse en m/s converti en ticks/cycle
-	autopilot(config, input, output->vitesse1_ratio, output->vitesse2_ratio, &ret);
-	output->vitesse1_ratio=ret.vitesse1_ratio; // roue droite
-	output->vitesse2_ratio=ret.vitesse2_ratio; // roue gauche
+	autopilot(config, input, output->motor_left_ratio, output->motor_right_ratio, &ret);
+	output->motor_left_ratio=ret.motor_left_ratio;
+	output->motor_right_ratio=ret.motor_right_ratio;
 
 	//gestion du jack / debug
 	if(!input->is_jack_gone) {
-		output->vitesse1_ratio=0;
-		output->vitesse2_ratio=0;
+		output->motor_left_ratio=0;
+		output->motor_right_ratio=0;
 		if(input->blue_button) {
 			pelle_out(output);
 		} else {

@@ -111,28 +111,28 @@ void move_to_target(const input_t* input, output_t* output, const float target_x
 
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff <= 0) {
-            output->vitesse1_ratio = 0.5f;
-            output->vitesse2_ratio = 0.0f;
+            output->motor_left_ratio = 0.0f;
+            output->motor_right_ratio = 0.5f;
         } else {
-            output->vitesse1_ratio = 0.0f;
-            output->vitesse2_ratio = 0.5f;
+            output->motor_left_ratio = 0.5f;
+            output->motor_right_ratio = 0.0f;
         }
     } else {
-        output->vitesse1_ratio = 0.5f - angle_diff / 180.0f;
-        output->vitesse2_ratio = 0.5f + angle_diff / 180.0f;
+        output->motor_left_ratio = 0.5f + angle_diff / 180.0f;
+        output->motor_right_ratio = 0.5f - angle_diff / 180.0f;
     }
 }
 
 extern "C" {
 
-void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
+/*void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
     input->x_mm = -state->y_m * 1000 + 1225;
     input->y_mm = -state->x_m * 1000 + 1775;
     input->orientation_degrees = -state->theta_deg;
     thibault_top_step(input, state, output);
-}
+}*/
 
-void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
+void thibault_top_step(config_t* config, input_t* input, output_t* output) {
     int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 
@@ -150,9 +150,10 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     const float closest_bleacher_distance = closest_result.second;
 
     if (closest_bleacher_distance <= STOP_DISTANCE) {
+        myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
         pelle_out(output);
-        output->vitesse1_ratio = 0;
-        output->vitesse2_ratio = 0;
+        output->motor_left_ratio = 0.0f;
+        output->motor_right_ratio = 0.0f;
         return;
     }
     if (closest_bleacher_distance < 45.0f) {
@@ -161,7 +162,7 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
     }
 
     const int LOOKAHEAD_DISTANCE = 5;
-    const float SLOPE_THRESHOLD = 0.25f;
+    const float SLOPE_THRESHOLD = 0.05f;
     const float dx = potential_field[index_x + LOOKAHEAD_DISTANCE][index_y] -
                      potential_field[index_x - LOOKAHEAD_DISTANCE][index_y];
     const float dy = potential_field[index_x][index_y + LOOKAHEAD_DISTANCE] -
@@ -169,9 +170,11 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD &&
         std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        output->vitesse1_ratio = 0;
-        output->vitesse2_ratio = 0;
+        output->motor_left_ratio = 0.0f;
+        output->motor_right_ratio = 0.0f;
         pelle_out(output);
+
+        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
     } else {
         const float target_angle_deg = std::atan2(-dx, dy) / M_PI * 180.0f;
 
@@ -183,26 +186,27 @@ void thibault_top_step(input_t* input, const state_t* state, output_t* output) {
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff <= 0) {
-                output->vitesse1_ratio = 0.5f;
-                output->vitesse2_ratio = 0.0f;
+                output->motor_left_ratio = 0.0f;
+                output->motor_right_ratio = 0.5f;
             } else {
-                output->vitesse1_ratio = 0.0f;
-                output->vitesse2_ratio = 0.5f;
+                output->motor_left_ratio = 0.5f;
+                output->motor_right_ratio = 0.0f;
             }
         } else {
             const float right = 0.5f - angle_diff / 180.0f;
             const float left = 0.5f + angle_diff / 180.0f;
             const float max = std::max(right, left);
-            output->vitesse1_ratio = VITESSE_RATIO_MAX / max * right;
-            output->vitesse2_ratio = VITESSE_RATIO_MAX / max * left;
+            output->motor_left_ratio = VITESSE_RATIO_MAX / max * left;
+            output->motor_right_ratio = VITESSE_RATIO_MAX / max * right;
         }
 
-        myprintf("Vitesse 1: %f, Vitesse 2: %f\n", output->vitesse1_ratio, output->vitesse2_ratio);
-        myprintf("Current orientation: %f\n", input->orientation_degrees);
-        myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
         myprintf("Target angle: %f\n", target_angle_deg);
         myprintf("Angle diff: %f\n", angle_diff);
     }
+
+    myprintf("Left motor ratio: %f, Right motor ratio: %f\n", output->motor_left_ratio, output->motor_right_ratio);
+    myprintf("Current orientation: %f\n", input->orientation_degrees);
+    myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
 }
 
 }  // extern "C"

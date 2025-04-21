@@ -20,7 +20,7 @@
  * @param kStanley : Coefficient du contrôleur Stanley (plus grand => plus réactif sur l'erreur latérale).
  * @param wheelBase_m : Entraxe du robot (distance entre les deux roues).
  * @param arrivalThreshold : Distance en-dessous de laquelle on considère être “arrivé”.
- * @param out_vitesse_droit, out_vitesse_gauche : Résultats, vitesses des roues (m/s).
+ * @param out_speed_right, out_speed_left : Résultats, vitesses des roues (m/s).
  * @return true si on est arrivé à target
  */
 int stanley_controller(
@@ -33,8 +33,8 @@ int stanley_controller(
     float kStanley,
     float wheelBase_m,
     float arrivalThreshold,
-    float *out_vitesse_droit,
-    float *out_vitesse_gauche
+    float *out_speed_left,
+    float *out_speed_right
 )
 {
     //------------------------------------------------------------------
@@ -79,8 +79,8 @@ int stanley_controller(
         float v_left  = v - w ;
         float v_right = v + w ;
 
-        *out_vitesse_gauche = v_left;
-        *out_vitesse_droit  = v_right;
+        *out_speed_left = v_left;
+        *out_speed_right  = v_right;
         return heading_error < 0.1;
     }
 
@@ -154,8 +154,8 @@ int stanley_controller(
         v_right *= scale;
     }
 
-    *out_vitesse_gauche = v_left;
-    *out_vitesse_droit  = v_right;
+    *out_speed_left = v_left;
+    *out_speed_right  = v_right;
     return 0;
 }
 
@@ -177,8 +177,8 @@ int stanley_controller(
  * @param Vmax            Vitesse linéaire max (m/s)
  * @param wheelBase_m     Entraxe du robot (distance entre roues) (m)
  * @param arrivalThreshold Distance en dessous de laquelle on considère le robot "arrivé"
- * @param out_vitesse_droit  [out] Vitesse roue droite (m/s)
- * @param out_vitesse_gauche [out] Vitesse roue gauche (m/s)
+ * @param out_speed_left [out] Vitesse roue gauche (m/s)
+ * @param out_speed_right  [out] Vitesse roue droite (m/s)
  *
  * @return int  1 si le robot est dans le rayon d'arrivée, sinon 0
  */
@@ -188,8 +188,8 @@ int controller_pid(
     float Vmax,
     float wheelBase_m,
     float arrivalThreshold,
-    float *out_vitesse_droit,
-    float *out_vitesse_gauche
+    float *out_speed_left,
+    float *out_speed_right
 )
 {
     //----------------------------------------------------------------------
@@ -202,8 +202,8 @@ int controller_pid(
     // Si on est dans la zone d'arrivée, on s'arrête
     if (distance <= arrivalThreshold)
     {
-        *out_vitesse_droit  = 0.0f;
-        *out_vitesse_gauche = 0.0f;
+        *out_speed_left = 0.0f;
+        *out_speed_right  = 0.0f;
         return 1; // arrivé
     }
 
@@ -257,8 +257,8 @@ int controller_pid(
     //----------------------------------------------------------------------
     // 6) Sorties
     //----------------------------------------------------------------------
-    *out_vitesse_gauche = v_left;
-    *out_vitesse_droit  = v_right;
+    *out_speed_left = v_left;
+    *out_speed_right  = v_right;
 
     return 0; // en cours
 }
