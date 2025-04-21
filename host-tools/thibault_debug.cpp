@@ -1,4 +1,4 @@
-#include "eaglesteward/thibault.hpp"
+#include "eaglesteward/guidance/thibault.hpp"
 #include "utils/constants.hpp"
 #include "utils/debug.hpp"
 

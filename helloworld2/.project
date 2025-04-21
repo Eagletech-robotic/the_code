@@ -32,9 +32,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Core/Src/eaglesteward/nicolas.c</name>
+			<name>Core/Src/eaglesteward/guidance/nicolas.c</name>
 			<type>1</type>
-			<location>${PROJECT_LOC}/Core/Src/eaglesteward/nicolas.c</location>
+			<location>${PROJECT_LOC}/Core/Src/eaglesteward/guidance/nicolas.c</location>
 		</link>
 	</linkedResources>
 </projectDescription>

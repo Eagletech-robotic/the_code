@@ -1,13 +1,13 @@
 #include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 
-#ifdef THIBAULT_AUTOPILOT
-#include "eaglesteward/thibault.hpp"
+#ifdef THIBAULT_GUIDANCE
+#include "eaglesteward/guidance/thibault.hpp"
 #else
-#include "eaglesteward/nicolas.h"
+#include "eaglesteward/guidance/nicolas.h"
 #endif
 
 void top_init(config_t *config) {
-#ifdef THIBAULT_AUTOPILOT
+#ifdef THIBAULT_GUIDANCE
     thibault_top_init(config);
 #else
     nicolas_top_init(config);
@@ -15,7 +15,7 @@ void top_init(config_t *config) {
 }
 
 void top_step(config_t *config, input_t *input, output_t *output) {
-#ifdef THIBAULT_AUTOPILOT
+#ifdef THIBAULT_GUIDANCE
     thibault_top_step(config, input, output);
 #else
     nicolas_top_step(config, input, output);

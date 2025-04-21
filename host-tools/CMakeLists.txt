@@ -14,7 +14,7 @@ file(GLOB UTILS_SOURCES
 if(NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/thibault.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
         ${UTILS_SOURCES}
     )
@@ -27,13 +27,13 @@ endif()
 if(EMSCRIPTEN)
     add_executable(simulator_connector
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/falcon.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/thibault.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/top_driver.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
         ${UTILS_SOURCES}
     )
 
-    target_compile_definitions(simulator_connector PRIVATE THIBAULT_AUTOPILOT)
+    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE)
 
     # Emscripten flags
     set_target_properties(simulator_connector PROPERTIES

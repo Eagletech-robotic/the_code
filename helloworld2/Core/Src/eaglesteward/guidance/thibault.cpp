@@ -1,7 +1,7 @@
 // AI for a robot playing coupe de france de robotique, using gradient descent essentially. Since it
 // is robotics, we are not allowed any memory allocation.
 
-#include "eaglesteward/thibault.hpp"
+#include "eaglesteward/guidance/thibault.hpp"
 
 #include <algorithm>
 #include <array>

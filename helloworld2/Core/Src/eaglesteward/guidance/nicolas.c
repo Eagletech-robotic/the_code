@@ -4,7 +4,7 @@
  *  Created on: Nov 3, 2024
  *      Author: nboulay
  */
-#include "eaglesteward/nicolas.h"
+#include "eaglesteward/guidance/nicolas.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #include "eaglesteward/constante.h"
 #include "eaglesteward/pelle.h"
 #include "eaglesteward/state.h"
-#include "eaglesteward/thibault.hpp"
+#include "eaglesteward/guidance/thibault.hpp"
 #include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 #include "robotic/angle.h"
 #include "robotic/carre.h"
