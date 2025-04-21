@@ -8,10 +8,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Pre-Cache Diagnostics - Check nano.specs
+        run: |
+          echo "--- Running Pre-Cache Diagnostics ---"
+          echo "Searching for nano.specs before apt caching/install..."
+          find /usr/lib/gcc/arm-none-eabi -name nano.specs -ls || echo "nano.specs not found in /usr/lib/gcc/arm-none-eabi (expected)"
+          find /usr/share/ -name nano.specs -ls 2>/dev/null || echo "nano.specs not found in /usr/share (expected)"
+          echo "Checking if arm-none-eabi-gcc exists yet..."
+          which arm-none-eabi-gcc || echo "arm-none-eabi-gcc not found yet (expected)"
+          echo "--- Pre-Cache Diagnostics Complete ---"
+        shell: bash
+        continue-on-error: true # Allow failure if tools aren't present yet
+
       - name: Install apt dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+
+      - name: Post-Cache Diagnostics - Check nano.specs
+        run: |
+          echo "--- Running Post-Cache Diagnostics ---"
+          echo "Cache hit: ${{ steps.apt_cache.outputs.cache-hit }}"
+          echo "Searching for nano.specs *after* apt caching/install..."
+          find /usr/lib/gcc/arm-none-eabi -name nano.specs -ls || echo "nano.specs *still* not found in /usr/lib/gcc/arm-none-eabi (ERROR if package installed)"
+          find /usr/share/ -name nano.specs -ls 2>/dev/null || echo "nano.specs *still* not found in /usr/share"
+          echo "Checking if arm-none-eabi-gcc can print nano.specs location *after* install..."
+          arm-none-eabi-gcc --print-file-name=nano.specs || echo "ARM GCC failed to print nano.specs location (ERROR if package installed)"
+          # Optionally list the directory content
+          echo "Listing /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/ specifcally..."
+          ls -l /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/ || echo "Failed to list ARM lib directory"
+          echo "--- Post-Cache Diagnostics Complete ---"
+        shell: bash
+        continue-on-error: true # Allow failure if tools aren't present yet
 
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v14
@@ -40,22 +68,6 @@ jobs:
           [ -d "build" ] && echo "build/ contents:" && ls -la build/ || echo "build/ not found"
           [ -d "build-wasm" ] && echo "build-wasm/ contents:" && ls -la build-wasm/ || echo "build-wasm/ not found"
           [ -d "build-stm32" ] && echo "build-stm32/ contents:" && ls -la build-stm32/ || echo "build-stm32/ not found"
-        shell: bash
-
-      - name: Environment Diagnostics
-        run: |
-          echo "--- Running Environment Diagnostics ---"
-          echo "Checking if arm-none-eabi-gcc exists..."
-          which arm-none-eabi-gcc || echo "arm-none-eabi-gcc not found"
-          echo "--- Environment Diagnostics Complete ---"
-        shell: bash
-
-      - name: Enhanced Environment Diagnostics
-        run: |
-          echo "--- Running Enhanced Environment Diagnostics ---"
-          echo "Checking if arm-none-eabi-gcc can print nano.specs location..."
-          arm-none-eabi-gcc --print-file-name=nano.specs || echo "ARM GCC failed to print nano.specs location"
-          echo "--- Enhanced Environment Diagnostics Complete ---"
         shell: bash
 
       - name: Run build
