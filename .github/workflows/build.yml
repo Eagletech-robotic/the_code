@@ -30,4 +30,4 @@ jobs:
 
       - name: Run build
         id: build_run
-        run: ./build.sh --all
+        run: ./build.sh build --all
