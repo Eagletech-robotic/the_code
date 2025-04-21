@@ -3,7 +3,7 @@
 #ifdef THIBAULT_GUIDANCE
 #include "eaglesteward/guidance/thibault.hpp"
 #else
-#include "eaglesteward/guidance/nicolas.h"
+#include "eaglesteward/guidance/nicolas.hpp"
 #endif
 
 void top_init(config_t *config) {

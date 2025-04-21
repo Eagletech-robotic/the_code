@@ -10,7 +10,7 @@
 #include "iot01A/led.h"
 #include "iot01A/motor.h"
 #include "iot01A/pwm.h"
-#include "utils/myprintf.h"
+#include "utils/myprintf.hpp"
 
 void output_init(output_t *output) {
     output->motor_left_ratio = 0.0f;

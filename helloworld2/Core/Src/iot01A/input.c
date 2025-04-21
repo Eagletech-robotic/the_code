@@ -15,7 +15,7 @@
 #include "iot01A/sensors.h"
 #include "robotic/angle.h"
 #include "robotic/um7.h"
-#include "utils/myprintf.h"
+#include "utils/myprintf.hpp"
 
 extern TIM_HandleTypeDef htim1;  //
 extern TIM_HandleTypeDef htim2;  // PWM1 et PWM2

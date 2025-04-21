@@ -5,7 +5,7 @@
  *      Author: nboulay
  */
 
-#include "eaglesteward/pelle.h"
+#include "eaglesteward/pelle.hpp"
 
 void pelle_off(output_t *output) { output->servo_pelle_ratio = 0.0f; }
 void pelle_in(output_t *output) { output->servo_pelle_ratio = 0.05f; }

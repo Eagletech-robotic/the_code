@@ -15,7 +15,7 @@ if(NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
         ${UTILS_SOURCES}
     )
 
@@ -26,10 +26,10 @@ endif()
 # Simulator connector (WASM binary)
 if(EMSCRIPTEN)
     add_executable(simulator_connector
-        ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/top_driver.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/top_driver.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
         ${UTILS_SOURCES}
     )
 
@@ -45,7 +45,14 @@ if(EMSCRIPTEN)
     # Ensure we're only generating a .wasm file, not .js files
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 
-    # Set flags on the target directly
-    target_compile_options(simulator_connector PRIVATE "-o2" "-g" "-s" "ASSERTIONS=1")
-    target_link_options(simulator_connector PRIVATE "-o2" "-g" "-s" "ASSERTIONS=1")
+    # Comiler flags
+    target_compile_options(simulator_connector PRIVATE "-O2" "-g")
+
+    # Linker flags
+    target_link_options(simulator_connector PRIVATE 
+        "-O2" 
+        "-g" 
+        "-sASSERTIONS=1" 
+        "-sEXPORTED_FUNCTIONS=['_exported_top_init','_exported_top_step','_create_input','_create_output']"
+    )
 endif()

@@ -9,13 +9,13 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "eaglesteward/pelle.h"
-#include "eaglesteward/state.h"
+#include "eaglesteward/pelle.hpp"
+#include "eaglesteward/state.hpp"
 #include "iot01A/top_driver.h"
 #include "utils/constants.hpp"
 #include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
-#include "utils/myprintf.h"
+#include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
 
 float potential_field[P_FIELD_W][P_FIELD_H]{};

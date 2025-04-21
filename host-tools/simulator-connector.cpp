@@ -1,9 +1,12 @@
 #include <emscripten/emscripten.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "iot01A/top_driver.h"
 
 config_t config;
+
+extern "C" {
 
 EMSCRIPTEN_KEEPALIVE void exported_top_init() { top_init(&config); }
 
@@ -35,3 +38,5 @@ EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output) {
 }
 
 int main() { return 0; }
+
+} // extern "C"

@@ -1,10 +1,3 @@
-/*
- * pelle.h
- *
- *  Created on: Apr 12, 2025
- *      Author: nboulay
- */
-
 #pragma once
 
 #include "iot01A/output.h"

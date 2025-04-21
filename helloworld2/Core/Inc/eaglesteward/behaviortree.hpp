@@ -1,12 +1,12 @@
 /*
- * behaviortree.h
+ * behaviortree.hpp
  *
  *  Created on: Apr 8, 2025
  *      Author: nboulay
  */
 #pragma once
 
-#include "eaglesteward/state.h"
+#include "eaglesteward/state.hpp"
 #include "iot01A/input.h"
 #include "iot01A/output.h"
 #include <functional>

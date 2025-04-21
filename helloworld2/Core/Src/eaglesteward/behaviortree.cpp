@@ -8,7 +8,7 @@
 #include <tuple>
 #include <type_traits>
 // #include <iostream> // code gros, ralenti le download sur cible
-#include "eaglesteward/behaviortree.h"
+#include "eaglesteward/behaviortree.hpp"
 #include <stdio.h>
 
 Status behavior_as_function(input_t *, output_t *, state_t *) {
