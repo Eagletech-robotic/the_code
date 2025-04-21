@@ -97,14 +97,15 @@ std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_
     return {*closest, closest_distance};
 }
 
-void move_to_target(const input_t *input, output_t *output, const float target_x_mm, const float target_y_mm) {
-    const float delta_x = input->x_mm - target_x_mm;
-    const float delta_y = input->y_mm - target_y_mm;
+void move_to_target(output_t *output, const float x_mm, const float y_mm, const float orientation_degrees,
+                    const float target_x_mm, const float target_y_mm) {
+    const float delta_x = x_mm - target_x_mm;
+    const float delta_y = y_mm - target_y_mm;
     auto target_angle_deg = std::atan2(delta_x, delta_y) / M_PI * 180;
     if (target_angle_deg < 0)
         target_angle_deg += 180;
 
-    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - input->orientation_degrees, 360));
+    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - orientation_degrees, 360));
     if (angle_diff >= 180)
         angle_diff -= 360;
 
@@ -150,20 +151,20 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     }
 
     update_position_and_orientation(&thibault_state, input, config);
-    input->x_mm = INITIAL_X_MM - thibault_state.y_m * 1000;
-    input->y_mm = INITIAL_Y_MM - thibault_state.x_m * 1000;
-    input->orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
+    const float x_mm = INITIAL_X_MM - thibault_state.y_m * 1000;
+    const float y_mm = INITIAL_Y_MM - thibault_state.x_m * 1000;
+    const float orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
 
-    int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
-    int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
+    int const index_x = std::floor(x_mm / 10.0f / SQUARE_SIZE_CM);
+    int const index_y = std::floor(y_mm / 10.0f / SQUARE_SIZE_CM);
 
     if (index_x >= P_FIELD_W || index_y >= P_FIELD_H) {
         // throw std::out_of_range("Coordinates out of range");
     }
 
-    myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
+    myprintf("X %.3f %.3f %.3f\n", x_mm, y_mm, orientation_degrees);
 
-    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(input->x_mm, input->y_mm);
+    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x_mm, y_mm);
 
     if (closest_bleacher_distance <= STOP_DISTANCE_MM) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
@@ -173,7 +174,7 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
         return;
     }
     if (closest_bleacher_distance < 45.0f) {
-        move_to_target(input, output, static_cast<float>(closest_bleacher.x) * 10.0f,
+        move_to_target(output, x_mm, y_mm, orientation_degrees, static_cast<float>(closest_bleacher.x) * 10.0f,
                        static_cast<float>(closest_bleacher.y) * 10.0f);
         return;
     }
@@ -194,7 +195,7 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     } else {
         const float target_angle_deg = std::atan2(-dx, dy) / static_cast<float>(M_PI) * 180.0f;
 
-        auto angle_diff = target_angle_deg - input->orientation_degrees;
+        auto angle_diff = target_angle_deg - orientation_degrees;
         if (angle_diff <= -180)
             angle_diff += 360;
         else if (angle_diff >= 180)
@@ -221,6 +222,6 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     }
 
     myprintf("Left motor ratio: %f, Right motor ratio: %f\n", output->motor_left_ratio, output->motor_right_ratio);
-    myprintf("Current orientation: %f\n", input->orientation_degrees);
+    myprintf("Current orientation: %f\n", orientation_degrees);
     myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
 }
