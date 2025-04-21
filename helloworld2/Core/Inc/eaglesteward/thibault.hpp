@@ -1,7 +1,8 @@
 #pragma once
 
-#include "iot01A/top_driver.h"
-#include "eaglesteward/state.h"
+#include "iot01A/config.h"
+#include "iot01A/input.h"
+#include "iot01A/output.h"
 
 #ifdef __cplusplus
 extern "C" {
