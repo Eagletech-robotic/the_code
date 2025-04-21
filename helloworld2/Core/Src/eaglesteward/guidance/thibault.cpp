@@ -9,20 +9,26 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "eaglesteward/autopilot.hpp"
+#include "eaglesteward/constante.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
-#include "iot01A/top_driver.h"
+#include "robotic/angle.h"
+#include "robotic/fusion_odo_imu.h"
 #include "utils/constants.hpp"
-#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
 
-float potential_field[P_FIELD_W][P_FIELD_H]{};
+state_t thibault_state;
 
+float potential_field[P_FIELD_W][P_FIELD_H]{};
 SizedArray<Bleacher, 10> bleachers;
 
-void add_walls() {
+void init_potential_field() {
+    // -----------
+    // Walls influence
+    // -----------
     constexpr int wall_influence_size = 35 / SQUARE_SIZE_CM;
     constexpr int max_potential = 35;
 
@@ -45,14 +51,13 @@ void add_walls() {
             }
         }
     }
-}
 
-void thibault_top_init(config_t *config) {
+    // -----------
+    // Bleachers influence
+    // -----------
     bleachers = {
         Bleacher(270, 70, 0),
     };
-
-    add_walls();
 
     for (auto &bleacher : bleachers) {
         auto &field = bleacher.potential_field();
@@ -71,13 +76,20 @@ void thibault_top_init(config_t *config) {
     }
 }
 
+void thibault_top_init(config_t *config) {
+    config->time_step_ms = 4;
+    printf("Cycle : %i ms\r\n", config->time_step_ms);
+    autopilot_init(config, &thibault_state);
+    init_potential_field();
+}
+
 std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_mm) {
     Bleacher *closest = &bleachers[0];
     float closest_distance = 9999;
     for (const auto bleacher : bleachers) {
-        float delta_x = std::abs(x_mm - bleacher.x * 10);
-        float delta_y = std::abs(y_mm - bleacher.y * 10);
-        float distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
+        const float delta_x = std::abs(x_mm - static_cast<float>(bleacher.x) * 10);
+        const float delta_y = std::abs(y_mm - static_cast<float>(bleacher.y) * 10);
+        const float distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
         if (distance < closest_distance)
             closest_distance = distance, *closest = bleacher;
     }
@@ -110,14 +122,38 @@ void move_to_target(const input_t *input, output_t *output, const float target_x
     }
 }
 
-/*void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
-    input->x_mm = -state->y_m * 1000 + 1225;
-    input->y_mm = -state->x_m * 1000 + 1775;
-    input->orientation_degrees = -state->theta_deg;
-    thibault_top_step(input, state, output);
-}*/
+void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
+    float delta_x_m, delta_y_m, delta_theta_deg;
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
+                        input->encoder_right, static_cast<float>(config->time_step_ms) / 1000.0f, state->theta_deg,
+                        &delta_x_m, &delta_y_m, &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M,
+                        WHEEL_BASE_M);
+    state->x_m += delta_x_m;
+    state->y_m += delta_y_m;
+    state->theta_deg += delta_theta_deg;
+    state->theta_deg = angle_normalize_deg(state->theta_deg);
+    print_state(state);
+}
+
+constexpr float INITIAL_ORIENTATION_DEGREES = 0.0f;
+constexpr int INITIAL_X_MM = 1225;
+constexpr int INITIAL_Y_MM = 1775;
+constexpr float VITESSE_RATIO_MAX = 1.2f;
+constexpr float STOP_DISTANCE_MM = 275;
 
 void thibault_top_step(config_t *config, input_t *input, output_t *output) {
+    if (!input->is_jack_gone) {
+        output->motor_left_ratio = 0;
+        output->motor_right_ratio = 0;
+        myprintf("STOPPING because jack has not been removed\n");
+        return;
+    }
+
+    update_position_and_orientation(&thibault_state, input, config);
+    input->x_mm = INITIAL_X_MM - thibault_state.y_m * 1000;
+    input->y_mm = INITIAL_Y_MM - thibault_state.x_m * 1000;
+    input->orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
+
     int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
     int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
 
@@ -125,16 +161,11 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
         // throw std::out_of_range("Coordinates out of range");
     }
 
-    constexpr float VITESSE_RATIO_MAX = 1.2f;
-    constexpr float STOP_DISTANCE = 275;
-
     myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
 
-    std::pair<Bleacher, float> closest_result = get_closest_bleacher(input->x_mm, input->y_mm);
-    const Bleacher &closest_bleacher = closest_result.first;
-    const float closest_bleacher_distance = closest_result.second;
+    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(input->x_mm, input->y_mm);
 
-    if (closest_bleacher_distance <= STOP_DISTANCE) {
+    if (closest_bleacher_distance <= STOP_DISTANCE_MM) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
         pelle_out(output);
         output->motor_left_ratio = 0.0f;
@@ -142,12 +173,13 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
         return;
     }
     if (closest_bleacher_distance < 45.0f) {
-        move_to_target(input, output, closest_bleacher.x * 10, closest_bleacher.y * 10);
+        move_to_target(input, output, static_cast<float>(closest_bleacher.x) * 10.0f,
+                       static_cast<float>(closest_bleacher.y) * 10.0f);
         return;
     }
 
-    const int LOOKAHEAD_DISTANCE = 5;
-    const float SLOPE_THRESHOLD = 0.05f;
+    constexpr int LOOKAHEAD_DISTANCE = 5;
+    constexpr float SLOPE_THRESHOLD = 0.05f;
     const float dx =
         potential_field[index_x + LOOKAHEAD_DISTANCE][index_y] - potential_field[index_x - LOOKAHEAD_DISTANCE][index_y];
     const float dy =
@@ -160,7 +192,7 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
 
         myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
     } else {
-        const float target_angle_deg = std::atan2(-dx, dy) / M_PI * 180.0f;
+        const float target_angle_deg = std::atan2(-dx, dy) / static_cast<float>(M_PI) * 180.0f;
 
         auto angle_diff = target_angle_deg - input->orientation_degrees;
         if (angle_diff <= -180)

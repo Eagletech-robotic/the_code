@@ -31,21 +31,21 @@ float clamp(float val, float Min, float Max) {
     return ret;
 }
 
-void pid_print(pid_t *pid) {
+void pid_print(PID_t *pid) {
     // printf("%f %f %f\r\n", pid->kp, pid->ki , pid->kd);
     printf("%f : %f (%f)\r\n", pid->Setpoint, pid->Output, pid->Input);
     printf(" %f %f %f\r\n", pid->ITerm, pid->lastInput, pid->Input);
     // printf(" [%f %f] %i %i\r\n", pid->outMin, pid->outMax,pid->isModeAuto, pid->isControllerDirectionDirect);
 }
 
-void Initialize(pid_t *pid) {
+void Initialize(PID_t *pid) {
     pid->lastInput = pid->Input;
     pid->ITerm = pid->Output;
     pid->ITerm = clamp(pid->ITerm, pid->outMin, pid->outMax);
 }
 
-void pid_init(pid_t *pid) {
-    pid_t pid_ = {0};
+void pid_init(PID_t *pid) {
+    PID_t pid_ = {0};
     *pid = pid_;
     pid->SampleTime_hz = 1000;
     pid->isModeAuto = 1;
@@ -53,9 +53,9 @@ void pid_init(pid_t *pid) {
     Initialize(pid);
 }
 
-void pid_command(pid_t *pid, float setpoint) { pid->Setpoint = setpoint; }
+void pid_command(PID_t *pid, float setpoint) { pid->Setpoint = setpoint; }
 
-float pid_compute(pid_t *pid, float input) {
+float pid_compute(PID_t *pid, float input) {
 
     if (!pid->isModeAuto)
         return 0.0; // attention, cette valeur n'a peut être aucun sens
@@ -80,13 +80,13 @@ float pid_compute(pid_t *pid, float input) {
     return pid->Output;
 }
 
-float pid_(pid_t *pid, float cmd, float input) {
+float pid_(PID_t *pid, float cmd, float input) {
     pid_command(pid, cmd);
     float regul = pid_compute(pid, input);
     return regul;
 }
 
-// void Compute(pid_t *pid)
+// void Compute(PID_t *pid)
 //{
 //    if(!pid->inAuto) return;
 //    unsigned long now = millis();
@@ -100,7 +100,7 @@ float pid_(pid_t *pid, float cmd, float input) {
 //    }
 // }
 
-void pid_tune(pid_t *pid, float Kp, float Ki, float Kd) {
+void pid_tune(PID_t *pid, float Kp, float Ki, float Kd) {
     if (Kp < 0 || Ki < 0 || Kd < 0)
         return;
 
@@ -119,7 +119,7 @@ void pid_tune(pid_t *pid, float Kp, float Ki, float Kd) {
     pid->kd = kd;
 }
 
-void pid_frequency(pid_t *pid, int f) {
+void pid_frequency(PID_t *pid, int f) {
     if (f > 0) {
         float ratio = (float)f / (float)pid->SampleTime_hz;
         pid->ki *= ratio;
@@ -128,7 +128,7 @@ void pid_frequency(pid_t *pid, int f) {
     }
 }
 
-void pid_limits(pid_t *pid, float Min, float Max) {
+void pid_limits(PID_t *pid, float Min, float Max) {
     if (Min > Max)
         return;
     pid->outMin = Min;
@@ -137,21 +137,21 @@ void pid_limits(pid_t *pid, float Min, float Max) {
     pid->ITerm = clamp(pid->ITerm, Min, Max);
 }
 
-void pid_mode(pid_t *pid, int Mode) {
+void pid_mode(PID_t *pid, int Mode) {
     if (Mode) { /*we just went from manual to auto*/
         Initialize(pid);
     }
     pid->isModeAuto = Mode;
 }
 
-void pid_stop(pid_t *pid) { pid_mode(pid, 0); }
+void pid_stop(PID_t *pid) { pid_mode(pid, 0); }
 
-void pid_start(pid_t *pid) { pid_mode(pid, 1); }
+void pid_start(PID_t *pid) { pid_mode(pid, 1); }
 
-void pid_SetControllerDirection(pid_t *pid, int Direction) { pid->isControllerDirectionDirect = Direction; }
+void pid_SetControllerDirection(PID_t *pid, int Direction) { pid->isControllerDirectionDirect = Direction; }
 
 int pid_test() {
-    pid_t pid;
+    PID_t pid;
 
     pid_init(&pid);
     pid_tune(&pid, 1.0, 1.0, 1.0); // valeur bien trop grande
