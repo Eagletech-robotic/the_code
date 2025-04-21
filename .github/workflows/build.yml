@@ -26,13 +26,3 @@ jobs:
       - name: Run build
         id: build_run
         run: ./build.sh --all
-
-      - name: Verify build succeeded
-        if: steps.build_run.outcome == 'success'
-        run: echo "Build completed successfully."
-
-      - name: Exit if build failed
-        if: steps.build_run.outcome != 'success'
-        run: |
-          echo "Error: Build failed! Check build logs."
-          exit 1
