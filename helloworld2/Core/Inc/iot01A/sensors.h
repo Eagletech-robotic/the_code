@@ -6,7 +6,6 @@
  *      Author: UTPM9
  */
 
-
 #include "main.h"
 
 void init_accelerometer();
@@ -43,5 +42,4 @@ void startToF();
 void getDistance(int *distance);
 
 void init_inertial();
-void getInertial6D(float *accx_, float *accy_, float *accz_,
-		float *gyrox_, float *gyroy_, float *gyroz_);
+void getInertial6D(float *accx_, float *accy_, float *accz_, float *gyrox_, float *gyroy_, float *gyroz_);

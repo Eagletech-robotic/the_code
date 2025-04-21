@@ -1,0 +1,31 @@
+name: check-format
+on: push
+
+jobs:
+  check_format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for git diff to work properly
+        
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          clang-format --version
+        
+      - name: Make build script executable
+        run: chmod +x ./build.sh
+        
+      - name: Check code formatting
+        run: ./build.sh --check-format
+      
+      - name: Show format instructions on failure
+        if: failure()
+        run: |
+          echo "::error::Code formatting check failed!"
+          echo "::error::To fix this locally:"
+          echo "::error::1. Run './build.sh --format'"
+          echo "::error::2. Commit and push the changes" 
