@@ -179,6 +179,7 @@ fi
 
 if [ "$RUN_FORMAT" = true ]; then
     format_code
+    exit 0
 fi
 
 # Build native target
