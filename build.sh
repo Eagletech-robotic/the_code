@@ -38,27 +38,50 @@ format_code() {
     echo "Code formatting complete."
 }
 
-# Check C/C++ code format using clang-format and git diff
+# Check C/C++ code format using clang-format
 check_format() {
     echo "=== Checking code format ==="
     _pre_format_checks
     
-    # Check if we're in a git repository
-    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        echo "Error: Not in a git repository. Format check requires git." >&2
-        exit 1
-    fi
+    TEMP_DIR=$(mktemp -d)
+    CHANGED=0
     
-    echo "Temporarily applying clang-format for check..."
+    FILES_TO_CHECK=$(find ${FORMAT_DIRS} -mindepth 2 -type f \
+        \( -iname '*.c' -o -iname '*.cpp' -o -iname '*.h' -o -iname '*.hpp' \))
+    
+    echo "Checking formatting of $(echo "$FILES_TO_CHECK" | wc -l) files..."
+    
+    for file in $FILES_TO_CHECK; do
+        rel_path=${file#*/}
+        backup_dir="$TEMP_DIR/$(dirname "$rel_path")"
+        mkdir -p "$backup_dir"
+        cp "$file" "$backup_dir/$(basename "$file")"
+    done
+    
+    echo "Temporarily applying clang-format..."
     _run_clang_format
-
+    
     echo "Checking for formatting changes..."
-    if ! git diff --quiet -- ${FORMAT_DIRS}; then
+    for file in $FILES_TO_CHECK; do
+        rel_path=${file#*/}
+        original="$TEMP_DIR/$rel_path"
+        
+        if ! diff -q "$original" "$file" >/dev/null 2>&1; then
+            if [ $CHANGED -eq 0 ]; then
+                echo "The following files need formatting:"
+                CHANGED=1
+            fi
+            echo "  - $file"
+            diff -u "$original" "$file" | head -n 50
+            cp "$original" "$file"
+        fi
+    done
+    
+    rm -rf "$TEMP_DIR"
+    
+    if [ $CHANGED -eq 1 ]; then
         echo "Error: Code formatting check failed." >&2
-        echo "The following changes are needed:" >&2
-        git --no-pager diff --color=always -- ${FORMAT_DIRS}
         echo "To fix: Run './build.sh --format' and commit the changes." >&2
-        git checkout -- ${FORMAT_DIRS}
         exit 1
     else
         echo "Code format check passed."
@@ -68,12 +91,12 @@ check_format() {
 
 # Parse arguments
 TARGET="all"
-RUN_FORMAT=false # Flag for formatting
-CHECK_FORMAT=false # Flag for checking format
+RUN_FORMAT=false
+CHECK_FORMAT=false
 TARGET_NATIVE=false
 TARGET_WASM=false
 TARGET_STM32=false
-BUILD_TYPE="Debug" # Default to Debug to match IDE log
+BUILD_TYPE="Debug"
 
 print_usage() {
     echo "Usage: $0 [OPTIONS]"
@@ -101,7 +124,7 @@ fi
 # Parse command line arguments
 for arg in "$@"; do
     case $arg in
-        --native) # Explicitly request native
+        --native)
             TARGET_NATIVE=true
             ;;
         --wasm)
@@ -115,17 +138,17 @@ for arg in "$@"; do
         --clean)
             CLEAN=true
             ;;
-        --format) # Add format flag
+        --format)
             RUN_FORMAT=true
             ;;
-        --check-format) # Add check-format flag
+        --check-format)
             CHECK_FORMAT=true
             ;;
         --debug)
             BUILD_TYPE="Debug"
             ;;
         --release)
-            BUILD_TYPE="Release" # Allow overriding to Release
+            BUILD_TYPE="Release"
             ;;
         --stm32)
             TARGET_STM32=true
@@ -151,14 +174,11 @@ fi
 
 # Handle formatting or checking first, as they might exit
 if [ "$CHECK_FORMAT" = true ]; then
-    check_format # This function will exit the script
+    check_format
 fi
 
 if [ "$RUN_FORMAT" = true ]; then
-    format_code 
-    # Decide if --format should *only* format or also build.
-    # Current behavior: format and then proceed to build if other targets are specified.
-    # If you want --format to *only* format, add 'exit 0' here.
+    format_code
 fi
 
 # Build native target
@@ -173,7 +193,7 @@ build_native() {
     mkdir -p build
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-    make -j$(nproc) # Build all native targets defined
+    make -j$(nproc)
     cd ..
     
     echo "Native build complete."
@@ -191,7 +211,7 @@ build_wasm() {
     mkdir -p build-wasm
     cd build-wasm
     emcmake cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-    emmake make -j$(nproc) # Build all WASM targets defined
+    emmake make -j$(nproc)
     cd ..
     
     echo "WebAssembly build complete."
