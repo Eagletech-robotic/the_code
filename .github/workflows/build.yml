@@ -8,11 +8,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache and install apt dependencies
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
-          version: 1.0
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
 
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v14
