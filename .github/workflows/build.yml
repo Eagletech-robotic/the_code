@@ -20,7 +20,7 @@ jobs:
           version: 1.0
 
       - name: Setup Emscripten SDK
-        uses: emscripten-core/setup-emsdk@v12
+        uses: emscripten-core/setup-emsdk@v2
         with:
           version: 4.0.7
           actions-cache-folder: 'emsdk-cache'
