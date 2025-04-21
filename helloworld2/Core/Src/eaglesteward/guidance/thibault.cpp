@@ -47,15 +47,9 @@ void add_walls() {
     }
 }
 
-extern "C" {
-
 void thibault_top_init(config_t *config) {
     bleachers = {
-        Bleacher(293, 67, 0), /*
-Bleacher(82, 27, 0),  Bleacher(217, 27, 0),  Bleacher(222, 175, 0),
-Bleacher(77, 175, 0),  Bleacher(190, 105, 0)},
-Bleacher(292, 67, 0),  Bleacher(292, 160, 0),
-Bleacher(7, 160, 0),*/
+        Bleacher(270, 70, 0),
     };
 
     add_walls();
@@ -76,8 +70,6 @@ Bleacher(7, 160, 0),*/
         }
     }
 }
-
-} // extern "C"
 
 std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_mm) {
     Bleacher *closest = &bleachers[0];
@@ -117,8 +109,6 @@ void move_to_target(const input_t *input, output_t *output, const float target_x
         output->motor_right_ratio = 0.5f - angle_diff / 180.0f;
     }
 }
-
-extern "C" {
 
 /*void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
     input->x_mm = -state->y_m * 1000 + 1225;
@@ -202,5 +192,3 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     myprintf("Current orientation: %f\n", input->orientation_degrees);
     myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
 }
-
-} // extern "C"
