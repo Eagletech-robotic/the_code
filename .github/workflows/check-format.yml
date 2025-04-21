@@ -1,4 +1,4 @@
-name: check-format
+name: CLang Formatting
 on: push
 
 jobs:
