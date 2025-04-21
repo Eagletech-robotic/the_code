@@ -12,13 +12,16 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi
-          version: 1.1
+          version: 1.0
 
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: 4.0.7
           actions-cache-folder: 'emsdk-cache'
+
+      - name: Clean previous build directories that might have been cached from previous runs
+        run: rm -rf build build-wasm build-stm32
 
       - name: Make build script executable
         run: chmod +x ./build.sh
