@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache and install apt dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi
+          version: 1.0
+
+      - name: Setup Emscripten SDK
+        uses: emscripten-core/setup-emsdk@v12
+        with:
+          version: 4.0.7
+          actions-cache-folder: 'emsdk-cache'
+
+      - name: Make build script executable
+        run: chmod +x ./build.sh
+
+      - name: Run build
+        id: build_run
+        run: ./build.sh --all
+
+      - name: Verify build succeeded
+        if: steps.build_run.outcome == 'success'
+        run: echo "Build completed successfully."
+
+      - name: Exit if build failed
+        if: steps.build_run.outcome != 'success'
+        run: |
+          echo "Error: Build failed! Check build logs."
+          exit 1
