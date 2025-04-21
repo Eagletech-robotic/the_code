@@ -37,6 +37,6 @@ EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output) {
     top_step(&config, input, output);
 }
 
-int main() { return 0; }
-
 } // extern "C"
+
+int main() { return 0; }

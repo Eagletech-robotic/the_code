@@ -4,9 +4,16 @@ project(the_code LANGUAGES C CXX)
 # Set C/C++ standard
 set(CMAKE_CXX_STANDARD 20)
 
-# Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -O3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -O3")
+# Common compiler flags
+set(COMMON_FLAGS "-Wall -Wextra -Wshadow -O3 -Wno-unused-parameter -Wno-missing-field-initializers")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
+
+# GCC-specific compiler flags
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-volatile")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-volatile")
+endif()
 
 # Include directories
 include_directories(helloworld2/Core/Inc)

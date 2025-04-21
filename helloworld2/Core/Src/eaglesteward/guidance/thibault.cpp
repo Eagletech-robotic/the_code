@@ -62,8 +62,8 @@ Bleacher(7, 160, 0),*/
 
     for (auto &bleacher : bleachers) {
         auto &field = bleacher.potential_field();
-        for (int x = 0; x < field.size(); x++) {
-            for (int y = 0; y < field.size(); y++) {
+        for (int x = 0; static_cast<decltype(field.size())>(x) < field.size(); x++) {
+            for (int y = 0; static_cast<decltype(field.size())>(y) < field.size(); y++) {
                 int const x_index = x + bleacher.x / SQUARE_SIZE_CM - static_cast<int>(field.size()) / 2;
                 int const y_index = y + bleacher.y / SQUARE_SIZE_CM - static_cast<int>(field[0].size()) / 2;
 

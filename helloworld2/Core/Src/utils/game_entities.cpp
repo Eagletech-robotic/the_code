@@ -12,11 +12,11 @@ Bleacher::potential_field() {
     constexpr float center_x = size / 2.0f;
     constexpr float center_y = size / 2.0f;
 
-    for (int x = 0; x < size; x++) {
-        for (int y = 0; y < size; y++) {
-            float dx = std::abs(static_cast<float>(x) - center_x);
-            float dy = std::abs(static_cast<float>(y) - center_y);
-            field[x][y] = potential_function(dx, dy);
+    for (int loop_x = 0; loop_x < size; loop_x++) {
+        for (int loop_y = 0; loop_y < size; loop_y++) {
+            float dx = std::abs(static_cast<float>(loop_x) - center_x);
+            float dy = std::abs(static_cast<float>(loop_y) - center_y);
+            field[loop_x][loop_y] = potential_function(dx, dy);
         }
     }
 

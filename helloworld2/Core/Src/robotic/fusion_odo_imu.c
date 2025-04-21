@@ -62,14 +62,14 @@ void fusion_odo_imu_fuse(float ax_imu_g, float ay_imu_g, float delta_yaw_imu_deg
     float dist_avg_m = 0.5f * (dist_left_m + dist_right_m);
 
     //--------------------------------------------------------------------------
-    // 2) Variation d’angle calculée par l’odométrie (en degrés)
+    // 2) Variation d'angle calculée par l'odométrie (en degrés)
     //--------------------------------------------------------------------------
     // Δθ (radians) = (dist_right_m - dist_left_m) / wheel_base_m
     // => converti ensuite en degrés
     float delta_theta_odom_deg = ((dist_right_m - dist_left_m) / wheel_base_m) * (180.0f / (float)M_PI);
 
     //--------------------------------------------------------------------------
-    // 3) Variation d’angle IMU (en degrés) fournie directement : delta_yaw_imu_deg
+    // 3) Variation d'angle IMU (en degrés) fournie directement : delta_yaw_imu_deg
     //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
@@ -177,14 +177,14 @@ void fusion_odo_imu_fuse(float ax_imu_g, float ay_imu_g, float delta_yaw_imu_deg
 //    float dist_avg_m   = 0.5f * (dist_left_m + dist_right_m);
 //
 //    //--------------------------------------------------------------------------
-//    // 2) Variation d’angle calculée par l’odométrie (en degrés)
+//    // 2) Variation d'angle calculée par l'odométrie (en degrés)
 //    //--------------------------------------------------------------------------
 //    // Δθ (radians) = (dist_right_m - dist_left_m) / wheel_base_m
 //    // => converti ensuite en degrés
 //    float delta_theta_odom_deg = ((dist_right_m - dist_left_m) / wheel_base_m) * (180.0f / (float)M_PI);
 //
 //    //--------------------------------------------------------------------------
-//    // 3) Variation d’angle mesurée par l'IMU (en degrés)
+//    // 3) Variation d'angle mesurée par l'IMU (en degrés)
 //    //--------------------------------------------------------------------------
 //    float delta_theta_imu_deg = yaw_imu_deg - fusion_odo_imu->previous_float_yaw_imu_deg;
 //

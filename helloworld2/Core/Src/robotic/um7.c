@@ -90,12 +90,11 @@ union combine {
 };
 
 float read_register_as_float(int firstByte) { // For one register as an IEEE floatpoint
-    floatval temp;
-    temp.bytes[3] = data[(firstByte)];
-    temp.bytes[2] = data[(firstByte + 1)];
-    temp.bytes[1] = data[(firstByte + 2)];
-    temp.bytes[0] = data[(firstByte + 3)];
-    return temp.val;
+    floatval local_temp;
+    for (int i = 0; i < 4; i++) {
+        local_temp.bytes[i] = data[(firstByte + i)];
+    }
+    return local_temp.val;
 }
 
 void um7_save() {
@@ -364,84 +363,84 @@ void um7_get_pos(um7_t *um7) {
 void um7_print(um7_t *um7) { printf("I %f  %.2f %.2f\n", um7->yaw, um7->accel_x, um7->accel_y); }
 
 void um7_set_all_processed_rate(UART_HandleTypeDef *huart, uint8_t rate) {
-    uint8_t config_buffer[12];
-    config_buffer[0] = 's';
-    config_buffer[1] = 'n';
-    config_buffer[2] = 'p';
-    config_buffer[3] = 0x80;            // PT byte = 1000 0000.
-    config_buffer[4] = CREG_COM_RATES4; // address
+    uint8_t local_config_buffer[12];
+    local_config_buffer[0] = 's';
+    local_config_buffer[1] = 'n';
+    local_config_buffer[2] = 'p';
+    local_config_buffer[3] = 0x80;            // PT byte = 1000 0000.
+    local_config_buffer[4] = CREG_COM_RATES4; // address
 
-    config_buffer[5] = 0;    // B3 Reserved
-    config_buffer[6] = 0;    // B2 Reserved
-    config_buffer[7] = 0;    // B1 Reserved
-    config_buffer[8] = rate; // B0 All Processed rate
+    local_config_buffer[5] = 0;    // B3 Reserved
+    local_config_buffer[6] = 0;    // B2 Reserved
+    local_config_buffer[7] = 0;    // B1 Reserved
+    local_config_buffer[8] = rate; // B0 All Processed rate
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES4 + rate;
 
     // Parsing checksumsum
-    config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-    config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
-    HAL_UART_Transmit(huart, config_buffer, 11, 0);
+    local_config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+    local_config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
+    HAL_UART_Transmit(huart, local_config_buffer, 11, 0);
     // serial_port->write(config_buffer, 11);
 }
 
 void um7_set_position_rate(UART_HandleTypeDef *huart, uint8_t rate) {
-    uint8_t config_buffer[12];
-    config_buffer[0] = 's';
-    config_buffer[1] = 'n';
-    config_buffer[2] = 'p';
-    config_buffer[3] = 0x80;            // PT byte = 1000 0000.
-    config_buffer[4] = CREG_COM_RATES5; // address
+    uint8_t local_config_buffer[12];
+    local_config_buffer[0] = 's';
+    local_config_buffer[1] = 'n';
+    local_config_buffer[2] = 'p';
+    local_config_buffer[3] = 0x80;            // PT byte = 1000 0000.
+    local_config_buffer[4] = CREG_COM_RATES5; // address
 
-    config_buffer[5] = 0;    // B3 Quaternion rate
-    config_buffer[6] = rate; // B2 Euler rate
-    config_buffer[7] = 0;    // B1 Position rate
-    config_buffer[8] = 0;    // B0 Velocity rate
+    local_config_buffer[5] = 0;    // B3 Quaternion rate
+    local_config_buffer[6] = rate; // B2 Euler rate
+    local_config_buffer[7] = 0;    // B1 Position rate
+    local_config_buffer[8] = 0;    // B0 Velocity rate
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES5 + rate;
 
     // Parsing checksumsum
-    config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-    config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
-    HAL_UART_Transmit(huart, config_buffer, 11, 0);
+    local_config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+    local_config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
+    HAL_UART_Transmit(huart, local_config_buffer, 11, 0);
     // serial_port->write(config_buffer, 11);
 }
 
 void um7_set_pose_rate(UART_HandleTypeDef *huart, uint8_t rate) {
-    uint8_t config_buffer[12];
-    config_buffer[0] = 's';
-    config_buffer[1] = 'n';
-    config_buffer[2] = 'p';
-    config_buffer[3] = 0x80;            // PT byte = 1000 0000.
-    config_buffer[4] = CREG_COM_RATES6; // address
+    uint8_t local_config_buffer[12];
+    local_config_buffer[0] = 's';
+    local_config_buffer[1] = 'n';
+    local_config_buffer[2] = 'p';
+    local_config_buffer[3] = 0x80;            // PT byte = 1000 0000.
+    local_config_buffer[4] = CREG_COM_RATES6; // address
 
-    config_buffer[5] = rate; // B3 Pose rate
-    config_buffer[6] = 0;    // B2 (Reserved, 4b) | (Health rate, 4b)
-    config_buffer[7] = 0;    // B1 Gyro bias rate
-    config_buffer[8] = 0;    // B0 Reserved
+    local_config_buffer[5] = rate; // B3 Pose rate
+    local_config_buffer[6] = 0;    // B2 (Reserved, 4b) | (Health rate, 4b)
+    local_config_buffer[7] = 0;    // B1 Gyro bias rate
+    local_config_buffer[8] = 0;    // B0 Reserved
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_COM_RATES6 + rate;
 
     // Parsing checksumsum
-    config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-    config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
-    HAL_UART_Transmit(huart, config_buffer, 11, 0);
+    local_config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+    local_config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
+    HAL_UART_Transmit(huart, local_config_buffer, 11, 0);
     // serial_port->write(config_buffer, 11);
 }
 
 void um7_set_home_position(UART_HandleTypeDef *huart) {
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;              // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = SET_HOME_POSITION; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;              // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = SET_HOME_POSITION; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + SET_HOME_POSITION;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
 }
 
 /*
@@ -449,72 +448,72 @@ void um7_set_home_position(UART_HandleTypeDef *huart) {
    bias. The UM7 should be kept stationary while the zero operation is underway. retourne ensuite que des zéros !!!
 */
 void um7_zero_gyros(UART_HandleTypeDef *huart) { // Doesn't check for COMMAND_COMPLETE byte, only sends cmd
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;       // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = ZERO_GYROS; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;       // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = ZERO_GYROS; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + ZERO_GYROS;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
 }
 
 /*
         Sets the current yaw heading position as north.
 */
 void um7_set_mag_reference(UART_HandleTypeDef *huart) {
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;              // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = SET_MAG_REFERENCE; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;              // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = SET_MAG_REFERENCE; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + SET_MAG_REFERENCE;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
 
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
 }
 
 /*
         Reboots the UM7 and performs a crude calibration on the accelerometers. Best performed on a flat surface.
 */
 void um7_calibrate_accelerometers(UART_HandleTypeDef *huart) {
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;                     // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = CALIBRATE_ACCELEROMETERS; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;                     // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = CALIBRATE_ACCELEROMETERS; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + CALIBRATE_ACCELEROMETERS;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
 
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
 }
 
 void um7_factory_reset(UART_HandleTypeDef *huart) {
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;             // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = RESET_TO_FACTORY; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;             // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = RESET_TO_FACTORY; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + RESET_TO_FACTORY;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
 
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
     printf("FACTORY RESET UM7"); // default serial_port 0
 }
 
@@ -522,23 +521,23 @@ void um7_factory_reset(UART_HandleTypeDef *huart) {
         Resets the EKF. Extended Kalman Filter (EKF)
 */
 void um7_reset_kalman_filter(UART_HandleTypeDef *huart) {
-    uint8_t cmd_buffer[7];
-    cmd_buffer[0] = 's';
-    cmd_buffer[1] = 'n';
-    cmd_buffer[2] = 'p';
-    cmd_buffer[3] = 0x00;      // PT byte = 0000 0000 for command register
-    cmd_buffer[4] = RESET_EKF; // address
+    uint8_t local_cmd_buffer[7];
+    local_cmd_buffer[0] = 's';
+    local_cmd_buffer[1] = 'n';
+    local_cmd_buffer[2] = 'p';
+    local_cmd_buffer[3] = 0x00;      // PT byte = 0000 0000 for command register
+    local_cmd_buffer[4] = RESET_EKF; // address
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x00 + RESET_EKF;
 
-    cmd_buffer[6] = checksumsum & 0xFF;
-    cmd_buffer[5] = (checksumsum >> 8);
+    local_cmd_buffer[6] = checksumsum & 0xFF;
+    local_cmd_buffer[5] = (checksumsum >> 8);
 
-    HAL_UART_Transmit(huart, cmd_buffer, 7, 0);
+    HAL_UART_Transmit(huart, local_cmd_buffer, 7, 0);
 }
 
 void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q, bool mag) {
-    uint8_t config_buffer[11];
+    uint8_t local_config_buffer[11];
     uint8_t b1 = 0, b0 = 0;
 
     if (pps)
@@ -562,47 +561,47 @@ void um7_set_misc_settings(UART_HandleTypeDef *huart, bool pps, bool zg, bool q,
     if (mag)
         b0 = 00000001;
 
-    config_buffer[0] = 's';
-    config_buffer[1] = 'n';
-    config_buffer[2] = 'p';
-    config_buffer[3] = 0x80;               // PT byte = 1000 0000.
-    config_buffer[4] = CREG_MISC_SETTINGS; // address
+    local_config_buffer[0] = 's';
+    local_config_buffer[1] = 'n';
+    local_config_buffer[2] = 'p';
+    local_config_buffer[3] = 0x80;               // PT byte = 1000 0000.
+    local_config_buffer[4] = CREG_MISC_SETTINGS; // address
 
-    config_buffer[5] = 0;  // B3 Reserved
-    config_buffer[6] = 0;  // B2 Reserved
-    config_buffer[7] = b1; // B1 (Reserved, 7b) | (PPS, 1b)
-    config_buffer[8] = b0; // B0 (Reserved, 5b) | (ZG, 1b) | (Q, 1b) | (MAG, 1b)
+    local_config_buffer[5] = 0;  // B3 Reserved
+    local_config_buffer[6] = 0;  // B2 Reserved
+    local_config_buffer[7] = b1; // B1 (Reserved, 7b) | (PPS, 1b)
+    local_config_buffer[8] = b0; // B0 (Reserved, 5b) | (ZG, 1b) | (Q, 1b) | (MAG, 1b)
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_MISC_SETTINGS + b1 + b0;
 
     // Parsing checksumsum
-    config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-    config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
-    HAL_UART_Transmit(huart, config_buffer, 11, 0);
+    local_config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+    local_config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
+    HAL_UART_Transmit(huart, local_config_buffer, 11, 0);
 }
 
 void um7_set_home_north(UART_HandleTypeDef *huart, float north) {
     combine n = {north};
-    uint8_t config_buffer[11];
+    uint8_t local_config_buffer[11];
 
-    config_buffer[0] = 's';
-    config_buffer[1] = 'n';
-    config_buffer[2] = 'p';
-    config_buffer[3] = 0x80;            // PT byte = 1000 0000.
-    config_buffer[4] = CREG_HOME_NORTH; // address
+    local_config_buffer[0] = 's';
+    local_config_buffer[1] = 'n';
+    local_config_buffer[2] = 'p';
+    local_config_buffer[3] = 0x80;            // PT byte = 1000 0000.
+    local_config_buffer[4] = CREG_HOME_NORTH; // address
 
-    config_buffer[5] = n.b[0]; // B3
-    config_buffer[6] = n.b[1]; // B2
-    config_buffer[7] = n.b[2]; // B1
-    config_buffer[8] = n.b[3]; // B0
+    local_config_buffer[5] = n.b[0]; // B3
+    local_config_buffer[6] = n.b[1]; // B2
+    local_config_buffer[7] = n.b[2]; // B1
+    local_config_buffer[8] = n.b[3]; // B0
 
     uint16_t checksumsum = 's' + 'n' + 'p' + 0x80 + CREG_HOME_NORTH + n.b[0] + n.b[1] + n.b[2] + n.b[3];
 
     // Parsing checksumsum
-    config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
-    config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
+    local_config_buffer[10] = checksumsum & 0xFF; // Checksum LOW byte
+    local_config_buffer[9] = (checksumsum >> 8);  // Checksum HIGH byte
 
-    HAL_UART_Transmit(huart, config_buffer, 11, 0);
+    HAL_UART_Transmit(huart, local_config_buffer, 11, 0);
 }
 
 // ne marche pas
