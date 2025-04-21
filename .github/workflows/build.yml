@@ -11,8 +11,8 @@ jobs:
       - name: Cache and install apt dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi
-          version: 1.0
+          packages: build-essential cmake gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+          version: 1.1
 
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v14
