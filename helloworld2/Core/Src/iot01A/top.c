@@ -5,25 +5,24 @@
  *      Author: nboulay
  */
 
-// top niveau du code, main.c est remplit de code généré cela permet de séparer
-#include <iot01A/top_driver.h>
-#include "main.h" //generated code
-#include "iot01A/sensors.h"
-#include <stdio.h>
-#include "iot01A/encoder.h"
-#include "iot01A/output.h"
-#include "iot01A/input.h"
-#include "iot01A/config.h"
 #include "iot01A/top.h"
-#include "iot01A/motor.h"
 
-//TODO : to move to input or ouput
+#include <stdio.h>
+
+#include "iot01A/config.h"
+#include "iot01A/input.h"
+#include "iot01A/motor.h"
+#include "iot01A/output.h"
+#include "iot01A/top_driver.h"
+#include "main.h"  // top niveau du code, main.c est remplit de code généré cela permet de séparer
+#include "utils/myprintf.h"
+
+// TODO : to move to input or output
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2
 extern TIM_HandleTypeDef htim3; // encoder 2
 extern TIM_HandleTypeDef htim5; // encoder 1
 extern TIM_HandleTypeDef htim15; // pwm sur la led
-
 
 extern UART_HandleTypeDef huart4; // uart du connector ARD
 extern UART_HandleTypeDef huart1; // uart pour debug par usb
@@ -71,12 +70,12 @@ int old_tick=0;
 int top_is_time_to_start() {
 	int now = HAL_GetTick();
 	int step_ms = config.time_step_ms;
-	if (old_tick+step_ms == now) {
+	if (old_tick + step_ms == now) {
 		old_tick = now;
 		return 1;
-	} else if ((old_tick+step_ms) < now)  {
-		printf("!! %i %i\r\n",now, now - old_tick);
-		old_tick = now;
+	} else if ((old_tick + step_ms) < now)  {
+                myprintf("!! %i %i\r\n", now, now - old_tick);
+                old_tick = now;
 		return 1;
 	}
 

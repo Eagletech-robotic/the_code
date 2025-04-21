@@ -4,23 +4,23 @@
  *  Created on: Nov 3, 2024
  *      Author: nboulay
  */
-#include <stdio.h>
 #include "eaglesteward/nicolas.h"
 
-#include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
-#include "robotic/carre.h"
-
-#include "robotic/pid.h"
 #include <math.h>
-#include "eaglesteward/constante.h"
-#include "robotic/fusion_odo_imu.h"
-#include "eaglesteward/state.h"
-#include "robotic/controller_stanley.h"
+#include <stdio.h>
+
 #include "eaglesteward/behaviortree.h"
-#include "robotic/myprintf.h"
+#include "eaglesteward/constante.h"
 #include "eaglesteward/pelle.h"
+#include "eaglesteward/state.h"
 #include "eaglesteward/thibault.hpp"
+#include "iot01A/top_driver.h"  // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 #include "robotic/angle.h"
+#include "robotic/carre.h"
+#include "robotic/controller_stanley.h"
+#include "robotic/fusion_odo_imu.h"
+#include "robotic/pid.h"
+#include "utils/myprintf.h"
 
 carre_t carre;
 

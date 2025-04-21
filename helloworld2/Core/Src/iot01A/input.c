@@ -5,17 +5,17 @@
  *      Author: nboulay
  */
 
-
 #include "iot01A/input.h"
-#include"iot01A/encoder.h"
-#include "iot01A/sensors.h"
-#include <stdio.h>
+
 #include <inttypes.h>
-#include "iot01A/async_uart.h"
-#include "robotic/um7.h"
-#include "robotic/myprintf.h"
 #include <math.h>
+
+#include "utils/myprintf.h"
+#include "iot01A/async_uart.h"
+#include "iot01A/encoder.h"
+#include "iot01A/sensors.h"
 #include "robotic/angle.h"
+#include "robotic/um7.h"
 
 extern TIM_HandleTypeDef htim1; //
 extern TIM_HandleTypeDef htim2; // PWM1 et PWM2

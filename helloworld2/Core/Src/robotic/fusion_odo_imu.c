@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "robotic/myprintf.h"
+#include "utils/myprintf.h"
 
 /**
  * @brief
@@ -93,7 +93,7 @@ void fusion_odo_imu_fuse(
     	//if (delta_theta_odom_deg != 0.0f || delta_yaw_imu_deg != 0.0f)
     if(delta_yaw_imu_deg != 0.0f)
        {
-    		//printf("§ %f %f\n", delta_theta_odom_deg, delta_yaw_imu_deg);
+    		//myprintf("§ %f %f\n", delta_theta_odom_deg, delta_yaw_imu_deg);
 		}
     // On fournit en sortie la variation d'angle du cycle
     *delta_theta_deg = fused_delta_theta_deg;

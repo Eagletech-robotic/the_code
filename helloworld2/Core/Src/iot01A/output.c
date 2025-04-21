@@ -4,11 +4,14 @@
 //  et de générer les sorties de façon fixe temporrellement à chaque cycle
 
 #include "iot01A/output.h"
-#include "iot01A/motor.h"
+
 #include <stdio.h>
-#include "iot01A/pwm.h"
-#include "robotic/myprintf.h"
+
+#include "utils/myprintf.h"
 #include "iot01A/led.h"
+#include "iot01A/motor.h"
+#include "iot01A/pwm.h"
+
 void output_init(output_t * output){
 	output->motor_left_ratio = 0.0f;
 	output->motor_right_ratio = 0.0f;
