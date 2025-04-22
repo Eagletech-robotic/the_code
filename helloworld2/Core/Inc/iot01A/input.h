@@ -6,7 +6,6 @@
  *      Author: nboulay
  */
 #include <stdint.h>
-// #include "robotic/um7.h" //TODO à virer
 
 typedef struct input_t {
     int is_jack_gone;
@@ -15,19 +14,14 @@ typedef struct input_t {
     float y_mm;                // obsolète
     float orientation_degrees; // obsolète
     float delta_yaw_deg;       // différence avec l'appel précedent de ins.yaw
-    // float gyro[3];
-    // float accelero[3];
-    // float compass[3];
     int32_t encoder_left;
     int32_t encoder_right;
-    // INS
-    // BT
-    // um7_t ins;
     float imu_yaw_deg;
     float imu_accel_x_mss; // vers l'avant
     float imu_accel_y_mss; // vers la gauche
     float imu_accel_z_mss; // vers le haut
     int blue_button;
+    uint32_t ms; // free running counter in ms
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward

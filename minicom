@@ -1,1 +1,1 @@
-minicom -D /dev/ttyACM0
+minicom -D /tmp/ttyBLE

@@ -186,6 +186,7 @@ void nicolas_top_init(config_t *config) {
     carre_init(&carre, config->time_step_ms / 1000.0);
     autopilot_init(config);
     thibault_top_init(config);
+    state_init(&state);
 }
 
 // TODO :
