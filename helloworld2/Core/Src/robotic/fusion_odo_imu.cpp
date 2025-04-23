@@ -5,7 +5,7 @@
  *      Author: nboulay
  */
 
-#include "robotic/fusion_odo_imu.h"
+#include "robotic/fusion_odo_imu.hpp"
 
 // Il s'agit d'un moyen de mélanger les données des odomètres et de la central intertiel (IMU)
 // L'IMU donne une orientation absolue pas trop mauvaise

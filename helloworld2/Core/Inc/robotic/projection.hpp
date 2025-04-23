@@ -1,12 +1,6 @@
 #pragma once
-/*
- * projection.h
- *
- *  Created on: Jan 2, 2025
- *      Author: nboulay
- *
- *      Quelques opérations géométrique en 3D et objet pour manipuler un compa magnétique
- */
+
+// Quelques opérations géométrique en 3D et objet pour manipuler un compa magnétique
 
 void projectOnPlane(const float A[3], const float M[3], float M2D[2]);
 

@@ -9,75 +9,96 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
-#include "iot01A/top_driver.h"
+#include "robotic/angle.hpp"
+#include "robotic/fusion_odo_imu.hpp"
+#include "robotic/robot_constants.hpp"
 #include "utils/constants.hpp"
-#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
 
-float potential_field[P_FIELD_W][P_FIELD_H]{};
+state_t thibault_state;
 
+float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ]{};
 SizedArray<Bleacher, 10> bleachers;
 
-void add_walls() {
-    constexpr int wall_influence_size = 35 / SQUARE_SIZE_CM;
-    constexpr int max_potential = 35;
+void init_potential_field() {
+    // -----------
+    // Walls influence
+    // -----------
+    constexpr float INFLUENCE_DISTANCE = 0.35f;
+    constexpr float MAX_POTENTIAL = 35.0f;
 
-    for (int x = 0; x < P_FIELD_W; x++) {
-        for (int y = 0; y < P_FIELD_H; y++) {
-            if (x < wall_influence_size) {
-                potential_field[x][y] += static_cast<float>(max_potential * (wall_influence_size - x)) /
-                                         static_cast<float>(wall_influence_size);
-            } else if (x >= P_FIELD_W - wall_influence_size) {
-                potential_field[x][y] += static_cast<float>(max_potential * (x - P_FIELD_W + wall_influence_size)) /
-                                         static_cast<float>(wall_influence_size);
+    constexpr int wall_influence_squares = static_cast<int>(INFLUENCE_DISTANCE / SQUARE_SIZE_M);
+    for (int i = 0; i < FIELD_WIDTH_SQ; i++) {
+        for (int j = 0; j < FIELD_HEIGHT_SQ; j++) {
+            if (i < wall_influence_squares) {
+                potential_field[i][j] +=
+                    MAX_POTENTIAL * static_cast<float>(wall_influence_squares - i) / wall_influence_squares;
+            } else if (i >= FIELD_WIDTH_SQ - wall_influence_squares) {
+                potential_field[i][j] += MAX_POTENTIAL *
+                                         static_cast<float>(i - (FIELD_WIDTH_SQ - wall_influence_squares)) /
+                                         wall_influence_squares;
             }
 
-            if (y < wall_influence_size) {
-                potential_field[x][y] += static_cast<float>(max_potential * (wall_influence_size - y)) /
-                                         static_cast<float>(wall_influence_size);
-            } else if (y >= P_FIELD_H - wall_influence_size) {
-                potential_field[x][y] += static_cast<float>(max_potential * (y - P_FIELD_H + wall_influence_size)) /
-                                         static_cast<float>(wall_influence_size);
+            if (j < wall_influence_squares) {
+                potential_field[i][j] +=
+                    MAX_POTENTIAL * static_cast<float>(wall_influence_squares - j) / wall_influence_squares;
+            } else if (j >= FIELD_HEIGHT_SQ - wall_influence_squares) {
+                potential_field[i][j] += MAX_POTENTIAL *
+                                         static_cast<float>(j - (FIELD_HEIGHT_SQ - wall_influence_squares)) /
+                                         wall_influence_squares;
+            }
+        }
+    }
+
+    // -----------
+    // Bleachers influence
+    // -----------
+    bleachers = {
+        Bleacher(1.5f, 1.0f, 0.0f),
+    };
+
+    for (auto &bleacher : bleachers) {
+        auto &field = bleacher.potential_field();
+
+        int const field_width = static_cast<int>(field.size());
+        int const field_height = static_cast<int>(field[0].size());
+
+        int const bleacher_i = static_cast<int>(std::round(bleacher.x / SQUARE_SIZE_M)) - field_width / 2;
+        int const bleacher_j = static_cast<int>(std::round(bleacher.y / SQUARE_SIZE_M)) - field_height / 2;
+
+        for (int field_i = 0; field_i < field_width; field_i++) {
+            for (int field_j = 0; field_j < field_height; field_j++) {
+                int const i = bleacher_i + field_i;
+                int const j = bleacher_j + field_j;
+
+                if (i < 0 || j < 0 || i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ)
+                    continue;
+
+                potential_field[i][j] += field[field_i][field_j];
             }
         }
     }
 }
 
 void thibault_top_init(config_t *config) {
-    bleachers = {
-        Bleacher(270, 70, 0),
-    };
-
-    add_walls();
-
-    for (auto &bleacher : bleachers) {
-        auto &field = bleacher.potential_field();
-        for (int x = 0; static_cast<decltype(field.size())>(x) < field.size(); x++) {
-            for (int y = 0; static_cast<decltype(field.size())>(y) < field.size(); y++) {
-                int const x_index = x + bleacher.x / SQUARE_SIZE_CM - static_cast<int>(field.size()) / 2;
-                int const y_index = y + bleacher.y / SQUARE_SIZE_CM - static_cast<int>(field[0].size()) / 2;
-
-                if (x_index >= P_FIELD_W || y_index >= P_FIELD_H || x_index < 0 || y_index < 0) {
-                    continue;
-                }
-
-                potential_field[x_index][y_index] += field[x][y];
-            }
-        }
-    }
+    config->time_step = 0.004f;
+    printf("cycle : %.0f ms\r\n", config->time_step * 1000.0);
+    motor_init(*config, thibault_state);
+    init_potential_field();
 }
 
-std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_mm) {
+std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     Bleacher *closest = &bleachers[0];
-    float closest_distance = 9999;
+    float closest_distance = 9.999f;
     for (const auto bleacher : bleachers) {
-        float delta_x = std::abs(x_mm - bleacher.x * 10);
-        float delta_y = std::abs(y_mm - bleacher.y * 10);
-        float distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
+        float const delta_x = std::abs(x - bleacher.x);
+        float const delta_y = std::abs(y - bleacher.y);
+        float const distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
         if (distance < closest_distance)
             closest_distance = distance, *closest = bleacher;
     }
@@ -85,73 +106,94 @@ std::pair<Bleacher, float> get_closest_bleacher(const float x_mm, const float y_
     return {*closest, closest_distance};
 }
 
-void move_to_target(const input_t *input, output_t *output, const float target_x_mm, const float target_y_mm) {
-    const float delta_x = input->x_mm - target_x_mm;
-    const float delta_y = input->y_mm - target_y_mm;
+void move_to_target(config_t *config, input_t *input, output_t *output, float const x, float const y,
+                    float const orientation_degrees, float const target_x, float const target_y) {
+    float const delta_x = x - target_x;
+    float const delta_y = y - target_y;
     auto target_angle_deg = std::atan2(delta_x, delta_y) / M_PI * 180;
     if (target_angle_deg < 0)
         target_angle_deg += 180;
 
-    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - input->orientation_degrees, 360));
+    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - orientation_degrees, 360));
     if (angle_diff >= 180)
         angle_diff -= 360;
 
+    float speed_left, speed_right;
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff <= 0) {
-            output->motor_left_ratio = 0.0f;
-            output->motor_right_ratio = 0.5f;
+            speed_left = 0.0f;
+            speed_right = 0.5f;
         } else {
-            output->motor_left_ratio = 0.5f;
-            output->motor_right_ratio = 0.0f;
+            speed_left = 0.5f;
+            speed_right = 0.0f;
         }
     } else {
-        output->motor_left_ratio = 0.5f + angle_diff / 180.0f;
-        output->motor_right_ratio = 0.5f - angle_diff / 180.0f;
+        speed_left = 0.5f + angle_diff / 180.0f;
+        speed_right = 0.5f - angle_diff / 180.0f;
     }
+    motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
+                           output->motor_right_ratio);
 }
 
-/*void thibault_top_step_bridge(input_t* input, const state_t* state, output_t* output) {
-    input->x_mm = -state->y_m * 1000 + 1225;
-    input->y_mm = -state->x_m * 1000 + 1775;
-    input->orientation_degrees = -state->theta_deg;
-    thibault_top_step(input, state, output);
-}*/
+void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
+    float delta_x_m, delta_y_m, delta_theta_deg;
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
+                        input->encoder_right, config->time_step, state->theta_deg, &delta_x_m, &delta_y_m,
+                        &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
+    state->x_m += delta_x_m;
+    state->y_m += delta_y_m;
+    state->theta_deg += delta_theta_deg;
+    state->theta_deg = angle_normalize_deg(state->theta_deg);
+    print_state(state);
+}
+
+constexpr float INITIAL_ORIENTATION_DEGREES = 0.0f;
+constexpr float INITIAL_X = 1.225f;
+constexpr float INITIAL_Y = 1.775f;
 
 void thibault_top_step(config_t *config, input_t *input, output_t *output) {
-    int const index_x = std::floor((input->x_mm / 10.0f) / SQUARE_SIZE_CM);
-    int const index_y = std::floor((input->y_mm / 10.0f) / SQUARE_SIZE_CM);
+    if (!input->is_jack_gone) {
+        output->motor_left_ratio = 0.0f;
+        output->motor_right_ratio = 0.0f;
+        myprintf("STOPPING because jack has not been removed\n");
+        return;
+    }
 
-    if (index_x >= P_FIELD_W || index_y >= P_FIELD_H) {
+    update_position_and_orientation(&thibault_state, input, config);
+    float const x = INITIAL_X - thibault_state.y_m;
+    float const y = INITIAL_Y - thibault_state.x_m;
+    float const orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
+
+    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
+    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+
+    if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
         // throw std::out_of_range("Coordinates out of range");
     }
 
-    constexpr float VITESSE_RATIO_MAX = 1.2f;
-    constexpr float STOP_DISTANCE = 275;
+    myprintf("X %.3f %.3f %.3f\n", x, y, orientation_degrees);
 
-    myprintf("X %.3f %.3f %.3f\n", input->x_mm, input->y_mm, input->orientation_degrees);
+    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
 
-    std::pair<Bleacher, float> closest_result = get_closest_bleacher(input->x_mm, input->y_mm);
-    const Bleacher &closest_bleacher = closest_result.first;
-    const float closest_bleacher_distance = closest_result.second;
-
+    constexpr float STOP_DISTANCE = 0.275f;
+    constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
         pelle_out(output);
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
         return;
-    }
-    if (closest_bleacher_distance < 45.0f) {
-        move_to_target(input, output, closest_bleacher.x * 10, closest_bleacher.y * 10);
+    } else if (closest_bleacher_distance < MOVE_TO_TARGET_DISTANCE) {
+        move_to_target(config, input, output, x, y, orientation_degrees, closest_bleacher.x, closest_bleacher.y);
         return;
     }
 
-    const int LOOKAHEAD_DISTANCE = 5;
-    const float SLOPE_THRESHOLD = 0.05f;
-    const float dx =
-        potential_field[index_x + LOOKAHEAD_DISTANCE][index_y] - potential_field[index_x - LOOKAHEAD_DISTANCE][index_y];
-    const float dy =
-        potential_field[index_x][index_y + LOOKAHEAD_DISTANCE] - potential_field[index_x][index_y - LOOKAHEAD_DISTANCE];
+    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
+    constexpr float SLOPE_THRESHOLD = 0.05f;
+    constexpr float VITESSE_MAX = 1.2f; // m/s
+
+    float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
+    float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         output->motor_left_ratio = 0.0f;
@@ -160,9 +202,9 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
 
         myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
     } else {
-        const float target_angle_deg = std::atan2(-dx, dy) / M_PI * 180.0f;
+        float const target_angle_deg = std::atan2(-dx, dy) / static_cast<float>(M_PI) * 180.0f;
 
-        auto angle_diff = target_angle_deg - input->orientation_degrees;
+        auto angle_diff = target_angle_deg - orientation_degrees;
         if (angle_diff <= -180)
             angle_diff += 360;
         else if (angle_diff >= 180)
@@ -170,18 +212,20 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff <= 0) {
-                output->motor_left_ratio = 0.0f;
-                output->motor_right_ratio = 0.5f;
+                motor_calculate_ratios(*config, thibault_state, *input, 0.0f, 0.5f, output->motor_left_ratio,
+                                       output->motor_right_ratio);
             } else {
-                output->motor_left_ratio = 0.5f;
-                output->motor_right_ratio = 0.0f;
+                motor_calculate_ratios(*config, thibault_state, *input, 0.5f, 0.0f, output->motor_left_ratio,
+                                       output->motor_right_ratio);
             }
         } else {
-            const float right = 0.5f - angle_diff / 180.0f;
-            const float left = 0.5f + angle_diff / 180.0f;
-            const float max = std::max(right, left);
-            output->motor_left_ratio = VITESSE_RATIO_MAX / max * left;
-            output->motor_right_ratio = VITESSE_RATIO_MAX / max * right;
+            float const speed_left = 0.5f + angle_diff / 180.0f;
+            float const speed_right = 0.5f - angle_diff / 180.0f;
+            float const max = std::max(speed_left, speed_right);
+            float const throttled_speed_left = VITESSE_MAX / max * speed_left;
+            float const throttled_speed_right = VITESSE_MAX / max * speed_right;
+            motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
+                                   output->motor_left_ratio, output->motor_right_ratio);
         }
 
         myprintf("Target angle: %f\n", target_angle_deg);
@@ -189,6 +233,6 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     }
 
     myprintf("Left motor ratio: %f, Right motor ratio: %f\n", output->motor_left_ratio, output->motor_right_ratio);
-    myprintf("Current orientation: %f\n", input->orientation_degrees);
-    myprintf("Current potential: %f\n", potential_field[index_x][index_y]);
+    myprintf("Current orientation: %f\n", orientation_degrees);
+    myprintf("Current potential: %f\n", potential_field[i][j]);
 }

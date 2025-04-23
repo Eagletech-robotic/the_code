@@ -10,10 +10,7 @@
 typedef struct input_t {
     int is_jack_gone;
     float tof_m;
-    float x_mm;                // obsolète
-    float y_mm;                // obsolète
-    float orientation_degrees; // obsolète
-    float delta_yaw_deg;       // différence avec l'appel précedent de ins.yaw
+    float delta_yaw_deg; // différence avec l'appel précedent de ins.yaw
     int32_t encoder_left;
     int32_t encoder_right;
     float imu_yaw_deg;

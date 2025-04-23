@@ -20,7 +20,7 @@ jobs:
         run: chmod +x ./build.sh
         
       - name: Check code formatting
-        run: ./build.sh --check-format
+        run: ./build.sh check-format
       
       - name: Show format instructions on failure
         if: failure()

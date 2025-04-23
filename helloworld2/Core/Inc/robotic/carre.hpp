@@ -1,12 +1,7 @@
-/*
- * carre.h
- *
- *  Created on: Aug 30, 2024
- *      Author: nboulay
- */
-
 #pragma once
+
 #include "iot01A/output.h" //TODO : to remove
+
 typedef struct carre_t {
     // output_t output;
     float time_from_start_s;     // free running compteur depuis le début

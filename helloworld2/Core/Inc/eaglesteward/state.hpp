@@ -1,12 +1,7 @@
-/*
- * state.h
- *
- *  Created on: Apr 6, 2025
- *      Author: nboulay
- */
-
 #pragma once
 #include <stdint.h>
+
+#include "robotic/pid.hpp"
 
 typedef struct state_t {
     float x_m;
@@ -18,6 +13,9 @@ typedef struct state_t {
     uint32_t start_time_ms; // "date du début du match" en ms
     float elapsed_time_s; // temps écoulé depuis le début du match
     int previous_is_jack_gone;
+    // --- Géré par autopilot
+    PID_t pid_diff;
+    PID_t pid_sum;
 } state_t;
 
 void print_state(state_t *state);

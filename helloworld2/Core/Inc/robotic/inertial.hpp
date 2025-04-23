@@ -1,9 +1,3 @@
-/*
- * inertial.h
- *
- *  Created on: Aug 30, 2024
- *      Author: nboulay
- */
 #pragma once
 
 typedef struct inertial_t {

@@ -18,13 +18,11 @@
 //                                     2 v2 - 2 v1
 // soit R = e* (v1+v2) / (v1-v2)
 
-#include "robotic/carre.h"
-#include "robotic/projection.h"
+#include "robotic/carre.hpp"
+#include "robotic/projection.hpp"
+#include "robotic/robot_constants.hpp"
 #include <math.h>
 #include <stdio.h>
-
-const float r_wheel_m = 0.035; // rayon des roues
-const float r_axel_m = 0.33;   // entraxe des 2 roues
 
 void carre_init(carre_t *carre, float cycle_period_s) {
     // output_init(&carre->output);
@@ -36,8 +34,8 @@ void carre_init(carre_t *carre, float cycle_period_s) {
 
 // calcul de vitesses avec la vitesse moyenne et le rayon de courbure voulu selon l'entre-axe
 void r_to_v(float r, float v, float *v1, float *v2) {
-    *v1 = v * (1 + r_axel_m / (2 * r));
-    *v2 = v * (1 - r_axel_m / (2 * r));
+    *v1 = v * (1 + WHEELBASE_M / (2 * r));
+    *v2 = v * (1 - WHEELBASE_M / (2 * r));
 }
 
 int carre_is_elapsed_time(carre_t *c, float t_s) { return c->time_from_start_s < (c->start_sequence_time_s + t_s); }

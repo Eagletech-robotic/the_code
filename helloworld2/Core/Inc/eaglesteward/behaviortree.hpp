@@ -24,9 +24,7 @@ template <typename F> constexpr bool is_valid_behavior() {
 // Cas de base (une seule lambda)
 template <typename F> auto sequence(F f) {
     static_assert(is_valid_behavior<F>(), "Lambda doesn't match required signature.");
-    return [f](input_t *input, output_t *output, state_t *current_state) -> Status {
-        return f(input, output, current_state);
-    };
+    return [f](input_t *input, output_t *output, state_t *state) -> Status { return f(input, output, state); };
 }
 
 // Cas récursif (plusieurs lambdas)
@@ -36,12 +34,12 @@ template <typename F, typename... Rest> auto sequence(F f, Rest... rest) {
     static_assert((is_valid_behavior<Rest>() && ...), "At least one lambda doesn't match required signature.");
     auto next = sequence(rest...);
 
-    return [f, next](input_t *input, output_t *output, state_t *current_state) -> Status {
-        Status result = f(input, output, current_state);
+    return [f, next](input_t *input, output_t *output, state_t *state) -> Status {
+        Status result = f(input, output, state);
 
         switch (result) {
         case Status::SUCCESS:
-            return next(input, output, current_state);
+            return next(input, output, state);
         case Status::FAILURE:
         case Status::RUNNING:
             return result;
@@ -54,9 +52,7 @@ template <typename F, typename... Rest> auto sequence(F f, Rest... rest) {
 // Cas de base : une seule lambda
 template <typename F> auto alternative(F f) {
     static_assert(is_valid_behavior<F>(), "Lambda doesn't match required signature.");
-    return [f](input_t *input, output_t *output, state_t *current_state) -> Status {
-        return f(input, output, current_state);
-    };
+    return [f](input_t *input, output_t *output, state_t *state) -> Status { return f(input, output, state); };
 }
 
 // Cas récursif : plusieurs lambdas
@@ -66,12 +62,12 @@ template <typename F, typename... Rest> auto alternative(F f, Rest... rest) {
 
     auto next = alternative(rest...);
 
-    return [f, next](input_t *input, output_t *output, state_t *current_state) -> Status {
-        Status result = f(input, output, current_state);
+    return [f, next](input_t *input, output_t *output, state_t *state) -> Status {
+        Status result = f(input, output, state);
 
         switch (result) {
         case Status::FAILURE:
-            return next(input, output, current_state); // essayer suivant
+            return next(input, output, state); // essayer suivant
         case Status::SUCCESS:
         case Status::RUNNING:
             return result; // succès ou en cours => on s'arrête

@@ -26,9 +26,9 @@
 #include <math.h>
 #include "iot01A/pwm.h"
 #include "iot01A/motor.h"
-#include "robotic/carre.h"
+#include "robotic/carre.hpp"
 #include <stdlib.h>  //exit
-#include "robotic/pid.h"
+#include "robotic/pid.hpp"
 #include "iot01A/led.h"
 #include "iot01A/top.h"
 /* USER CODE END Includes */

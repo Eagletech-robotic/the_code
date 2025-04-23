@@ -1,9 +1,3 @@
-/*
- * controller_stanley.h
- *
- *  Created on: Apr 8, 2025
- *      Author: nboulay
- */
 #pragma once
 
 int stanley_controller(float robot_x_m, float robot_y_m, float robot_theta_deg, float x_start_m, float y_start_m,

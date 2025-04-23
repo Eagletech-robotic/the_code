@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 # Use a path that works both when built standalone and from the root
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Inc)
 
+file (GLOB EAGLESTEWARD_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/*.cpp"
+)
+
 file(GLOB UTILS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/utils/*.cpp"
 )
@@ -15,23 +19,30 @@ if(NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/angle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/fusion_odo_imu.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/pid.cpp
+        ${EAGLESTEWARD_SOURCES}
         ${UTILS_SOURCES}
     )
 
+    target_compile_definitions(thibault_debug PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
+
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O2")
-
-    target_compile_definitions(thibault_debug PRIVATE MYPRINTF_ALWAYS)
 endif()
 
 # Simulator connector (WASM binary)
 if(EMSCRIPTEN)
     add_executable(simulator_connector
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/top_driver.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/pelle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/angle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/carre.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/controller_stanley.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/fusion_odo_imu.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/pid.cpp
+        ${EAGLESTEWARD_SOURCES}
         ${UTILS_SOURCES}
     )
 
@@ -51,10 +62,10 @@ if(EMSCRIPTEN)
     target_compile_options(simulator_connector PRIVATE "-O2" "-g")
 
     # Linker flags
-    target_link_options(simulator_connector PRIVATE 
-        "-O2" 
-        "-g" 
-        "-sASSERTIONS=1" 
+    target_link_options(simulator_connector PRIVATE
+        "-O2"
+        "-g"
+        "-sASSERTIONS=1"
         "-sEXPORTED_FUNCTIONS=['_exported_top_init','_exported_top_step','_create_input','_create_output']"
     )
 endif()

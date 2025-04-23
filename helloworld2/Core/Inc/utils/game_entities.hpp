@@ -9,20 +9,21 @@ constexpr int BLEACHER_INFLUENCE_SIZE = 400;
 
 // GameEntity struct
 struct GameEntity {
-    int x;
-    int y;
-    int orientation_degrees;
+    float x;
+    float y;
+    float orientation_degrees;
 
     GameEntity() = default;
 
-    GameEntity(int x_val, int y_val, int orientation_degrees_val)
+    GameEntity(float x_val, float y_val, float orientation_degrees_val)
         : x(x_val), y(y_val), orientation_degrees(orientation_degrees_val) {}
 };
 
 // Bleacher class
 class Bleacher : public GameEntity {
   public:
-    Bleacher(int x_val, int y_val, int orientation_degrees_val) : GameEntity(x_val, y_val, orientation_degrees_val) {}
+    Bleacher(float x_val, float y_val, float orientation_degrees_val)
+        : GameEntity(x_val, y_val, orientation_degrees_val) {}
 
     Bleacher() = default;
 
