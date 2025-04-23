@@ -4,7 +4,7 @@
 #include <cmath>
 
 void motor_init(const config_t &config, state_t &state) {
-    int const frequency = static_cast<int>(std::round(1000.0f / config.time_step_ms));
+    int const frequency = static_cast<int>(std::round(1.0f / config.time_step));
 
     pid_init(&state.pid_diff);
     // avec ki =0 est le seul moyen d'avoir R inférieur à 1% d'erreur (autour de 12-15v), ki fait diverger
@@ -25,7 +25,7 @@ void motor_calculate_ratios(const config_t &config, state_t &state, const input_
     auto const sensor_right = static_cast<float>(input.encoder_right);
 
     // 72000/(3.14*0.069)/250
-    float const ticks_per_m = (config.time_step_ms / 1000.0f) * TICKS_PER_REV / WHEEL_CIRCUMFERENCE_M; //~1330
+    float const ticks_per_m = config.time_step * TICKS_PER_REV / WHEEL_CIRCUMFERENCE_M; //~1330
     float const ratio_left = speed_left_m_s * ticks_per_m;
     float const ratio_right = speed_right_m_s * ticks_per_m;
 

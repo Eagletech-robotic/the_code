@@ -86,8 +86,8 @@ void init_potential_field() {
 }
 
 void thibault_top_init(config_t *config) {
-    config->time_step_ms = 4;
-    printf("Cycle : %i ms\r\n", config->time_step_ms);
+    config->time_step = 0.004f;
+    printf("cycle : %.0f ms\r\n", config->time_step * 1000.0);
     motor_init(*config, thibault_state);
     init_potential_field();
 }
@@ -138,9 +138,8 @@ void move_to_target(config_t *config, input_t *input, output_t *output, float co
 void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
     float delta_x_m, delta_y_m, delta_theta_deg;
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, static_cast<float>(config->time_step_ms) / 1000.0f, state->theta_deg,
-                        &delta_x_m, &delta_y_m, &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M,
-                        WHEELBASE_M);
+                        input->encoder_right, config->time_step, state->theta_deg, &delta_x_m, &delta_y_m,
+                        &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
     state->theta_deg += delta_theta_deg;

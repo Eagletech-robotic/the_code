@@ -69,11 +69,11 @@ void top_in_loop() {
 int old_tick = 0;
 int top_is_time_to_start() {
     int now = HAL_GetTick();
-    int step_ms = config.time_step_ms;
+    int step_ms = static_cast<int>(config.time_step * 1000.0f);
     if (old_tick + step_ms == now) {
         old_tick = now;
         return 1;
-    } else if ((old_tick + step_ms) < now) {
+    } else if (old_tick + step_ms < now) {
         myprintf("!! %i %i\r\n", now, now - old_tick);
         old_tick = now;
         return 1;
