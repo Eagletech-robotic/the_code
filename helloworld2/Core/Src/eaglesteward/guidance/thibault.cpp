@@ -39,7 +39,8 @@ void init_potential_field() {
                 potential_field[i][j] +=
                     MAX_POTENTIAL * static_cast<float>(wall_influence_squares - i) / wall_influence_squares;
             } else if (i >= FIELD_WIDTH_SQ - wall_influence_squares) {
-                potential_field[i][j] += MAX_POTENTIAL * static_cast<float>(i - (FIELD_WIDTH_SQ - wall_influence_squares)) /
+                potential_field[i][j] += MAX_POTENTIAL *
+                                         static_cast<float>(i - (FIELD_WIDTH_SQ - wall_influence_squares)) /
                                          wall_influence_squares;
             }
 
@@ -47,7 +48,8 @@ void init_potential_field() {
                 potential_field[i][j] +=
                     MAX_POTENTIAL * static_cast<float>(wall_influence_squares - j) / wall_influence_squares;
             } else if (j >= FIELD_HEIGHT_SQ - wall_influence_squares) {
-                potential_field[i][j] += MAX_POTENTIAL * static_cast<float>(j - (FIELD_HEIGHT_SQ - wall_influence_squares)) /
+                potential_field[i][j] += MAX_POTENTIAL *
+                                         static_cast<float>(j - (FIELD_HEIGHT_SQ - wall_influence_squares)) /
                                          wall_influence_squares;
             }
         }

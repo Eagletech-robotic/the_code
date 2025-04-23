@@ -4,9 +4,9 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
+#include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
-#include "eaglesteward/motor.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/angle.h"
 #include "robotic/carre.h"
