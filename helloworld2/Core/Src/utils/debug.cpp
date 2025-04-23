@@ -6,7 +6,7 @@
 
 #include "utils/constants.hpp"
 
-void visualize_potential_field(float potential_field[P_FIELD_W][P_FIELD_H], const size_t width, const size_t height) {
+void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ], const size_t width, const size_t height) {
     int const colors[] = {
         17, 19, 20, 26, 32, 38, 46, 82, 118, 154, 190, 226, 214, 208, 202, 196, 160, 124, 88, 52,
     };
