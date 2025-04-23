@@ -124,6 +124,8 @@ void nicolas_top_init(config_t *config) {
     printf("cycle : %.0f ms\r\n", config->time_step * 1000.0);
     carre_init(&carre, config->time_step);
     motor_init(*config, nicolas_state);
+    state_init(&nicolas_state);
+
 }
 
 // TODO :

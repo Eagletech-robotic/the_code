@@ -1,0 +1,6 @@
+#!/bin/bash
+while true; do
+    ../venv/bin/ble-serial -d 68:5E:1C:31:9E:4B
+    sleep 1  # Pause d'une seconde entre deux tentatives
+done
+

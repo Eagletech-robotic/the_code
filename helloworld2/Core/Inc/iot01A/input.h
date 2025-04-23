@@ -6,7 +6,6 @@
  *      Author: nboulay
  */
 #include <stdint.h>
-// #include "robotic/um7.h" //TODO à virer
 
 typedef struct input_t {
     int is_jack_gone;
@@ -19,6 +18,7 @@ typedef struct input_t {
     float imu_accel_y_mss; // vers la gauche
     float imu_accel_z_mss; // vers le haut
     int blue_button;
+    uint32_t ms; // free running counter in ms
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward
