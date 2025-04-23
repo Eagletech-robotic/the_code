@@ -9,7 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "eaglesteward/autopilot.hpp"
+#include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.h"
@@ -109,18 +109,21 @@ void move_to_target(output_t *output, const float x_mm, const float y_mm, const 
     if (angle_diff >= 180)
         angle_diff -= 360;
 
+    float speed_left, speed_right;
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff <= 0) {
-            output->motor_left_ratio = 0.0f;
-            output->motor_right_ratio = 0.5f;
+            speed_left = 0.0f;
+            speed_right = 0.5f;
         } else {
-            output->motor_left_ratio = 0.5f;
-            output->motor_right_ratio = 0.0f;
+            speed_left = 0.5f;
+            speed_right = 0.0f;
         }
     } else {
-        output->motor_left_ratio = 0.5f + angle_diff / 180.0f;
-        output->motor_right_ratio = 0.5f - angle_diff / 180.0f;
+        speed_left = 0.5f + angle_diff / 180.0f;
+        speed_right = 0.5f - angle_diff / 180.0f;
     }
+    motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
+                           output->motor_right_ratio);
 }
 
 void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
@@ -137,15 +140,13 @@ void update_position_and_orientation(state_t *state, input_t *input, config_t *c
 }
 
 constexpr float INITIAL_ORIENTATION_DEGREES = 0.0f;
-constexpr int INITIAL_X_MM = 1225;
-constexpr int INITIAL_Y_MM = 1775;
-constexpr float VITESSE_RATIO_MAX = 1.2f;
-constexpr float STOP_DISTANCE_MM = 275;
+constexpr float INITIAL_X = 1.225f;
+constexpr float INITIAL_Y = 1.775f;
 
 void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     if (!input->is_jack_gone) {
-        output->motor_left_ratio = 0;
-        output->motor_right_ratio = 0;
+        output->motor_left_ratio = 0.0f;
+        output->motor_right_ratio = 0.0f;
         myprintf("STOPPING because jack has not been removed\n");
         return;
     }
@@ -203,18 +204,20 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff <= 0) {
-                output->motor_left_ratio = 0.0f;
-                output->motor_right_ratio = 0.5f;
+                motor_calculate_ratios(*config, thibault_state, *input, 0.0f, 0.5f, output->motor_left_ratio,
+                                       output->motor_right_ratio);
             } else {
-                output->motor_left_ratio = 0.5f;
-                output->motor_right_ratio = 0.0f;
+                motor_calculate_ratios(*config, thibault_state, *input, 0.5f, 0.0f, output->motor_left_ratio,
+                                       output->motor_right_ratio);
             }
         } else {
-            const float right = 0.5f - angle_diff / 180.0f;
-            const float left = 0.5f + angle_diff / 180.0f;
-            const float max = std::max(right, left);
-            output->motor_left_ratio = VITESSE_RATIO_MAX / max * left;
-            output->motor_right_ratio = VITESSE_RATIO_MAX / max * right;
+            float const speed_left = 0.5f + angle_diff / 180.0f;
+            float const speed_right = 0.5f - angle_diff / 180.0f;
+            float const max = std::max(speed_left, speed_right);
+            float const throttled_speed_left = VITESSE_MAX / max * speed_left;
+            float const throttled_speed_right = VITESSE_MAX / max * speed_right;
+            motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
+                                   output->motor_left_ratio, output->motor_right_ratio);
         }
 
         myprintf("Target angle: %f\n", target_angle_deg);

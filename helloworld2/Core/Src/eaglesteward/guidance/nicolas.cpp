@@ -3,10 +3,10 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "eaglesteward/autopilot.hpp"
 #include "eaglesteward/behaviortree.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
+#include "eaglesteward/motor.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/angle.h"
 #include "robotic/carre.h"
@@ -103,8 +103,8 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
     // myprintf("O %.2f %.2f\n\r", output->motor_left_ratio, output->motor_right_ratio);
 
     // asservissement en vitesse
-    autopilot_step(config, &nicolas_state, input, output->motor_left_ratio, output->motor_right_ratio,
-                   &output->motor_left_ratio, &output->motor_right_ratio);
+    motor_calculate_ratios(*config, nicolas_state, *input, output->motor_left_ratio, output->motor_right_ratio,
+                           output->motor_left_ratio, output->motor_right_ratio);
 
     // gestion du jack / debug
     if (!input->is_jack_gone) {
@@ -123,7 +123,7 @@ void nicolas_top_init(config_t *config) {
     config->time_step_ms = 4; // il faudrait 250hz, les get par I2C sont trop lent
     printf("cycle : %i ms\r\n", config->time_step_ms);
     carre_init(&carre, config->time_step_ms / 1000.0);
-    autopilot_init(config, &nicolas_state);
+    motor_init(*config, nicolas_state);
 }
 
 // TODO :
