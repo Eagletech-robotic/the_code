@@ -69,7 +69,7 @@ void top_in_loop() {
 int old_tick = 0;
 int top_is_time_to_start() {
     int now = HAL_GetTick();
-    int step_ms = static_cast<int>(config.time_step * 1000.0f);
+    int step_ms = static_cast<int>(config.time_step_s * 1000.0f);
     if (old_tick + step_ms == now) {
         old_tick = now;
         return 1;

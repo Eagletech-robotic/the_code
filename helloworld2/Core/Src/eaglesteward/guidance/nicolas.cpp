@@ -12,7 +12,7 @@
 #include "robotic/carre.hpp"
 #include "robotic/controller_stanley.hpp"
 #include "robotic/fusion_odo_imu.hpp"
-#include "robotic/robot_constants.hpp"
+#include "eaglesteward/robot_constants.hpp"
 #include "utils/myprintf.hpp"
 
 carre_t carre;
@@ -79,7 +79,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
     const float alpha_orientation_ratio = 0.5f;
     // O.O -> IMU seul
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, config->time_step, state->theta_deg, &delta_x_m, &delta_y_m,
+                        input->encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
@@ -120,9 +120,9 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
 }
 
 void nicolas_top_init(config_t *config) {
-    config->time_step = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
-    printf("cycle : %.0f ms\r\n", config->time_step * 1000.0);
-    carre_init(&carre, config->time_step);
+    config->time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
+    printf("cycle : %.0f ms\r\n", config->time_step_s * 1000.0);
+    carre_init(&carre, config->time_step_s);
     motor_init(*config, nicolas_state);
     state_init(&nicolas_state);
 

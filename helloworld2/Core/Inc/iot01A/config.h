@@ -10,5 +10,5 @@
 // mais qui pourrait avoir un intéret à modifier en mise au point
 
 typedef struct config_t {
-    float time_step; // In seconds
+    float time_step_s; // In seconds
 } config_t;
