@@ -1,9 +1,3 @@
-/*
- * falcon.c
- *
- *  Created on: Nov 3, 2024
- *      Author: nboulay
- */
 #include "eaglesteward/guidance/nicolas.hpp"
 
 #include <math.h>
@@ -11,12 +5,12 @@
 
 #include "eaglesteward/autopilot.hpp"
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/constante.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/angle.h"
 #include "robotic/carre.h"
+#include "robotic/constants.h"
 #include "robotic/controller_stanley.h"
 #include "robotic/fusion_odo_imu.h"
 #include "utils/myprintf.hpp"
@@ -40,13 +34,13 @@ Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float targ
     //	    1000.0f, //Vmax
     //	    500.0f,  // Wmax
     //	    1.0f,   // k
-    //	    WHEEL_BASE_M,
+    //	    WHEELBASE_M,
     //	    0.1f, // arrivalThreshold avant virage
     //	    &output->motor_left_ratio,
     //	    &output->motor_right_ratio
     //	);
     int isArrived = controller_pid(func_state->x_m, func_state->y_m, func_state->theta_deg, target_x_m, target_y_m,
-                                   0.8f, WHEEL_BASE_M, 0.08, &output->motor_left_ratio, &output->motor_right_ratio);
+                                   0.8f, WHEELBASE_M, 0.08, &output->motor_left_ratio, &output->motor_right_ratio);
     if (isArrived) {
         func_state->target++;
         return Status::SUCCESS;
@@ -86,7 +80,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
     // O.O -> IMU seul
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
                         input->encoder_right, config->time_step_ms / 1000.0, state->theta_deg, &delta_x_m, &delta_y_m,
-                        &delta_theta_deg, alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEEL_BASE_M);
+                        &delta_theta_deg, alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
     state->theta_deg += delta_theta_deg;

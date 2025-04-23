@@ -38,6 +38,8 @@ if(EMSCRIPTEN)
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/angle.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/carre.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/controller_stanley.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/fusion_odo_imu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/pid.cpp
         ${EAGLESTEWARD_SOURCES}

@@ -10,10 +10,10 @@
 #include <stdexcept>
 
 #include "eaglesteward/autopilot.hpp"
-#include "eaglesteward/constante.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.h"
+#include "robotic/constants.h"
 #include "robotic/fusion_odo_imu.h"
 #include "utils/constants.hpp"
 #include "utils/game_entities.hpp"
@@ -128,7 +128,7 @@ void update_position_and_orientation(state_t *state, input_t *input, config_t *c
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
                         input->encoder_right, static_cast<float>(config->time_step_ms) / 1000.0f, state->theta_deg,
                         &delta_x_m, &delta_y_m, &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M,
-                        WHEEL_BASE_M);
+                        WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
     state->theta_deg += delta_theta_deg;
