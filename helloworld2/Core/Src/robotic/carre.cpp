@@ -18,9 +18,9 @@
 //                                     2 v2 - 2 v1
 // soit R = e* (v1+v2) / (v1-v2)
 
-#include "robotic/carre.h"
-#include "robotic/constants.h"
-#include "robotic/projection.h"
+#include "robotic/carre.hpp"
+#include "robotic/projection.hpp"
+#include "robotic/robot_constants.hpp"
 #include <math.h>
 #include <stdio.h>
 

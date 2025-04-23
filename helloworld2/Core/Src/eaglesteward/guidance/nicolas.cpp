@@ -8,11 +8,11 @@
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
-#include "robotic/angle.h"
-#include "robotic/carre.h"
-#include "robotic/constants.h"
-#include "robotic/controller_stanley.h"
-#include "robotic/fusion_odo_imu.h"
+#include "robotic/angle.hpp"
+#include "robotic/carre.hpp"
+#include "robotic/controller_stanley.hpp"
+#include "robotic/fusion_odo_imu.hpp"
+#include "robotic/robot_constants.hpp"
 #include "utils/myprintf.hpp"
 
 carre_t carre;

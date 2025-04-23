@@ -9,7 +9,7 @@
 // https://www.pololu.com/file/0J1556/UM7%20Datasheet_v1-8_30.07.2018.pdf
 // code issue : https://github.com/Nagillimi/MYUM7/blob/master/MYUM7.cpp
 
-#include "robotic/um7.h"
+#include "robotic/um7.hpp"
 #include "main.h"
 #include <stdint.h>
 #include <stdio.h>

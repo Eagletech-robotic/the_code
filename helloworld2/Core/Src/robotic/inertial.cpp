@@ -5,11 +5,11 @@
  *      Author: nboulay
  */
 
-#include "robotic/inertial.h"
+#include "robotic/inertial.hpp"
 
-#include "robotic/inertial.h"
 #include <math.h>
 #include <stdio.h>
+
 // todo :
 // remplacer les const par des paramètres
 // faire une structure pour stoquer l'état interne et la vitesse

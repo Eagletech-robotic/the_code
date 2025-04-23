@@ -4,8 +4,8 @@
  *  Created on: Apr 17, 2025
  *      Author: nboulay
  */
-#include "robotic/angle.h"
-#include <math.h>
+#include "robotic/angle.hpp"
+#include <cmath>
 
 float angle_normalize_deg(float angle_deg) {
     // Remet dans [-360, 360] (fmod renvoie un résultat dans (-360, 360], sauf si angle_deg est un multiple exact de

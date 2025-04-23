@@ -1,6 +1,6 @@
 #pragma once
 
-#include "robotic/pid.h"
+#include "robotic/pid.hpp"
 
 typedef struct state_t {
     float x_m;

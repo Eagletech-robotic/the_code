@@ -5,7 +5,7 @@
  *      Author: nboulay
  */
 #include "main.h"
-#include "robotic/um7.h"
+#include "robotic/um7.hpp"
 #include <stdio.h>
 #include <string.h>
 // lecture de um7 + configuration du port série en interruption

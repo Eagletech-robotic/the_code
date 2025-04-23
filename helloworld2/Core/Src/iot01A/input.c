@@ -13,8 +13,8 @@
 #include "iot01A/async_uart.h"
 #include "iot01A/encoder.h"
 #include "iot01A/sensors.h"
-#include "robotic/angle.h"
-#include "robotic/um7.h"
+#include "robotic/angle.hpp"
+#include "robotic/um7.hpp"
 #include "utils/myprintf.hpp"
 
 extern TIM_HandleTypeDef htim1;  //

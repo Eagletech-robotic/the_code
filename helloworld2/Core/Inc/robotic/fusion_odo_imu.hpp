@@ -1,9 +1,3 @@
-/*
- * fusion_odo_imu.h
- *
- *  Created on: Apr 6, 2025
- *      Author: nboulay
- */
 #pragma once
 
 void fusion_odo_imu_fuse(float ax_imu_g,
