@@ -90,7 +90,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
 
 //  doit appeler la fonction et gérer les IOS
 void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
-    myprintf("\x1B[2J"); // efface l'écran de debug
+
     nicolas_state.filtered_tof_m = tof_filter(nicolas_state, input->tof_m);
     // gestion de la position
     calcul_position(&nicolas_state, input, config);

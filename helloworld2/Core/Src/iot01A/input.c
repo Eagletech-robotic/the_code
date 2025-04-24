@@ -91,13 +91,6 @@ void input_get(input_t *input) {
 
 static int count = 0;
 void input_print(input_t *input) {
-    // myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
-    // input->is_jack_gone, input->tof_m);
-    count++;
-    if (count == 250) {
-        // printf("%.1f\r\n", input->tof_m*100);
-        // printf("%d\r\n", input->ins.yaw);
-        // um7_print(&input->ins);
-        count = 0;
-    }
+    myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
+     input->is_jack_gone, input->tof_m);
 }
