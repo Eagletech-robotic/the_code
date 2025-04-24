@@ -16,6 +16,12 @@ typedef struct state_t {
     // --- Géré par autopilot
     PID_t pid_diff;
     PID_t pid_sum;
+    // -- Position de l'adversaire
+    float opponent_x_m;
+    float opponent_y_m;
+    // -- target en cours, cela peut être n'importe quoi
+    float target_x_m;
+    float target_y_m;
 } state_t;
 
 void print_state(state_t *state);
