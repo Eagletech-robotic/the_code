@@ -89,7 +89,6 @@ void input_get(input_t *input) {
     // printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
-static int count = 0;
 void input_print(input_t *input) {
     myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
      input->is_jack_gone, input->tof_m);

@@ -41,7 +41,7 @@ Status retour(input_t * input, output_t *output, state_t *state) {
 
     //GO to backstage
     if(state->elapsed_time_s > 70.0f) {
-    	// goto backstage
+    	myprintf("goto backstage\n");
     	return Status::RUNNING;
     }
 
