@@ -14,11 +14,11 @@
 #include "robotic/fusion_odo_imu.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "utils/myprintf.hpp"
+#include "eaglesteward/guidance/cc_root.hpp"
 
 carre_t carre;
 state_t nicolas_state;
 
-//// Comportement
 
 Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float target_y_m, float next_x_m, float next_y_m,
                   int target, input_t *input, output_t *output, state_t *func_state) {
@@ -96,9 +96,9 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
     calcul_position(&nicolas_state, input, config);
 
     // gestion de la trajectoire
-    // carre_in_loop(&carre, output); // simpliste
-    infinite_rectangle(config, input, output, &nicolas_state);
-    pelle_in(output);
+    //infinite_rectangle(config, input, output, &nicolas_state);
+    //pelle_in(output);
+    cc_root_behavior_tree(input, output, &nicolas_state);
 
     // myprintf("O %.2f %.2f\n\r", output->motor_left_ratio, output->motor_right_ratio);
 
@@ -127,7 +127,3 @@ void nicolas_top_init(config_t *config) {
     state_init(&nicolas_state);
 
 }
-
-// TODO :
-//  connectivité externe en bluetooth
-//  prévoir les commandes de servo

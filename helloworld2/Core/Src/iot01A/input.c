@@ -90,6 +90,6 @@ void input_get(input_t *input) {
 }
 
 void input_print(input_t *input) {
-    myprintf("IN %ld %ld %d %f...\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
+    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
      input->is_jack_gone, input->tof_m);
 }
