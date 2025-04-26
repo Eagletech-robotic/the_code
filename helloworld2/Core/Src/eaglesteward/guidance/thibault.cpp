@@ -11,10 +11,10 @@
 
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
+#include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/fusion_odo_imu.hpp"
-#include "eaglesteward/robot_constants.hpp"
 #include "utils/constants.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
