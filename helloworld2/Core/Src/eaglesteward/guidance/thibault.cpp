@@ -137,8 +137,8 @@ void move_to_target(config_t *config, input_t *input, output_t *output, float co
 
 void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
     float delta_x_m, delta_y_m, delta_theta_deg;
-    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
+                        input->delta_encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;

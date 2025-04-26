@@ -11,4 +11,4 @@ typedef struct output_t {
 void output_set(output_t *output);
 void output_init(output_t *output);
 
-void output_print(output_t *output);
+void print_output(output_t *output);

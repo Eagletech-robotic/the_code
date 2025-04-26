@@ -78,8 +78,8 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
     float delta_theta_deg = 0.0f;
     const float alpha_orientation_ratio = 0.5f;
     // O.O -> IMU seul
-    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
+                        input->delta_encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;

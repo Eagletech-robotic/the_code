@@ -38,14 +38,12 @@ float yaw_raw, yaw_old;
 int first_cycle = 100;
 
 // un compteur compte en 32 bit unsigned et cela fait des mauvaises surprises
-int32_t angle_get(int64_t new_, int64_t old, int64_t max) {
+int32_t diff_with_overflow(int64_t new_, int64_t old, int64_t max) {
     int64_t r = new_ - old;
-    // printf("   %ld\r\n",(int)r);
-    //  cas du passage par le zero
-    if (r > (max / 2)) {
-        r = r - max;
-    } else if (r < (-max / 2)) {
-        r = max + r;
+    if (r > max / 2) {
+        r -= max;
+    } else if (r < -max / 2) {
+        r += max;
     }
     return r;
 }
@@ -67,8 +65,8 @@ void input_get(input_t *input) {
     getDistance(&dist_mm);
 
     // printf("  : %ld %ld\r\n", (int)raw[0], (int)raw[1]);
-    input->encoder_left = -angle_get(encoder_raw[1], encoder_old[1], 4294967295);
-    input->encoder_right = angle_get(encoder_raw[0], encoder_old[0], 65535);
+    input->delta_encoder_left = -diff_with_overflow(encoder_raw[1], encoder_old[1], 4294967295);
+    input->delta_encoder_right = diff_with_overflow(encoder_raw[0], encoder_old[0], 65535);
     input->tof_m = dist_mm / 1000.0;
     input->is_jack_gone = is_jack_gone();
     um7_t um7;
@@ -89,7 +87,7 @@ void input_get(input_t *input) {
     // printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
-void input_print(input_t *input) {
-    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input->encoder_left, (int32_t)input->encoder_right,
-     input->is_jack_gone, input->tof_m);
+void print_input(input_t *input) {
+    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input->delta_encoder_left, (int32_t)input->delta_encoder_right,
+             input->is_jack_gone, input->tof_m);
 }
