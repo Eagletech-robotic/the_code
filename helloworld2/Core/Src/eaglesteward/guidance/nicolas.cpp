@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/guidance/cc_root.hpp"
+#include "eaglesteward/cc_root.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/robot_constants.hpp"
@@ -83,6 +83,7 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
     state->theta_deg += delta_theta_deg;
+    myprintf("delta_x=%.6f delta_y=%.6f delta_theta=%.3f\n", delta_x_m, delta_y_m, delta_theta_deg);
     state->theta_deg = angle_normalize_deg(state->theta_deg);
     print_state(state);
 }
@@ -93,6 +94,8 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
     nicolas_state.filtered_tof_m = tof_filter(nicolas_state, input->tof_m);
     // gestion de la position
     calcul_position(&nicolas_state, input, config);
+
+    myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", nicolas_state.x_m, nicolas_state.y_m, nicolas_state.theta_deg);
 
     // gestion de la trajectoire
     // infinite_rectangle(config, input, output, &nicolas_state);
@@ -114,8 +117,10 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
         } else {
             pelle_in(output);
         }
-        return;
     }
+
+    myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output->motor_left_ratio, output->motor_right_ratio,
+             output->servo_pelle_ratio);
 }
 
 void nicolas_top_init(config_t *config) {

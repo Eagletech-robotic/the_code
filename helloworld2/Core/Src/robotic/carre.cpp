@@ -98,57 +98,57 @@ void carre_in_loop(carre_t *c, output_t *output) {
 //////////////////// OLD stuff /// Delete ?
 
 void carre_in_loop_with_mag(carre_t *c, const float mag[3], output_t *output) {
-    c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
-
-    float v_r = 1000.0;
-    float v_curve_r = 1000.0;
-    // float t_curve_s = 0.65f;
-    float t_line_s = 0.5;
-    if (carre_is_elapsed_time(c, t_line_s)) {
-        // ligne de droite
-        output->motor_left_ratio = v_r;
-        output->motor_right_ratio = v_r;
-        c->mag[0] = mag[0];
-        c->mag[1] = mag[1];
-        c->mag[2] = mag[2];
-        printf("d\r\n");
-    } else if (angleBetweenVectors(c->mag, mag) < .15) {
-        // demi courbe
-        float v1, v2;
-        r_to_v(.2, v_curve_r, &v1, &v2);
-        output->motor_left_ratio = v1;
-        output->motor_right_ratio = v2;
-    } else {
-        // sequence terminée, on recommence
-        c->start_sequence_time_s = c->time_from_start_s;
-        printf("RRR\r\n");
-    }
+    // c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
+    //
+    // float v_r = 1000.0;
+    // float v_curve_r = 1000.0;
+    // // float t_curve_s = 0.65f;
+    // float t_line_s = 0.5;
+    // if (carre_is_elapsed_time(c, t_line_s)) {
+    //     // ligne de droite
+    //     output->motor_left_ratio = v_r;
+    //     output->motor_right_ratio = v_r;
+    //     c->mag[0] = mag[0];
+    //     c->mag[1] = mag[1];
+    //     c->mag[2] = mag[2];
+    //     printf("d\r\n");
+    // } else if (angleBetweenVectors(c->mag, mag) < .15) {
+    //     // demi courbe
+    //     float v1, v2;
+    //     r_to_v(.2, v_curve_r, &v1, &v2);
+    //     output->motor_left_ratio = v1;
+    //     output->motor_right_ratio = v2;
+    // } else {
+    //     // sequence terminée, on recommence
+    //     c->start_sequence_time_s = c->time_from_start_s;
+    //     printf("RRR\r\n");
+    // }
 }
 
 void carre_in_loop_with_heading(carre_t *c, const float heading, output_t *output) {
-    c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
-
-    float v_r = 1000.0;
-    float v_curve_r = 1000.0;
-    // float t_curve_s = 0.65f;
-    float t_line_s = 0.5;
-    if (carre_is_elapsed_time(c, t_line_s)) {
-        // ligne de droite
-        output->motor_left_ratio = v_r;
-        output->motor_right_ratio = v_r;
-        c->mag[0] = heading;
-        printf("d\r\n");
-    } else if (fabs(c->mag[0] - heading) < 5.0) {
-        // demi courbe
-        float v1, v2;
-        r_to_v(.3, v_curve_r, &v1, &v2);
-        output->motor_left_ratio = v1;
-        output->motor_right_ratio = v2;
-    } else {
-        // sequence terminée, on recommence
-        c->start_sequence_time_s = c->time_from_start_s;
-        printf("RRR\r\n");
-    }
+    // c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
+    //
+    // float v_r = 1000.0;
+    // float v_curve_r = 1000.0;
+    // // float t_curve_s = 0.65f;
+    // float t_line_s = 0.5;
+    // if (carre_is_elapsed_time(c, t_line_s)) {
+    //     // ligne de droite
+    //     output->motor_left_ratio = v_r;
+    //     output->motor_right_ratio = v_r;
+    //     c->mag[0] = heading;
+    //     printf("d\r\n");
+    // } else if (fabs(c->mag[0] - heading) < 5.0) {
+    //     // demi courbe
+    //     float v1, v2;
+    //     r_to_v(.3, v_curve_r, &v1, &v2);
+    //     output->motor_left_ratio = v1;
+    //     output->motor_right_ratio = v2;
+    // } else {
+    //     // sequence terminée, on recommence
+    //     c->start_sequence_time_s = c->time_from_start_s;
+    //     printf("RRR\r\n");
+    // }
 }
 
 // calcul d'un déplacement selon un arc de cercle

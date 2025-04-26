@@ -1,10 +1,3 @@
-/*
- * cc_root.cpp
- *
- *  Created on: Apr 24, 2025
- *      Author: nboulay
- */
-
 #include "eaglesteward/behaviortree.hpp"
 #include "eaglesteward/cc_retour.hpp"
 #include "eaglesteward/pelle.hpp"
