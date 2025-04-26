@@ -14,15 +14,17 @@ file(GLOB UTILS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/utils/*.cpp"
 )
 
+file(GLOB ROBOTIC_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/*.cpp"
+)
+
 # thibault_debug
 if(NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/angle.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/fusion_odo_imu.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/pid.cpp
         ${EAGLESTEWARD_SOURCES}
+        ${ROBOTIC_SOURCES}
         ${UTILS_SOURCES}
     )
 
@@ -37,12 +39,8 @@ if(EMSCRIPTEN)
     add_executable(simulator_connector
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/angle.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/carre.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/controller_stanley.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/fusion_odo_imu.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/pid.cpp
         ${EAGLESTEWARD_SOURCES}
+        ${ROBOTIC_SOURCES}
         ${UTILS_SOURCES}
     )
 
