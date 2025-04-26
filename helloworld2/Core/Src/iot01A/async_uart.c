@@ -4,8 +4,8 @@
  *  Created on: Mar 23, 2025
  *      Author: nboulay
  */
+#include "iot01A/um7.hpp"
 #include "main.h"
-#include "robotic/um7.hpp"
 #include <stdio.h>
 #include <string.h>
 // lecture de um7 + configuration du port série en interruption
