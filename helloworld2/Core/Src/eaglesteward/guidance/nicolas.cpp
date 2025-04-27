@@ -102,8 +102,6 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
     // pelle_in(output);
     cc_root_behavior_tree(input, output, &nicolas_state);
 
-    // myprintf("O %.2f %.2f\n\r", output->motor_left_ratio, output->motor_right_ratio);
-
     // asservissement en vitesse
     motor_calculate_ratios(*config, nicolas_state, *input, output->motor_left_ratio, output->motor_right_ratio,
                            output->motor_left_ratio, output->motor_right_ratio);
