@@ -56,7 +56,7 @@ void add_walls() {
 
 void add_bleachers() {
     bleachers = {
-        Bleacher(2.75f, 1.5f, 0.0f),
+        Bleacher(2.925f, 1.255f, 0.0f),
     };
 
     for (auto &bleacher : bleachers) {
@@ -154,7 +154,7 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
 }
 
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
-    //print_complete_input(*input);
+    // print_complete_input(*input);
 
     uint8_t packet[PACKET_SIZE];
     bool packet_read = false;
@@ -191,7 +191,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     myprintf("Closest target distance: %f\n", closest_bleacher_distance);
     myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
 
-    constexpr float STOP_DISTANCE = 0.275f;
+    constexpr float STOP_DISTANCE = 0.25f;
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
@@ -199,7 +199,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
         return;
-    } else if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
         myprintf("Moving to target");
         move_to_target(config, input, output, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
         return;
