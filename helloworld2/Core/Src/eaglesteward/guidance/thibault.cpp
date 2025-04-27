@@ -163,10 +163,11 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
 
     if (packet_read) {
         // Read the packet
-        float x_camera = ((packet[1] - '0') * 100 + (packet[2] - '0') * 10 + (packet[3] - '0')) / 1000.0f;
-        float y_camera = ((packet[4] - '0') * 100 + (packet[5] - '0') * 10 + (packet[6] - '0')) / 1000.0f;
+        float x_camera = ((packet[1] - '0') * 100 + (packet[2] - '0') * 10 + (packet[3] - '0')) / 100.0f;
+        float y_camera = ((packet[4] - '0') * 100 + (packet[5] - '0') * 10 + (packet[6] - '0')) / 100.0f;
         float theta_camera_deg =
             angle_normalize_deg(packet[7] - '0') * 100 + (packet[8] - '0') * 10 + (packet[9] - '0');
+        // myprintf("!!! Camera: x=%.3f y=%.3f theta=%.3f\n", x_camera, y_camera, theta_camera_deg);
 
         // Calculate the IMU -> field coordinate transformation
         save_imu_to_field_transform(thibault_state, x_camera, y_camera, theta_camera_deg);

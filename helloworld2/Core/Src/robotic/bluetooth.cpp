@@ -1,10 +1,13 @@
 #include "robotic/bluetooth.hpp"
+
+#include "utils/myprintf.hpp"
+
 #include <cstdint>
 #include <cstring>
+
 constexpr int STARTER_BYTE = 'S'; // To facilitate debugging - revert to 255 when done
 
 constexpr int NB_PACKETS = 10; // Number of packets to store
-
 uint8_t packets[NB_PACKETS][PACKET_SIZE];
 
 enum { STATE_WAITING_STARTER_BYTE, STATE_READING_PACKET };
@@ -29,6 +32,9 @@ void bluetooth_decode(uint8_t byte) {
     case STATE_WAITING_STARTER_BYTE: {
         if (byte == STARTER_BYTE) {
             bluetooth_state = STATE_READING_PACKET;
+            uint8_t *packet_ptr = packets[decoding_packet];
+            packet_ptr[byte_index] = byte;
+            byte_index++;
         }
         return;
     }
@@ -36,11 +42,22 @@ void bluetooth_decode(uint8_t byte) {
         uint8_t *packet_ptr = packets[decoding_packet];
         packet_ptr[byte_index] = byte;
         byte_index++;
+        // myprintf("Read byte %d: %d", byte_index, byte);
 
         if (byte_index == PACKET_SIZE) {
             bluetooth_state = STATE_WAITING_STARTER_BYTE;
             byte_index = 0;
             if (is_packet_valid(packet_ptr)) {
+                // Debug
+                char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
+                int str_pos = sprintf(output_str, "Packet %d received: ", decoding_packet);
+                for (int i = 0; i < PACKET_SIZE; i++) {
+                    output_str[str_pos++] = packet_ptr[i];
+                }
+                output_str[str_pos] = '\0';
+                // myprintf("%s", output_str);
+                // End of debug
+
                 decoding_packet = (decoding_packet + 1) % NB_PACKETS;
             }
         }
@@ -51,12 +68,25 @@ void bluetooth_decode(uint8_t byte) {
 bool read_packet(uint8_t out_packet[]) {
     int oldest_unread_packet = (last_packet_read + 1) % NB_PACKETS; // NB: will be 0 if last_packet_read was -1
 
+    myprintf("last_packet_read = %d, oldest_unread_packet = %d, decoding_packet = %d", last_packet_read,
+             oldest_unread_packet, decoding_packet);
     if (oldest_unread_packet == decoding_packet) {
         // No new packet available
         return false;
     } else {
         // Read the packet
         std::memcpy(out_packet, packets[oldest_unread_packet], PACKET_SIZE);
+
+        // Debug
+        char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
+        int str_pos = sprintf(output_str, "Packet %d read: ", oldest_unread_packet);
+        for (int i = 0; i < PACKET_SIZE; i++) {
+            output_str[str_pos++] = out_packet[i];
+        }
+        output_str[str_pos] = '\0';
+        myprintf("%s", output_str);
+        // End of debug
+
         last_packet_read = oldest_unread_packet;
         return true;
     }
