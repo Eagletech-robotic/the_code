@@ -170,7 +170,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
     if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-        throw std::out_of_range("Coordinates out of range");
+        //throw std::out_of_range("Coordinates out of range");
     }
 
     myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", x, y, orientation_degrees);
@@ -185,8 +185,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
         return;
-    }
-    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+    } else if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
         move_to_target(config, input, output, x, y, orientation_degrees, closest_bleacher.x, closest_bleacher.y);
         return;
     }
