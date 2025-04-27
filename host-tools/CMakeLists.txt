@@ -54,6 +54,6 @@ if (EMSCRIPTEN)
         "-O2"
         "-g"
         "-sASSERTIONS=1"
-        "-sEXPORTED_FUNCTIONS=['_exported_top_init','_exported_top_step','_create_input','_create_output']"
+        "-sEXPORTED_FUNCTIONS=['_exported_top_init','_exported_top_step','_create_input','_create_output', '_create_bluetooth']"
     )
 endif ()
