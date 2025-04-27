@@ -71,12 +71,12 @@ void input_get(input_t *input) {
     input->is_jack_gone = is_jack_gone();
     um7_t um7;
     um7_get_pos(&um7);
-    yaw_raw = um7.yaw;
-    if (first_cycle) { // sinon il y a toujours le décalage avec old à zero
+    yaw_raw = -um7.yaw; // sign du yaw inversé
+    if (first_cycle) {  // sinon il y a toujours le décalage avec old à zero
         yaw_old = yaw_raw;
         first_cycle--; // plusieurs cycle pour attendre les données
     }
-    input->delta_yaw_deg = angle_normalize_deg(-(yaw_raw - yaw_old)); // sign du yaw inversé ?
+    input->delta_yaw_deg = angle_normalize_deg(yaw_raw - yaw_old);
 
     input->imu_yaw_deg = yaw_raw;
     input->imu_accel_x_mss = um7.accel_x;

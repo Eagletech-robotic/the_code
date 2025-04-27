@@ -7,8 +7,8 @@
 #include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
 
-void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ], const size_t width,
-                               const size_t height) {
+void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ], const int width,
+                               const int height) {
     int const colors[] = {
         17, 19, 20, 26, 32, 38, 46, 82, 118, 154, 190, 226, 214, 208, 202, 196, 160, 124, 88, 52,
     };
@@ -16,8 +16,8 @@ void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGH
     float minValue = FLT_MAX;
     float maxValue = -FLT_MAX;
 
-    for (size_t x = 0; x < width; ++x) {
-        for (size_t y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+        for (int y = 0; y < height; ++y) {
             if (potential_field[x][y] < minValue)
                 minValue = potential_field[x][y];
             if (potential_field[x][y] > maxValue)
@@ -25,8 +25,8 @@ void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGH
         }
     }
 
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
+    for (int y = height; y >= 0; --y) {
+        for (int x = 0; x < width; ++x) {
             float const normalized = (potential_field[x][y] - minValue) / (maxValue - minValue);
             int const index = std::floor(normalized * (sizeof(colors) / sizeof(colors[0]) - 1));
 
@@ -34,13 +34,6 @@ void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGH
         }
         printf("\n");
     }
-
-    // for (size_t y = 0; y < height; ++y) {
-    //     for (size_t x = 0; x < width; ++x) {
-    //         printf("%1.0f,", potential_field[x][y]);
-    //     }
-    //     printf("\n");
-    // }
 
     printf("Min: %f, Max: %f\n", minValue, maxValue);
 }
@@ -50,9 +43,9 @@ void print_complete_input(const input_t &input) {
         "Input: is_jack_gone:%d tof_m:%.3f delta_yaw_deg:%.3f delta_encoder_left:%d delta_encoder_right:%d "
         "imu_yaw_deg:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
         input.is_jack_gone, input.tof_m, input.delta_yaw_deg,
-        static_cast<int>(input.delta_encoder_left), // STM32 passes int32_t as long int
-        static_cast<int>(input.delta_encoder_right), input.imu_yaw_deg, input.imu_accel_x_mss, input.imu_accel_y_mss,
-        input.imu_accel_z_mss, input.blue_button,
+        static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
+        static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
+        input.imu_yaw_deg, input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss, input.blue_button,
         static_cast<unsigned int>(input.clock_ms)); // STM32 passes uint32_t as long unsigned int
 }
 
