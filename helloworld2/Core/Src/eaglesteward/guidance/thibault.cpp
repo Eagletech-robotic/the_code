@@ -87,7 +87,7 @@ void init_potential_field() {
     add_bleachers();
 }
 
-constexpr float INITIAL_ORIENTATION_DEGREES = 135.0f;
+constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
 constexpr float INITIAL_X = 1.225f;
 constexpr float INITIAL_Y = 0.225f;
 
@@ -154,7 +154,7 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
 }
 
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
-    print_complete_input(*input);
+    //print_complete_input(*input);
 
     uint8_t packet[PACKET_SIZE];
     bool packet_read = false;
@@ -212,7 +212,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
 
     constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
     constexpr float SLOPE_THRESHOLD = 0.05f;
-    constexpr float MAX_SPEED = 2.0f; // m/s
+    constexpr float MAX_SPEED = 1.0f; // m/s
 
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
@@ -248,6 +248,6 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    print_complete_output(*output);
-    myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
+    //print_complete_output(*output);
+   // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }
