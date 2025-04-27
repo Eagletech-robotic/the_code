@@ -111,12 +111,12 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
                     float const orientation_degrees, float const target_x, float const target_y) {
     float const delta_x = x - target_x;
     float const delta_y = y - target_y;
-    auto target_angle_deg = std::atan2(delta_x, delta_y) / M_PI * 180;
-    if (target_angle_deg < 0)
-        target_angle_deg += 180;
+    float const target_angle_deg = std::atan2(-delta_x, delta_y) / static_cast<float>(M_PI) * 180;
 
-    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - orientation_degrees, 360));
-    if (angle_diff >= 180)
+    float angle_diff = target_angle_deg - orientation_degrees;
+    if (angle_diff <= -180)
+        angle_diff += 360;
+    else if (angle_diff >= 180)
         angle_diff -= 360;
 
     float speed_left, speed_right;
@@ -134,6 +134,9 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
     }
     motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
                            output->motor_right_ratio);
+
+    myprintf("Target angle: %f\n", target_angle_deg);
+    myprintf("Angle diff: %f\n", angle_diff);
 }
 
 void update_position_and_orientation(const input_t *input, const config_t *config) {
@@ -176,6 +179,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", x, y, orientation_degrees);
 
     auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
+    myprintf("Closest target distance: %f\n", closest_bleacher_distance);
+    myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
 
     constexpr float STOP_DISTANCE = 0.275f;
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
@@ -185,7 +190,9 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
         return;
-    } else if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+        myprintf("Moving to target");
         move_to_target(config, input, output, x, y, orientation_degrees, closest_bleacher.x, closest_bleacher.y);
         return;
     }

@@ -59,8 +59,7 @@ Installez Emscripten en suivant les instructions sur le [site officiel](https://
 
 ```bash
 ./build.sh build --wasm --clean && \
-  cp build-wasm/host-tools/simulator-connector.wasm ../simulator/public/ && \
-  echo "SUCCESS: simulator-connector.wasm copied to simulator/public/"
+  cp build-wasm/host-tools/simulator-connector.wasm ../simulator/public/
 ```
 
 #### Utilisation
