@@ -56,7 +56,7 @@ void add_walls() {
 
 void add_bleachers() {
     bleachers = {
-        Bleacher(2.75f, 1.5f, 0.0f),
+        Bleacher(2.925f, 1.255f, 0.0f),
     };
 
     for (auto &bleacher : bleachers) {
