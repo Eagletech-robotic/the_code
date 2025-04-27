@@ -136,16 +136,16 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
                            output->motor_right_ratio);
 }
 
-void update_position_and_orientation(state_t *state, const input_t *input, const config_t *config) {
+void update_position_and_orientation(const input_t *input, const config_t *config) {
     float delta_x_m, delta_y_m, delta_theta_deg;
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
-                        input->delta_encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
+                        input->delta_encoder_right, config->time_step_s, thibault_state.theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
-    state->x_m += delta_x_m;
-    state->y_m += delta_y_m;
-    state->theta_deg += delta_theta_deg;
-    state->theta_deg = angle_normalize_deg(state->theta_deg);
-    print_state(state);
+    thibault_state.x_m += delta_x_m;
+    thibault_state.y_m += delta_y_m;
+    thibault_state.theta_deg += delta_theta_deg;
+    thibault_state.theta_deg = angle_normalize_deg(thibault_state.theta_deg);
+    print_state(&thibault_state);
 }
 
 constexpr float INITIAL_ORIENTATION_DEGREES = 0.0f;
@@ -161,7 +161,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         return;
     }
 
-    update_position_and_orientation(&thibault_state, input, config);
+    update_position_and_orientation(input, config);
     float const x = INITIAL_X - thibault_state.y_m; // Using different coordinate system than the state
     float const y = INITIAL_Y - thibault_state.x_m; // Using different coordinate system than the state
     float const orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
