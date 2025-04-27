@@ -1,4 +1,6 @@
 # the_code
+[![Build all targets](https://github.com/Eagletech-robotic/the_code/actions/workflows/build.yml/badge.svg)](https://github.com/Eagletech-robotic/the_code/actions/workflows/build.yml)
+[![CLang Formatting](https://github.com/Eagletech-robotic/the_code/actions/workflows/check-format.yml/badge.svg)](https://github.com/Eagletech-robotic/the_code/actions/workflows/check-format.yml)
 
 Tout le code pour un robot.
 
