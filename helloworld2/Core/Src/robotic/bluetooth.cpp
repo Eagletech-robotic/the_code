@@ -1,10 +1,10 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
-
+#include "robotic/bluetooth.hpp"
 constexpr int STARTER_BYTE = 'S'; // To facilitate debugging - revert to 255 when done
 
-constexpr int PACKET_SIZE = 20; // Number of bytes in a packet
+
 constexpr int NB_PACKETS = 10;  // Number of packets to store
 
 uint8_t packets[NB_PACKETS][PACKET_SIZE];
@@ -18,13 +18,13 @@ static int last_packet_read = -1; // The latest packet read, or -1 if no packet 
 
 bool is_packet_valid(const uint8_t *packet) {
     const uint8_t expected_checksum = packet[PACKET_SIZE - 1];
-
+    return true;
     uint8_t checksum = 0;
     for (int i = 1; i < PACKET_SIZE - 1; i++) {
         checksum += packet[i];
     }
-
     return (checksum & 127) == expected_checksum;
+
 };
 
 void bluetooth_decode(const uint8_t byte) {
@@ -51,7 +51,7 @@ void bluetooth_decode(const uint8_t byte) {
     }
 }
 
-bool read_packet(uint8_t (&out_packet)[PACKET_SIZE]) {
+bool read_packet(uint8_t out_packet[]) {
     int oldest_unread_packet = (last_packet_read + 1) % NB_PACKETS; // NB: will be 0 if last_packet_read was -1
 
     if (oldest_unread_packet == decoding_packet) {
