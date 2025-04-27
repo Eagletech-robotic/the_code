@@ -154,7 +154,7 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
 }
 
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
-    //print_complete_input(*input);
+    // print_complete_input(*input);
 
     uint8_t packet[PACKET_SIZE];
     bool packet_read = false;
@@ -204,7 +204,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
         return;
-    } else if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
         myprintf("Moving to target");
         move_to_target(config, input, output, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
         return;
@@ -248,6 +249,6 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    //print_complete_output(*output);
-   // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
+    // print_complete_output(*output);
+    // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }
