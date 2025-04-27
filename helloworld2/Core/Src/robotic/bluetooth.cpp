@@ -1,11 +1,11 @@
-#include <array>
+#include "robotic/bluetooth.hpp"
 #include <cstdint>
 #include <cstring>
 #include "robotic/bluetooth.hpp"
 constexpr int STARTER_BYTE = 'S'; // To facilitate debugging - revert to 255 when done
 
-
 constexpr int NB_PACKETS = 10;  // Number of packets to store
+
 
 uint8_t packets[NB_PACKETS][PACKET_SIZE];
 
@@ -27,7 +27,7 @@ bool is_packet_valid(const uint8_t *packet) {
 
 };
 
-void bluetooth_decode(const uint8_t byte) {
+void bluetooth_decode(uint8_t byte) {
     switch (bluetooth_state) {
     case STATE_WAITING_STARTER_BYTE: {
         if (byte == STARTER_BYTE) {
