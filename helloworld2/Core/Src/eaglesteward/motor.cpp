@@ -19,8 +19,8 @@ void motor_init(const config_t &config, state_t &state) {
     pid_frequency(&state.pid_sum, frequency);
 }
 
-void motor_calculate_ratios(const config_t &config, state_t &state, const input_t &input, float speed_left_m_s,
-                            float speed_right_m_s, float &out_motor_left_ratio, float &out_motor_right_ratio) {
+void motor_calculate_ratios(const config_t &config, state_t &state, const input_t &input, const float speed_left_m_s,
+                            const float speed_right_m_s, float &out_motor_left_ratio, float &out_motor_right_ratio) {
     auto const encoder_left = static_cast<float>(input.delta_encoder_left);
     auto const encoder_right = static_cast<float>(input.delta_encoder_right);
 
