@@ -123,7 +123,7 @@ Status isSafe(input_t *input, output_t *output, state_t *state) {
     }
 
     //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->x_m, state->y_m, state->theta_deg,
-    //0.01f)) { 		return Status::FAILURE;
+    // 0.01f)) { 		return Status::FAILURE;
     //	}
 
     return Status::SUCCESS;
