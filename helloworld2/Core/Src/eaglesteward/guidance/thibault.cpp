@@ -87,7 +87,7 @@ void init_potential_field() {
     add_bleachers();
 }
 
-constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
+constexpr float INITIAL_ORIENTATION_DEGREES = 135.0f;
 constexpr float INITIAL_X = 1.225f;
 constexpr float INITIAL_Y = 0.225f;
 
@@ -97,11 +97,7 @@ void thibault_top_init(config_t *config) {
     motor_init(*config, thibault_state);
     init_potential_field();
 
-    float theta_offset_rad = INITIAL_ORIENTATION_DEGREES * M_PI / 180.0f;
-    thibault_state.x_offset_m =
-        INITIAL_X - (thibault_state.x_m * cos(theta_offset_rad) - thibault_state.y_m * sin(theta_offset_rad));
-    thibault_state.y_offset_m =
-        INITIAL_Y - (thibault_state.x_m * sin(theta_offset_rad) + thibault_state.y_m * cos(theta_offset_rad));
+    save_imu_to_field_transform(thibault_state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
 
 std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
@@ -173,13 +169,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
             angle_normalize_deg(packet[7] - '0') * 100 + (packet[8] - '0') * 10 + (packet[9] - '0');
 
         // Calculate the IMU -> field coordinate transformation
-        thibault_state.theta_offset_deg = theta_camera_deg - thibault_state.theta_deg;
-
-        float theta_offset_rad = thibault_state.theta_offset_deg * M_PI / 180.0f;
-        thibault_state.x_offset_m =
-            x_camera - (thibault_state.x_m * cos(theta_offset_rad) - thibault_state.y_m * sin(theta_offset_rad));
-        thibault_state.y_offset_m =
-            y_camera - (thibault_state.x_m * sin(theta_offset_rad) + thibault_state.y_m * cos(theta_offset_rad));
+        save_imu_to_field_transform(thibault_state, x_camera, y_camera, theta_camera_deg);
     }
 
     if (!input->is_jack_gone) {
