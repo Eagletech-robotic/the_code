@@ -1,4 +1,4 @@
-#include "iot01A/top_driver.h" // c'est la dépendance au interface, rien d'autre n'est authorisé à être inclus depuis iot01A
+#include "iot01A/top_driver.h" // c'est la dépendance à l'interface, rien d'autre n'est authorisé à être inclus depuis iot01A
 
 #ifdef THIBAULT_GUIDANCE
 #include "eaglesteward/guidance/thibault.hpp"
