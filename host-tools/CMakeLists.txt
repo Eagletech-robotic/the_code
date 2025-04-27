@@ -3,48 +3,38 @@ project(host_tools)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Use a path that works both when built standalone and from the root
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Inc)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Inc
+)
 
-file (GLOB EAGLESTEWARD_SOURCES
+file(GLOB_RECURSE SOURCES_NO_STM32_DEPENDENCY
     "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/*.cpp"
-)
-
-file(GLOB UTILS_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/utils/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/*.cpp"
 )
 
-file(GLOB ROBOTIC_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/robotic/*.cpp"
-)
 
 # thibault_debug
-if(NOT EMSCRIPTEN)
+if (NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${EAGLESTEWARD_SOURCES}
-        ${ROBOTIC_SOURCES}
-        ${UTILS_SOURCES}
+        ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
     target_compile_definitions(thibault_debug PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O2")
-endif()
+endif ()
 
 # Simulator connector (WASM binary)
-if(EMSCRIPTEN)
+if (EMSCRIPTEN)
     add_executable(simulator_connector
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../helloworld2/Core/Src/eaglesteward/guidance/thibault.cpp
-        ${EAGLESTEWARD_SOURCES}
-        ${ROBOTIC_SOURCES}
-        ${UTILS_SOURCES}
+        ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
-    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
+    target_compile_definitions(simulator_connector PRIVATE MYPRINTF_ALWAYS)
 
     # Emscripten flags
     set_target_properties(simulator_connector PROPERTIES
@@ -66,4 +56,4 @@ if(EMSCRIPTEN)
         "-sASSERTIONS=1"
         "-sEXPORTED_FUNCTIONS=['_exported_top_init','_exported_top_step','_create_input','_create_output']"
     )
-endif()
+endif ()
