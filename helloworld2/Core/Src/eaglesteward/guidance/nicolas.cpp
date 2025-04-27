@@ -4,21 +4,20 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
+#include "eaglesteward/guidance/cc_root.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
+#include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/carre.hpp"
 #include "robotic/controller_stanley.hpp"
 #include "robotic/fusion_odo_imu.hpp"
-#include "eaglesteward/robot_constants.hpp"
 #include "utils/myprintf.hpp"
-#include "eaglesteward/guidance/cc_root.hpp"
 
 carre_t carre;
 state_t nicolas_state;
-
 
 Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float target_y_m, float next_x_m, float next_y_m,
                   int target, input_t *input, output_t *output, state_t *func_state) {
@@ -78,12 +77,13 @@ void calcul_position(state_t *state, input_t *input, config_t *config) {
     float delta_theta_deg = 0.0f;
     const float alpha_orientation_ratio = 0.5f;
     // O.O -> IMU seul
-    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
+                        input->delta_encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, alpha_orientation_ratio, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
     state->theta_deg += delta_theta_deg;
+    myprintf("delta_x=%.6f delta_y=%.6f delta_theta=%.3f\n", delta_x_m, delta_y_m, delta_theta_deg);
     state->theta_deg = angle_normalize_deg(state->theta_deg);
     print_state(state);
 }
@@ -95,12 +95,12 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
     // gestion de la position
     calcul_position(&nicolas_state, input, config);
 
-    // gestion de la trajectoire
-    //infinite_rectangle(config, input, output, &nicolas_state);
-    //pelle_in(output);
-    cc_root_behavior_tree(input, output, &nicolas_state);
+    myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", nicolas_state.x_m, nicolas_state.y_m, nicolas_state.theta_deg);
 
-    // myprintf("O %.2f %.2f\n\r", output->motor_left_ratio, output->motor_right_ratio);
+    // gestion de la trajectoire
+    // infinite_rectangle(config, input, output, &nicolas_state);
+    // pelle_in(output);
+    cc_root_behavior_tree(input, output, &nicolas_state);
 
     // asservissement en vitesse
     motor_calculate_ratios(*config, nicolas_state, *input, output->motor_left_ratio, output->motor_right_ratio,
@@ -115,8 +115,10 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
         } else {
             pelle_in(output);
         }
-        return;
     }
+
+    myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output->motor_left_ratio, output->motor_right_ratio,
+             output->servo_pelle_ratio);
 }
 
 void nicolas_top_init(config_t *config) {
@@ -125,5 +127,4 @@ void nicolas_top_init(config_t *config) {
     carre_init(&carre, config->time_step_s);
     motor_init(*config, nicolas_state);
     state_init(&nicolas_state);
-
 }

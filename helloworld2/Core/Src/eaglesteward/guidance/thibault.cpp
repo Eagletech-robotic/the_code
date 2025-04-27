@@ -1,5 +1,4 @@
-// AI for a robot playing coupe de france de robotique, using gradient descent essentially. Since it
-// is robotics, we are not allowed any memory allocation.
+// AI for a robot playing coupe de france de robotique. We are not allowed any runtime memory allocation.
 
 #include "eaglesteward/guidance/thibault.hpp"
 
@@ -11,11 +10,12 @@
 
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/pelle.hpp"
+#include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/fusion_odo_imu.hpp"
-#include "eaglesteward/robot_constants.hpp"
 #include "utils/constants.hpp"
+#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
@@ -25,10 +25,7 @@ state_t thibault_state;
 float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ]{};
 SizedArray<Bleacher, 10> bleachers;
 
-void init_potential_field() {
-    // -----------
-    // Walls influence
-    // -----------
+void add_walls() {
     constexpr float INFLUENCE_DISTANCE = 0.35f;
     constexpr float MAX_POTENTIAL = 35.0f;
 
@@ -54,10 +51,9 @@ void init_potential_field() {
             }
         }
     }
+}
 
-    // -----------
-    // Bleachers influence
-    // -----------
+void add_bleachers() {
     bleachers = {
         Bleacher(1.5f, 1.0f, 0.0f),
     };
@@ -85,6 +81,11 @@ void init_potential_field() {
     }
 }
 
+void init_potential_field() {
+    add_walls();
+    add_bleachers();
+}
+
 void thibault_top_init(config_t *config) {
     config->time_step_s = 0.004f;
     printf("cycle : %.0f ms\r\n", config->time_step_s * 1000.0);
@@ -106,7 +107,7 @@ std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     return {*closest, closest_distance};
 }
 
-void move_to_target(config_t *config, input_t *input, output_t *output, float const x, float const y,
+void move_to_target(const config_t *config, const input_t *input, output_t *output, float const x, float const y,
                     float const orientation_degrees, float const target_x, float const target_y) {
     float const delta_x = x - target_x;
     float const delta_y = y - target_y;
@@ -135,10 +136,10 @@ void move_to_target(config_t *config, input_t *input, output_t *output, float co
                            output->motor_right_ratio);
 }
 
-void update_position_and_orientation(state_t *state, input_t *input, config_t *config) {
+void update_position_and_orientation(state_t *state, const input_t *input, const config_t *config) {
     float delta_x_m, delta_y_m, delta_theta_deg;
-    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->encoder_left,
-                        input->encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
+    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
+                        input->delta_encoder_right, config->time_step_s, state->theta_deg, &delta_x_m, &delta_y_m,
                         &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     state->x_m += delta_x_m;
     state->y_m += delta_y_m;
@@ -151,7 +152,8 @@ constexpr float INITIAL_ORIENTATION_DEGREES = 0.0f;
 constexpr float INITIAL_X = 1.225f;
 constexpr float INITIAL_Y = 1.775f;
 
-void thibault_top_step(config_t *config, input_t *input, output_t *output) {
+void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
+    print_complete_input(*input);
     if (!input->is_jack_gone) {
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
@@ -160,18 +162,18 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     }
 
     update_position_and_orientation(&thibault_state, input, config);
-    float const x = INITIAL_X - thibault_state.y_m;
-    float const y = INITIAL_Y - thibault_state.x_m;
+    float const x = INITIAL_X - thibault_state.y_m; // Using different coordinate system than the state
+    float const y = INITIAL_Y - thibault_state.x_m; // Using different coordinate system than the state
     float const orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
     if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-        // throw std::out_of_range("Coordinates out of range");
+     //   throw std::out_of_range("Coordinates out of range");
     }
 
-    myprintf("X %.3f %.3f %.3f\n", x, y, orientation_degrees);
+    myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", x, y, orientation_degrees);
 
     auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
 
@@ -179,11 +181,12 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
-        pelle_out(output);
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
+        pelle_out(output);
         return;
-    } else if (closest_bleacher_distance < MOVE_TO_TARGET_DISTANCE) {
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
         move_to_target(config, input, output, x, y, orientation_degrees, closest_bleacher.x, closest_bleacher.y);
         return;
     }
@@ -196,11 +199,10 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
+        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
-
-        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
     } else {
         float const target_angle_deg = std::atan2(-dx, dy) / static_cast<float>(M_PI) * 180.0f;
 
@@ -232,7 +234,6 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    myprintf("Left motor ratio: %f, Right motor ratio: %f\n", output->motor_left_ratio, output->motor_right_ratio);
-    myprintf("Current orientation: %f\n", orientation_degrees);
-    myprintf("Current potential: %f\n", potential_field[i][j]);
+    print_complete_output(*output);
+    myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_degrees);
 }

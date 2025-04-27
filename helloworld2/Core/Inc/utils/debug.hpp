@@ -1,5 +1,7 @@
-#ifndef VISUALIZE_POTENTIAL_FIELD_H
-#define VISUALIZE_POTENTIAL_FIELD_H
+#pragma once
+
+#include "iot01A/input.h"
+#include "iot01A/output.h"
 
 #include <cstddef> // For size_t
 
@@ -12,4 +14,5 @@
 // - height: Height of the field
 void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ], size_t width, size_t height);
 
-#endif // VISUALIZE_POTENTIAL_FIELD_H
+void print_complete_input(const input_t &input);
+void print_complete_output(const output_t &output);

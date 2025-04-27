@@ -162,11 +162,11 @@ Status isJackGone(input_t * input, output_t *output, state_t *state) {
     if(!state->previous_is_jack_gone) {
     	if(input->is_jack_gone) {
     		// Start !
-    		state->start_time_ms = input->ms;
+    		state->start_time_ms = input->clock_ms;
     	}
     }
     state->previous_is_jack_gone = input->is_jack_gone;
-    state->elapsed_time_s = (input->ms - state->start_time_ms) / 1000.0f;
+    state->elapsed_time_s = (input->clock_ms - state->start_time_ms) / 1000.0f;
 
     if(input->is_jack_gone) {
     	return Status::SUCCESS;

@@ -60,9 +60,9 @@ void top_init_driver() {
 void top_in_loop() {
     input_get(&input);
     myprintf("\x1B[2J"); // efface l'écran de debug
-    input_print(&input);
+    print_input(&input);
     top_step(&config, &input, &output);
-    output_print(&output);
+    print_output(&output);
     output_set(&output);
     fflush(stdout); // forcer la sortie pour mieux la lire
 }
