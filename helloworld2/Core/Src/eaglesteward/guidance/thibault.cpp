@@ -172,16 +172,11 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         save_imu_to_field_transform(thibault_state, x_camera, y_camera, theta_camera_deg);
     }
 
-    if (!input->is_jack_gone) {
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        myprintf("STOPPING because jack has not been removed\n");
-        return;
-    }
-
     update_position_and_orientation(input, config);
     float x, y, orientation_deg;
     convert_from_imu_to_field(thibault_state, x, y, orientation_deg);
+
+    myprintf("XY %.3f %.3f \n", x, y);
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -248,6 +243,12 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
+    if (!input->is_jack_gone) {
+            output->motor_left_ratio = 0.0f;
+            output->motor_right_ratio = 0.0f;
+            myprintf("STOPPING because jack has not been removed\n");
+            return;
+    } //S100150042
     //print_complete_output(*output);
    // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }
