@@ -55,7 +55,7 @@ void add_walls() {
 
 void add_bleachers() {
     bleachers = {
-        Bleacher(1.5f, 1.0f, 0.0f),
+        Bleacher(2.75f, 1.0f, 0.0f),
     };
 
     for (auto &bleacher : bleachers) {
@@ -111,12 +111,12 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
                     float const orientation_degrees, float const target_x, float const target_y) {
     float const delta_x = x - target_x;
     float const delta_y = y - target_y;
-    auto target_angle_deg = std::atan2(delta_x, delta_y) / M_PI * 180;
-    if (target_angle_deg < 0)
-        target_angle_deg += 180;
+    float const target_angle_deg = std::atan2(-delta_x, delta_y) / static_cast<float>(M_PI) * 180;
 
-    auto angle_diff = static_cast<float>(std::fmod(target_angle_deg - orientation_degrees, 360));
-    if (angle_diff >= 180)
+    float angle_diff = target_angle_deg - orientation_degrees;
+    if (angle_diff <= -180)
+        angle_diff += 360;
+    else if (angle_diff >= 180)
         angle_diff -= 360;
 
     float speed_left, speed_right;
@@ -134,13 +134,16 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
     }
     motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
                            output->motor_right_ratio);
+
+    myprintf("Target angle: %f\n", target_angle_deg);
+    myprintf("Angle diff: %f\n", angle_diff);
 }
 
 void update_position_and_orientation(const input_t *input, const config_t *config) {
     float delta_x_m, delta_y_m, delta_theta_deg;
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
-                        input->delta_encoder_right, config->time_step_s, thibault_state.theta_deg, &delta_x_m, &delta_y_m,
-                        &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
+                        input->delta_encoder_right, config->time_step_s, thibault_state.theta_deg, &delta_x_m,
+                        &delta_y_m, &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     thibault_state.x_m += delta_x_m;
     thibault_state.y_m += delta_y_m;
     thibault_state.theta_deg += delta_theta_deg;
@@ -170,12 +173,14 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
     if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-        //throw std::out_of_range("Coordinates out of range");
+        // throw std::out_of_range("Coordinates out of range");
     }
 
     myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", x, y, orientation_degrees);
 
     auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
+    myprintf("Closest target distance: %f\n", closest_bleacher_distance);
+    myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
 
     constexpr float STOP_DISTANCE = 0.275f;
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
@@ -185,14 +190,16 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         output->motor_right_ratio = 0.0f;
         pelle_out(output);
         return;
-    } else if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+        myprintf("Moving to target");
         move_to_target(config, input, output, x, y, orientation_degrees, closest_bleacher.x, closest_bleacher.y);
         return;
     }
 
     constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
     constexpr float SLOPE_THRESHOLD = 0.05f;
-    constexpr float VITESSE_MAX = 1.2f; // m/s
+    constexpr float MAX_SPEED = 1.2f; // m/s
 
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
@@ -223,8 +230,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
             float const speed_left = 0.5f + angle_diff / 180.0f;
             float const speed_right = 0.5f - angle_diff / 180.0f;
             float const max = std::max(speed_left, speed_right);
-            float const throttled_speed_left = VITESSE_MAX / max * speed_left;
-            float const throttled_speed_right = VITESSE_MAX / max * speed_right;
+            float const throttled_speed_left = MAX_SPEED / max * speed_left;
+            float const throttled_speed_right = MAX_SPEED / max * speed_right;
             motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
                                    output->motor_left_ratio, output->motor_right_ratio);
         }
