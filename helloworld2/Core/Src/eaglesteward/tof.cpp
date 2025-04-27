@@ -5,5 +5,5 @@ float tof_filter(const state_t &state, float value) {
         return state.filtered_tof_m;
     }
     float rate = 0.04f;
-    return (1.0f - rate)* state.filtered_tof_m + (rate * value);
+    return (1.0f - rate) * state.filtered_tof_m + (rate * value);
 }
