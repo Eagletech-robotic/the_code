@@ -55,7 +55,7 @@ void add_walls() {
 
 void add_bleachers() {
     bleachers = {
-        Bleacher(1.5f, 1.0f, 0.0f),
+        Bleacher(2.75f, 1.0f, 0.0f),
     };
 
     for (auto &bleacher : bleachers) {
@@ -192,7 +192,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
 
     constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
     constexpr float SLOPE_THRESHOLD = 0.05f;
-    constexpr float VITESSE_MAX = 1.2f; // m/s
+    constexpr float MAX_SPEED = 1.2f; // m/s
 
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
@@ -223,8 +223,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
             float const speed_left = 0.5f + angle_diff / 180.0f;
             float const speed_right = 0.5f - angle_diff / 180.0f;
             float const max = std::max(speed_left, speed_right);
-            float const throttled_speed_left = VITESSE_MAX / max * speed_left;
-            float const throttled_speed_right = VITESSE_MAX / max * speed_right;
+            float const throttled_speed_left = MAX_SPEED / max * speed_left;
+            float const throttled_speed_right = MAX_SPEED / max * speed_right;
             motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
                                    output->motor_left_ratio, output->motor_right_ratio);
         }
