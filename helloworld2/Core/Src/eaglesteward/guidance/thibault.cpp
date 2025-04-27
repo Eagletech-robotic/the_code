@@ -136,11 +136,7 @@ void move_to_target(const config_t *config, const input_t *input, output_t *outp
                            output->motor_right_ratio);
 }
 
-<<<<<<< HEAD
-void update_position_and_orientation(state_t *state, const input_t *input, const config_t *config) {
-=======
 void update_position_and_orientation(const input_t *input, const config_t *config) {
->>>>>>> 9b46586ee7b70ad206f5e25cbfbe55d379aa62b7
     float delta_x_m, delta_y_m, delta_theta_deg;
     fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
                         input->delta_encoder_right, config->time_step_s, thibault_state.theta_deg, &delta_x_m, &delta_y_m,
@@ -165,11 +161,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         return;
     }
 
-<<<<<<< HEAD
-    update_position_and_orientation(&thibault_state, input, config);
-=======
     update_position_and_orientation(input, config);
->>>>>>> 9b46586ee7b70ad206f5e25cbfbe55d379aa62b7
     float const x = INITIAL_X - thibault_state.y_m; // Using different coordinate system than the state
     float const y = INITIAL_Y - thibault_state.x_m; // Using different coordinate system than the state
     float const orientation_degrees = INITIAL_ORIENTATION_DEGREES - thibault_state.theta_deg;
@@ -178,11 +170,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
     if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-<<<<<<< HEAD
-     //   throw std::out_of_range("Coordinates out of range");
-=======
         throw std::out_of_range("Coordinates out of range");
->>>>>>> 9b46586ee7b70ad206f5e25cbfbe55d379aa62b7
     }
 
     myprintf("Position: x=%.3f y=%.3f angle=%.0f\n", x, y, orientation_degrees);
