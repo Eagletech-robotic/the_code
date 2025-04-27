@@ -12,6 +12,8 @@
 #include "math.h"
 #include "utils/myprintf.hpp"
 #include "eaglesteward/pelle.hpp"
+#include "eaglesteward/robot_constants.hpp"
+#include "robotic/controller_stanley.hpp"
 
 // --- Comportement racine définit ici.
 // ce qui commence par is/has est seulement un test qui retourne Failure ou success
@@ -54,7 +56,7 @@ int isPossiblyBleacherApproch(state_t *state){
 	return isInRange(0.3f, state->filtered_tof_m, 0.48);
 }
 
-#define DEG2RAD(d) ((d) * M_PI / 180.0)
+//#define DEG2RAD(d) ((d) * M_PI / 180.0)
 
 
 /*
@@ -120,13 +122,19 @@ bool robot_border_outward(float w, float h,
 
 // on n'utilise pas la présence du robot adverse,pour être robuste sur ce sujet
 Status isSafe(input_t * input, output_t *output, state_t *state){
-	if (input->tof_m < 0.2) { // failsafe si tout à merder avant
+	if (state->filtered_tof_m < 0.2) { // failsafe si tout à merder avant
+		myprintf("Failsafe\n");
 		return Status::FAILURE;
 	}
 
-	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->x_m, state->y_m, state->theta_deg, 0.01f)) {
+	if (isBigThingClose(state)) {
+		myprintf("BigThing\n");
 		return Status::FAILURE;
 	}
+
+//	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->x_m, state->y_m, state->theta_deg, 0.01f)) {
+//		return Status::FAILURE;
+//	}
 
 	return Status::SUCCESS;
 }
@@ -166,16 +174,17 @@ Status isJackGone(input_t * input, output_t *output, state_t *state) {
     	}
     }
     state->previous_is_jack_gone = input->is_jack_gone;
-    state->elapsed_time_s = (input->clock_ms - state->start_time_ms) / 1000.0f;
-
+    myprintf("T %f\n", state->elapsed_time_s);
     if(input->is_jack_gone) {
+    	state->elapsed_time_s = (input->clock_ms - state->start_time_ms) / 1000.0f;
     	return Status::SUCCESS;
     }
+
     return Status::FAILURE;
 }
 
-Status isGameEnding(input_t * input, output_t *output, state_t *state) {
-	if(state->elapsed_time_s > 90.0f) {
+Status isGameOn(input_t * input, output_t *output, state_t *state) {
+	if(state->elapsed_time_s < 90.0f) {
 		return Status::SUCCESS;
 	 }
 	return Status::FAILURE;
@@ -202,15 +211,57 @@ Status waiting(input_t * input, output_t *output, state_t *state) {
 	return Status::RUNNING;
 }
 
+// -- Debug
+
+Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float target_y_m, float next_x_m, float next_y_m,
+                  int target, input_t *input, output_t *output, state_t *func_state) {
+    if (func_state->target != target) {
+        return Status::SUCCESS;
+    }
+    myprintf("B%d\r\n", func_state->target);
+    int isArrived = controller_pid(func_state->x_m, func_state->y_m, func_state->theta_deg, target_x_m, target_y_m,
+                                   0.8f, WHEELBASE_M, 0.08, &output->motor_left_ratio, &output->motor_right_ratio);
+    if (isArrived) {
+        func_state->target++;
+        return Status::SUCCESS;
+    }
+    return Status::RUNNING;
+}
+
+// execution une fois par cycle de tout l'arbre
+Status infinite_rectangle(input_t *input, output_t *output, state_t *func_state) {
+    auto seq = sequence(
+        [](input_t *lambda_input, output_t *lambda_output, state_t *state) {
+            return gotoTarget(0.0, 0.0, 0.6, 0.0, 0.6, 0.6, 0, lambda_input, lambda_output, state);
+        },
+        [](input_t *lambda_input, output_t *lambda_output, state_t *state) {
+            return gotoTarget(0.6, 0.0, 0.6, 0.6, 0.0, 0.6, 1, lambda_input, lambda_output, state);
+        },
+        [](input_t *lambda_input, output_t *lambda_output, state_t *state) {
+            return gotoTarget(0.6, 0.6, 0.0, 0.6, 0.0, 0.0, 2, lambda_input, lambda_output, state);
+        },
+        [](input_t *lambda_input, output_t *lambda_output, state_t *state) {
+            return gotoTarget(0.0, 0.6, 0.0, 0.0, 0.6, 0.0, 3, lambda_input, lambda_output, state);
+        },
+        [](input_t *, output_t *, state_t *state) {
+            state->target = 0;
+            return Status::SUCCESS;
+        });
+
+    return seq(input, output, func_state);
+}
+
+
 // Arbre de haut niveau
 Status cc_root_behavior_tree(input_t * input, output_t *output, state_t *state) {
 	auto start = alternative(isJackGone,waiting);
-	auto ending = alternative(isGameEnding, waiting);
+	auto ending = alternative(isGameOn, waiting);
+//	auto safe = alternative(isSafe,avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
+	auto safe = alternative(isSafe, waiting); // Trop proche de l'adversaire, il faut se dérouter
 	auto backstage = alternative(isNotTimeToGoToBAckstage, gotoBackstage);
-	auto safe = alternative(isSafe,avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
 	auto find = alternative(haveBleacher,gotoClosestBleacher);
-	auto deposit = alternative(gotoClosestBleacher);
-	auto root = sequence(start, ending, safe, backstage,  retour, find, deposit);
+	auto deposit = alternative(gotoClosestArea);
+	auto root = sequence(start, ending, safe, infinite_rectangle,  backstage, find, deposit);
 
 	return root(input, output, state);
 }
