@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <cstring>
 
-constexpr int STARTER_BYTE = 255;
+constexpr int STARTER_BYTE = 'S'; // To facilitate debugging - revert to 255 when done
 
 constexpr int PACKET_SIZE = 20; // Number of bytes in a packet
 constexpr int NB_PACKETS = 10;  // Number of packets to store

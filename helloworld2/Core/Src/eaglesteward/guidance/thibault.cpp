@@ -87,11 +87,21 @@ void init_potential_field() {
     add_bleachers();
 }
 
+constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
+constexpr float INITIAL_X = 1.225f;
+constexpr float INITIAL_Y = 0.225f;
+
 void thibault_top_init(config_t *config) {
     config->time_step_s = 0.004f;
     printf("cycle : %.0f ms\r\n", config->time_step_s * 1000.0);
     motor_init(*config, thibault_state);
     init_potential_field();
+
+    float theta_offset_rad = INITIAL_ORIENTATION_DEGREES * M_PI / 180.0f;
+    thibault_state.x_offset_m =
+        INITIAL_X - (thibault_state.x_m * cos(theta_offset_rad) - thibault_state.y_m * sin(theta_offset_rad));
+    thibault_state.y_offset_m =
+        INITIAL_Y - (thibault_state.x_m * sin(theta_offset_rad) + thibault_state.y_m * cos(theta_offset_rad));
 }
 
 std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
@@ -147,10 +157,6 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
     print_state(&thibault_state);
 }
 
-constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
-constexpr float INITIAL_X = 1.225f;
-constexpr float INITIAL_Y = 0.225f;
-
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
     print_complete_input(*input);
 
@@ -160,7 +166,20 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         packet_read = true;
 
     if (packet_read) {
-        thibault_state.color = packet[0] == 0 ? Color::BLUE : Color::YELLOW;
+        // Read the packet
+        float x_camera = ((packet[1] - '0') * 100 + (packet[2] - '0') * 10 + (packet[3] - '0')) / 1000.0f;
+        float y_camera = ((packet[4] - '0') * 100 + (packet[5] - '0') * 10 + (packet[6] - '0')) / 1000.0f;
+        float theta_camera_deg =
+            angle_normalize_deg(packet[7] - '0') * 100 + (packet[8] - '0') * 10 + (packet[9] - '0');
+
+        // Calculate the IMU -> field coordinate transformation
+        thibault_state.theta_offset_deg = theta_camera_deg - thibault_state.theta_deg;
+
+        float theta_offset_rad = thibault_state.theta_offset_deg * M_PI / 180.0f;
+        thibault_state.x_offset_m =
+            x_camera - (thibault_state.x_m * cos(theta_offset_rad) - thibault_state.y_m * sin(theta_offset_rad));
+        thibault_state.y_offset_m =
+            y_camera - (thibault_state.x_m * sin(theta_offset_rad) + thibault_state.y_m * cos(theta_offset_rad));
     }
 
     if (!input->is_jack_gone) {
@@ -171,9 +190,8 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     }
 
     update_position_and_orientation(input, config);
-    float const x = INITIAL_X - thibault_state.y_m; // Using different coordinate system than the state
-    float const y = INITIAL_Y + thibault_state.x_m; // Using different coordinate system than the state
-    float const orientation_deg = INITIAL_ORIENTATION_DEGREES + thibault_state.theta_deg;
+    float x, y, orientation_deg;
+    convert_from_imu_to_field(thibault_state, x, y, orientation_deg);
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
