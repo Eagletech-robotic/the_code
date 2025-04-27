@@ -245,11 +245,11 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     }
 
     if (!input->is_jack_gone) {
-            output->motor_left_ratio = 0.0f;
-            output->motor_right_ratio = 0.0f;
-            myprintf("STOPPING because jack has not been removed\n");
-            return;
-    } //S100150042
-    //print_complete_output(*output);
-   // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
+        output->motor_left_ratio = 0.0f;
+        output->motor_right_ratio = 0.0f;
+        myprintf("STOPPING because jack has not been removed\n");
+        return;
+    } // S100150042
+    // print_complete_output(*output);
+    // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }
