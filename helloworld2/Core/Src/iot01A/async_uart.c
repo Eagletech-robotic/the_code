@@ -4,6 +4,7 @@
  *  Created on: Mar 23, 2025
  *      Author: nboulay
  */
+#include "iot01A/bluetooth.hpp"
 #include "iot01A/um7.hpp"
 #include "main.h"
 #include <stdio.h>
@@ -49,12 +50,12 @@ void async_uart_init() {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     /* Vérifie quelle UART a reçu un octet */
     if (huart == &huart3) {
-        // Traitement de la donnée reçue sur UART1 : RxData1
-        printf("Falcon online !\n");
-
+        // Bluetooth data
+        bluetooth_decode(RxData1);
         // Relancer la réception en IT
         HAL_UART_Receive_IT(&huart3, &RxData1, 1);
     } else if (huart == &hlpuart1) {
+        // UM7 data
         // Traitement de la donnée reçue sur UART2 : RxData2
         um7_decode(RxData2);
         // Relancer la réception en IT
