@@ -3,8 +3,9 @@
 #include <cmath>
 #include <stdexcept>
 
-const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>
-    &Bleacher::potential_field() {
+const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
+                 BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM> &
+Bleacher::potential_field() {
     constexpr int size = BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM;
     static std::array<std::array<float, size>, size> field;
 
