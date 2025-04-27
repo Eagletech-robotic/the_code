@@ -16,6 +16,7 @@
 #include "robotic/angle.hpp"
 #include "robotic/fusion_odo_imu.hpp"
 #include "utils/constants.hpp"
+#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
@@ -152,6 +153,8 @@ constexpr float INITIAL_X = 1.225f;
 constexpr float INITIAL_Y = 1.775f;
 
 void thibault_top_step(config_t *config, input_t *input, output_t *output) {
+    print_complete_input(*input);
+
     if (!input->is_jack_gone) {
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
@@ -232,8 +235,6 @@ void thibault_top_step(config_t *config, input_t *input, output_t *output) {
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output->motor_left_ratio, output->motor_right_ratio,
-             output->servo_pelle_ratio);
-    myprintf("Current orientation: %f\n", orientation_degrees);
-    myprintf("Current potential: %f\n", potential_field[i][j]);
+    print_complete_output(*output);
+    myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_degrees);
 }

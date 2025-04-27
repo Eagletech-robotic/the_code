@@ -35,5 +35,4 @@ void output_set(output_t *output) {
 
 void print_output(output_t *output) {
     myprintf("O %.4f\t%.4f\t%.4f\n", output->motor_left_ratio, output->motor_right_ratio, output->servo_pelle_ratio);
-    // myprintf("o: %.4f\t%.4f\r\n", output->motor_left_ratio, output->motor_right_ratio);
 }

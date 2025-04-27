@@ -10,7 +10,11 @@
 
 #ifdef MYPRINTF_ALWAYS
 // Standard printf. For use on a PC.
-#define myprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#define myprintf(fmt, ...)                                                                                             \
+    do {                                                                                                               \
+        printf(fmt, ##__VA_ARGS__);                                                                                    \
+        fflush(stdout);                                                                                                \
+    } while (0)
 #else
 // Print every n messages. For use on MCU.
 #define myprintf(fmt, ...)                                                                                             \

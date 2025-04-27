@@ -34,7 +34,7 @@ if (EMSCRIPTEN)
         ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
-    target_compile_definitions(simulator_connector PRIVATE MYPRINTF_ALWAYS)
+    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
 
     # Emscripten flags
     set_target_properties(simulator_connector PROPERTIES
