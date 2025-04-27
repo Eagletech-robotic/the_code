@@ -28,7 +28,20 @@ void state_init(state_t *state) {
 }
 
 /**
- * Converts coordinates from IMU coordinate system to field coordinate system
+ * Calculates the transformation from IMU coordinates to field coordinates and saves it in the state.
+ */
+void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field) {
+    // Calculate the rotation offset
+    state.theta_offset_deg = theta_field - state.theta_deg;
+
+    // Calculate the translation offsets
+    float theta_offset_rad = state.theta_offset_deg * (M_PI / 180.0f);
+    state.x_offset_m = x_field - (state.x_m * cos(theta_offset_rad) - state.y_m * sin(theta_offset_rad));
+    state.y_offset_m = y_field - (state.x_m * sin(theta_offset_rad) + state.y_m * cos(theta_offset_rad));
+}
+
+/**
+ * Converts coordinates from IMU coordinate system to field coordinate system.
  */
 void convert_from_imu_to_field(state_t &state, float &out_x, float &out_y, float &out_theta) {
     // Apply rotation and translation to convert coordinates

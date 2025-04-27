@@ -36,4 +36,5 @@ typedef struct state_t {
 void print_state(state_t *state);
 void state_init(state_t *);
 
+void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field);
 void convert_from_imu_to_field(state_t &state, float &out_x, float &out_y, float &out_theta);
