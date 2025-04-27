@@ -196,7 +196,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     myprintf("Closest target distance: %f\n", closest_bleacher_distance);
     myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
 
-    constexpr float STOP_DISTANCE = 0.275f;
+    constexpr float STOP_DISTANCE = 0.25f;
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
