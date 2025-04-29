@@ -177,8 +177,6 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     float x, y, orientation_deg;
     convert_from_imu_to_field(thibault_state, x, y, orientation_deg);
 
-    myprintf("XY %.3f %.3f \n", x, y);
-
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
