@@ -4,7 +4,7 @@
 #include "robotic/pid.hpp"
 
 enum class Color { BLUE = 0, YELLOW = 1 };
-
+typedef enum  getbleacher_state_t {GB_RESET, GB_NON_FREE, GB_CLOSE, GB_GET_IT} getbleacher_state_t;
 typedef struct state_t {
     enum Color color;
     // IMU coordinate system
@@ -28,9 +28,8 @@ typedef struct state_t {
     // -- Position de l'adversaire
     float opponent_x_m;
     float opponent_y_m;
-    // -- target en cours, cela peut être n'importe quoi
-    float target_x_m;
-    float target_y_m;
+    // -- fsm de gestion de l'approche d'un bleacher
+    int getbleacher_state;
 } state_t;
 
 void print_state(state_t *state);

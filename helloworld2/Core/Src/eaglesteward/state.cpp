@@ -13,7 +13,7 @@
 #include <math.h>
 
 void print_state(state_t *state) {
-    myprintf("S %.2f %.2f  %.1f  %.2f\n", state->x_m, state->y_m, state->theta_deg, state->filtered_tof_m);
+    myprintf("S %.2f %.2f  %.1f  %.3f\n", state->x_m, state->y_m, state->theta_deg, state->filtered_tof_m);
 }
 
 void state_init(state_t *state) {

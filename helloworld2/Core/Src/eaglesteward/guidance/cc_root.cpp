@@ -20,32 +20,80 @@
 // le reste est une action qui retourne normalement SUCCESS ou RUNNING
 // ce n'est pas obligatoire, juste un mini convention pour s'y retrouver
 
-float length(float x1, float y1, float x2, float y2) { return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)); }
+float length(float x1, float y1, float x2, float y2) {
+	return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
 
 // --- TOF
 // Avec la position physique du 20250426
 //   > 0.48 il n'y a rien
-//   [0.47; 0.36], il y a un gradin coller
+//   [0.47; 0.36], il y a un gradin collé
 //    [0.48; 0.26 mini ; 0.36/0.47] en approche de gradin
 //  <0.26 -> un robot approche
 
-int isInRange(float min_, float val, float max_) { return min_ < val && val < max_; }
+int isInRange(float min_, float val, float max_) {
+	return min_ < val && val < max_;
+}
 
 // A autour de 0.5 je détecte le sol à ~ 40 cm
 int isNearSpaceFree(state_t *state) { return state->filtered_tof_m > 0.46f; }
 
 // Le robot ou une bordure ou un grand gradin sont proches (<15cm)
-// C'est vrai aussi avec un gradin au contact
+// La chose est détecté aussi avec un gradin au contact
 int isBigThingClose(state_t *state) { return state->filtered_tof_m < 0.25f; }
 
-// On a ses chiffres sile gradin est là mais aussi si on approche
+// On a ces chiffres si le gradin est là mais aussi si on approche
 int isBleacherPossiblyAtContact(state_t *state) { return isInRange(0.36f, state->filtered_tof_m, 0.47); }
 
 // On passe par le mini vers 0.3 puis cela remonte.
 int isPossiblyBleacherApproch(state_t *state) { return isInRange(0.3f, state->filtered_tof_m, 0.48); }
 
-// #define DEG2RAD(d) ((d) * M_PI / 180.0)
+int isPossiblyBleacherApprochMinimum(state_t *state) { return state->filtered_tof_m < 0.31f; }
 
+// Machine d'état qui suit l'approche d'un gradin et en déduit que l'on est au contact
+// L'idée est de la faire tourner tout le temps
+// si on est à BG_GET_IT, c'est qu'il faut déployer la pelle pour attraper un bleacher
+// Trop sensible pour être utilisable
+void fsm_getbleacher(state_t *state) {
+	switch(state->getbleacher_state) {
+	case GB_RESET : {
+		myprintf("GB_RESET\n");
+		if(! isNearSpaceFree(state)){
+			state->getbleacher_state = GB_NON_FREE;
+			return;
+		}
+	};break;
+	case GB_NON_FREE:
+		myprintf("GB_NON_FREE\n");
+		if(isNearSpaceFree(state)){
+			state->getbleacher_state = GB_RESET;
+			return;
+		}
+		if(isPossiblyBleacherApprochMinimum(state)) {
+			state->getbleacher_state = GB_CLOSE;
+			return;
+		}
+		;break;
+	case GB_CLOSE:
+		myprintf("GB_CLOSE");
+		if(isNearSpaceFree(state)){
+			state->getbleacher_state = GB_RESET;
+			return;
+		}
+		if(isBleacherPossiblyAtContact(state)) {
+			state->getbleacher_state = GB_GET_IT;
+			return;
+		}
+		;break;
+	case GB_GET_IT:
+		myprintf("GB_GET_IT");
+		if(!isBleacherPossiblyAtContact(state)){
+			state->getbleacher_state = GB_RESET;
+			return;
+		}
+		;break;
+	}
+}
 /*
  * Retourne true si le robot :
  *   • est entièrement contenu dans la carte (w × h),
@@ -117,7 +165,7 @@ Status isSafe(input_t *input, output_t *output, state_t *state) {
         return Status::FAILURE;
     }
 
-    if (isBigThingClose(state)) {
+    if (isBigThingClose(state)) { // -> sensible à la detection autour de la table
         myprintf("BigThing\n");
         return Status::FAILURE;
     }
@@ -131,14 +179,15 @@ Status isSafe(input_t *input, output_t *output, state_t *state) {
 
 Status avoidOpponent(input_t *input, output_t *output, state_t *state) {
     myprintf("goto 90° de l'adversaire du coté target\n");
-
+    output->motor_left_ratio = 0.5;
+    output->motor_right_ratio = -0.5;
     return Status::RUNNING;
 }
 
-// Détection d'un gradin accorcher au aimant ?
+// Détection d'un gradin accrocher au aimant ?
 Status haveBleacher(input_t *input, output_t *output, state_t *state) {
     myprintf("est-ce que j'ai un gradin accrocher ? Camera ou pelle out ou contacteur");
-    if (isBleacherPossiblyAtContact(state)) {
+    if (isBleacherPossiblyAtContact(state)) { //-> la pelle doit avoir été sorti avant
         return Status::SUCCESS;
     }
     return Status::FAILURE;
@@ -180,7 +229,7 @@ Status isGameOn(input_t *input, output_t *output, state_t *state) {
     return Status::FAILURE;
 }
 
-Status isNotTimeToGoToBAckstage(input_t *input, output_t *output, state_t *state) {
+Status isNotTimeToGoToBackstage(input_t *input, output_t *output, state_t *state) {
     if (state->elapsed_time_s > 70.0f) {
         return Status::FAILURE;
     }
@@ -218,6 +267,13 @@ Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float targ
     return Status::RUNNING;
 }
 
+// c'et prévu pour être utilisé dans une clause alternaltive, d'ou le Failure en retour
+auto print(char const *s) {
+    return [s](input_t *input, output_t *output, state_t *state) -> Status {
+    	myprintf("%s\n",s); return Status::FAILURE;
+    };
+}
+
 // execution une fois par cycle de tout l'arbre
 Status infinite_rectangle(input_t *input, output_t *output, state_t *func_state) {
     auto seq = sequence(
@@ -243,13 +299,13 @@ Status infinite_rectangle(input_t *input, output_t *output, state_t *func_state)
 
 // Arbre de haut niveau
 Status cc_root_behavior_tree(input_t *input, output_t *output, state_t *state) {
-    auto start = alternative(isJackGone, waiting);
-    auto ending = alternative(isGameOn, waiting);
-    //	auto safe = alternative(isSafe,avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
-    auto safe = alternative(isSafe, waiting); // Trop proche de l'adversaire, il faut se dérouter
-    auto backstage = alternative(isNotTimeToGoToBAckstage, gotoBackstage);
-    auto find = alternative(haveBleacher, gotoClosestBleacher);
-    auto deposit = alternative(gotoClosestArea);
+	fsm_getbleacher(state);
+    auto start = alternative(print("start"),isJackGone, waiting);
+    auto ending = alternative(print("ending"),isGameOn, waiting);
+    auto safe = alternative(print("safe"),isSafe,avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
+    auto backstage = alternative(print("backstage"),isNotTimeToGoToBackstage, gotoBackstage);
+    auto find = alternative(print("start"),haveBleacher, gotoClosestBleacher);
+    auto deposit = alternative(print("deposit"),gotoClosestArea);
     auto root = sequence(start, ending, safe, infinite_rectangle, backstage, find, deposit);
 
     return root(input, output, state);

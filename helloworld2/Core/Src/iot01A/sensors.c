@@ -202,24 +202,144 @@ void getTemperature(float *temperature) {
 #define TOF_RESET_Pin GPIO_PIN_6
 #define TOF_RESET_GPIO_Port GPIOC
 
-void startToF() {
-
-    HAL_GPIO_WritePin(TOF_RESET_GPIO_Port, TOF_RESET_Pin, GPIO_PIN_SET);
-    uint8_t addressWrite = 0x52;
-    uint8_t turnOn[] = {0x00, 0x01};
-    HAL_I2C_Master_Transmit(&hi2c2, addressWrite, turnOn, 2, 1);
+void writereg(uint8_t reg, uint8_t value) {
+	uint8_t addressWrite = 0x52;
+	uint8_t turnOn[] = {0x00, 0x01};
+	turnOn[0] = reg;
+	turnOn[1] = value;
+	HAL_I2C_Master_Transmit(&hi2c2, addressWrite, turnOn, 2, 1);
 }
 
-void getDistance(int *distance) {
+void writereg16(uint8_t reg, uint16_t value) {
+	uint8_t addressWrite = 0x52;
+	uint8_t turnOn[] = {0x00, 0x01, 0x02};
+	turnOn[0] = reg;
+	turnOn[1] = (value >> 8) & 0xFF;
+	turnOn[2] = value & 0xFF;
+	HAL_I2C_Master_Transmit(&hi2c2, addressWrite, turnOn, 2, 1);
+}
+
+uint16_t readreg(uint8_t reg) {
     uint8_t addressWrite = 0x52;
     uint8_t addressRead = 0x53;
     uint8_t resultAddress[] = {0x1e};
+    resultAddress[0]=reg;
     uint8_t rawData[] = {0, 0};
-
     HAL_I2C_Master_Transmit(&hi2c2, addressWrite, resultAddress, 1, 1);
-
     HAL_I2C_Master_Receive(&hi2c2, addressRead, rawData, 2, 1);
-    *distance = (rawData[0] << 8) + rawData[1] - 20;
+
+    return (rawData[0] << 8) + rawData[1];
+}
+
+void startToF() {
+
+	HAL_GPIO_WritePin(TOF_RESET_GPIO_Port, TOF_RESET_Pin, GPIO_PIN_SET);
+	writereg(0x00, 0X1);
+
+	// --- "tunning"
+	writereg(0xFF, 0x01);
+	writereg(0x00, 0x00);
+
+	writereg(0xFF, 0x00);
+	writereg(0x09, 0x00);
+	writereg(0x10, 0x00);
+	writereg(0x11, 0x00);
+
+	writereg(0x24, 0x01);
+	writereg(0x25, 0xFF);
+	writereg(0x75, 0x00);
+
+	writereg(0xFF, 0x01);
+	writereg(0x4E, 0x2C);
+	writereg(0x48, 0x00);
+	writereg(0x30, 0x20);
+
+	writereg(0xFF, 0x00);
+	writereg(0x30, 0x09);
+	writereg(0x54, 0x00);
+	writereg(0x31, 0x04);
+	writereg(0x32, 0x03);
+	writereg(0x40, 0x83);
+	writereg(0x46, 0x25);
+	writereg(0x60, 0x00);
+	writereg(0x27, 0x00);
+	writereg(0x50, 0x06);
+	writereg(0x51, 0x00);
+	writereg(0x52, 0x96);
+	writereg(0x56, 0x08);
+	writereg(0x57, 0x30);
+	writereg(0x61, 0x00);
+	writereg(0x62, 0x00);
+	writereg(0x64, 0x00);
+	writereg(0x65, 0x00);
+	writereg(0x66, 0xA0);
+
+	writereg(0xFF, 0x01);
+	writereg(0x22, 0x32);
+	writereg(0x47, 0x14);
+	writereg(0x49, 0xFF);
+	writereg(0x4A, 0x00);
+
+	writereg(0xFF, 0x00);
+	writereg(0x7A, 0x0A);
+	writereg(0x7B, 0x00);
+	writereg(0x78, 0x21);
+
+	writereg(0xFF, 0x01);
+	writereg(0x23, 0x34);
+	writereg(0x42, 0x00);
+	writereg(0x44, 0xFF);
+	writereg(0x45, 0x26);
+	writereg(0x46, 0x05);
+	writereg(0x40, 0x40);
+	writereg(0x0E, 0x06);
+	writereg(0x20, 0x1A);
+	writereg(0x43, 0x40);
+
+	writereg(0xFF, 0x00);
+	writereg(0x34, 0x03);
+	writereg(0x35, 0x44);
+
+	writereg(0xFF, 0x01);
+	writereg(0x31, 0x04);
+	writereg(0x4B, 0x09);
+	writereg(0x4C, 0x05);
+	writereg(0x4D, 0x04);
+
+	writereg(0xFF, 0x00);
+	writereg(0x44, 0x00);
+	writereg(0x45, 0x20);
+	writereg(0x47, 0x08);
+	writereg(0x48, 0x28);
+	writereg(0x67, 0x00);
+	writereg(0x70, 0x04);
+	writereg(0x71, 0x01);
+	writereg(0x72, 0xFE);
+	writereg(0x76, 0x00);
+	writereg(0x77, 0x00);
+
+	writereg(0xFF, 0x01);
+	writereg(0x0D, 0x01);
+
+	writereg(0xFF, 0x00);
+	writereg(0x80, 0x01);
+	writereg(0x01, 0xF8);
+
+	writereg(0xFF, 0x01);
+	writereg(0x8E, 0x01);
+	writereg(0x00, 0x01);
+	writereg(0xFF, 0x00);
+	writereg(0x80, 0x00);
+
+	// augmentation du temps de mesure "pifométrique" car le vrai calcul est long
+	uint8_t FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI        = 0x71;
+	writereg16(FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI,10000);
+	// continuous back-to-back mode
+	writereg(0x0, 0x02); // VL53L0X_REG_SYSRANGE_MODE_BACKTOBACK
+}
+
+void getDistance(int *distance) {
+    *distance = readreg(0x1e) -20;
 
     if (*distance < 0) {
         *distance = 0;

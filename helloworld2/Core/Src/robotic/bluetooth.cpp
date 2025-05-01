@@ -68,8 +68,8 @@ void bluetooth_decode(uint8_t byte) {
 bool read_packet(uint8_t out_packet[]) {
     int oldest_unread_packet = (last_packet_read + 1) % NB_PACKETS; // NB: will be 0 if last_packet_read was -1
 
-    //myprintf("last_packet_read = %d, oldest_unread_packet = %d, decoding_packet = %d", last_packet_read,
-     //        oldest_unread_packet, decoding_packet);
+    // myprintf("last_packet_read = %d, oldest_unread_packet = %d, decoding_packet = %d", last_packet_read,
+    //         oldest_unread_packet, decoding_packet);
     if (oldest_unread_packet == decoding_packet) {
         // No new packet available
         return false;
@@ -84,8 +84,8 @@ bool read_packet(uint8_t out_packet[]) {
             output_str[str_pos++] = out_packet[i];
         }
         output_str[str_pos] = '\0';
-        //myprintf("%s", output_str);
-        // End of debug
+        // myprintf("%s", output_str);
+        //  End of debug
 
         last_packet_read = oldest_unread_packet;
         return true;

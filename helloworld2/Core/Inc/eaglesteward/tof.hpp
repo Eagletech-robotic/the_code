@@ -2,4 +2,4 @@
 
 #include "eaglesteward/state.hpp"
 
-float tof_filter(const state_t &state, float value);
+float tof_filter( state_t &state, float value);

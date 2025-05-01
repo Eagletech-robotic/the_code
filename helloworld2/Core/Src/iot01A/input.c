@@ -61,7 +61,7 @@ void input_get(input_t *input) {
     encoder_raw[1] = encoder_get_value(&htim5);
     yaw_old = yaw_raw;
     int dist_mm;
-    startToF();
+   // startToF();
     getDistance(&dist_mm);
 
     // printf("  : %ld %ld\r\n", (int)raw[0], (int)raw[1]);
