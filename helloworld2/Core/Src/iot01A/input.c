@@ -61,10 +61,9 @@ void input_get(input_t *input) {
     encoder_raw[1] = encoder_get_value(&htim5);
     yaw_old = yaw_raw;
     int dist_mm;
-   // startToF();
+
     getDistance(&dist_mm);
 
-    // printf("  : %ld %ld\r\n", (int)raw[0], (int)raw[1]);
     input->delta_encoder_left = -diff_with_overflow(encoder_raw[1], encoder_old[1], 4294967295);
     input->delta_encoder_right = diff_with_overflow(encoder_raw[0], encoder_old[0], 65535);
     input->tof_m = dist_mm / 1000.0;

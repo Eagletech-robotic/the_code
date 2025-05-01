@@ -333,7 +333,7 @@ void startToF() {
 
 	// augmentation du temps de mesure "pifométrique" car le vrai calcul est long
 	uint8_t FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI        = 0x71;
-	writereg16(FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI,10000);
+	writereg16(FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI,500); //10000 2s
 	// continuous back-to-back mode
 	writereg(0x0, 0x02); // VL53L0X_REG_SYSRANGE_MODE_BACKTOBACK
 }

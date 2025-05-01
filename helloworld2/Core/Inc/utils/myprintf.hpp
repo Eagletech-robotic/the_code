@@ -20,7 +20,7 @@
 #define myprintf(fmt, ...)                                                                                             \
     do {                                                                                                               \
         static int counter_##__LINE__ = 0;                                                                             \
-        if (counter_##__LINE__ % 250 == 0) {                                                                           \
+        if (counter_##__LINE__ % 150 == 0) {                                                                           \
             printf(fmt, ##__VA_ARGS__);                                                                                \
         }                                                                                                              \
         counter_##__LINE__++;                                                                                          \
