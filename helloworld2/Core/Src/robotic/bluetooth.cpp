@@ -1,93 +1,92 @@
 #include "robotic/bluetooth.hpp"
-
 #include "utils/myprintf.hpp"
 
-#include <cstdint>
 #include <cstring>
 
-constexpr int STARTER_BYTE = 'S'; // To facilitate debugging - revert to 255 when done
+// Constructor
+BluetoothDecoder::BluetoothDecoder() = default;
 
-constexpr int NB_PACKETS = 10; // Number of packets to store
-uint8_t packets[NB_PACKETS][PACKET_SIZE];
-
-enum { STATE_WAITING_STARTER_BYTE, STATE_READING_PACKET };
-
-static int bluetooth_state;
-static int decoding_packet = 0;   // The packet currently being received.
-static int byte_index = 0;        // The currently written byte in the decoding packet.
-static int last_packet_read = -1; // The latest packet read, or -1 if no packet has been read yet.
-
-bool is_packet_valid(const uint8_t *packet) {
-    const uint8_t expected_checksum = packet[PACKET_SIZE - 1];
-    return true;
+// Check the packet's checksum
+bool BluetoothDecoder::is_packet_valid(const uint8_t *packet_data, const uint8_t checksum_byte) {
     uint8_t checksum = 0;
-    for (int i = 1; i < PACKET_SIZE - 1; i++) {
-        checksum += packet[i];
+    for (int i = 0; i < PACKET_SIZE; ++i) {
+        checksum += packet_data[i];
     }
-    return (checksum & 127) == expected_checksum;
-};
+    return (checksum & 0xFF) == checksum_byte;
+}
 
-void bluetooth_decode(uint8_t byte) {
-    switch (bluetooth_state) {
+// Process a single incoming byte
+void BluetoothDecoder::byte_received(uint8_t byte) {
+    uint8_t *packet_ptr = packets_buffer[current_packet_idx];
+
+    switch (state) {
     case STATE_WAITING_STARTER_BYTE: {
+        // Discard bytes until starter is found
         if (byte == STARTER_BYTE) {
-            bluetooth_state = STATE_READING_PACKET;
-            uint8_t *packet_ptr = packets[decoding_packet];
-            packet_ptr[byte_index] = byte;
-            byte_index++;
+            state = STATE_READING_PACKET;
+            current_byte_idx = 0; // Reset byte index for the new packet
         }
-        return;
+        break;
     }
     case STATE_READING_PACKET: {
-        uint8_t *packet_ptr = packets[decoding_packet];
-        packet_ptr[byte_index] = byte;
-        byte_index++;
-        // myprintf("Read byte %d: %d", byte_index, byte);
+        packet_ptr[current_byte_idx++] = byte;
 
-        if (byte_index == PACKET_SIZE) {
-            bluetooth_state = STATE_WAITING_STARTER_BYTE;
-            byte_index = 0;
-            if (is_packet_valid(packet_ptr)) {
-                // Debug
-                char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
-                int str_pos = sprintf(output_str, "Packet %d received: ", decoding_packet);
-                for (int i = 0; i < PACKET_SIZE; i++) {
-                    output_str[str_pos++] = packet_ptr[i];
-                }
-                output_str[str_pos] = '\0';
-                // myprintf("%s", output_str);
-                // End of debug
+        // Check if the expected number of data bytes has been received
+        if (current_byte_idx == PACKET_SIZE) {
+            state = STATE_WAITING_CHECKSUM;
+        }
+        break;
+    }
+    case STATE_WAITING_CHECKSUM: {
+        // The 'byte' received now is the checksum
+        if (BluetoothDecoder::is_packet_valid(packet_ptr, byte)) {
+            // Packet is valid, mark it ready by advancing the write pointer (current_packet_idx)
+            current_packet_idx = (current_packet_idx + 1) % NB_PACKETS;
 
-                decoding_packet = (decoding_packet + 1) % NB_PACKETS;
+            // Check if the next write position will overwrite the oldest readable packet.
+            // Advance the read pointer if we are about to overwrite.
+            int oldest_unread_packet_idx = (last_read_packet_idx + 1) % NB_PACKETS;
+            if (current_packet_idx == oldest_unread_packet_idx) {
+                last_read_packet_idx = oldest_unread_packet_idx;
             }
         }
+
+        // Reset for the next packet, regardless of checksum validity
+        state = STATE_WAITING_STARTER_BYTE;
+        break;
     }
     }
 }
 
-bool read_packet(uint8_t out_packet[]) {
-    int oldest_unread_packet = (last_packet_read + 1) % NB_PACKETS; // NB: will be 0 if last_packet_read was -1
+// Attempt to read the oldest available packet
+bool BluetoothDecoder::read_packet(uint8_t out_packet[PACKET_SIZE]) {
+    // Calculate the index of the oldest packet that hasn't been read yet
+    int oldest_unread_packet_idx = (last_read_packet_idx + 1) % NB_PACKETS;
 
-    // myprintf("last_packet_read = %d, oldest_unread_packet = %d, decoding_packet = %d", last_packet_read,
-    //         oldest_unread_packet, decoding_packet);
-    if (oldest_unread_packet == decoding_packet) {
+    // Check if the oldest unread packet index is the same as the current write index.
+    // If they are the same, it means the buffer is empty (or all packets have been read).
+    if (oldest_unread_packet_idx == current_packet_idx) {
         // No new packet available
         return false;
     } else {
-        // Read the packet
-        std::memcpy(out_packet, packets[oldest_unread_packet], PACKET_SIZE);
+        // Copy the oldest unread packet to the output buffer
+        std::memcpy(out_packet, packets_buffer[oldest_unread_packet_idx], PACKET_SIZE); // Use member variable
 
         // Debug
         char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
-        int str_pos = sprintf(output_str, "Packet %d read: ", oldest_unread_packet);
-        for (int i = 0; i < PACKET_SIZE; i++) {
-            output_str[str_pos++] = out_packet[i];
-        }
+        int str_pos = sprintf(output_str, "Packet %d read: ", oldest_unread_packet_idx);
+        int i = 0;
+        while (i < PACKET_SIZE)
+            output_str[str_pos++] = out_packet[i++];
         output_str[str_pos] = '\0';
-        // myprintf("%s", output_str);
+        myprintf("Read packet: %s", output_str);
         //  End of debug
 
-        last_packet_read = oldest_unread_packet;
+        // Update the index of the last read packet
+        last_read_packet_idx = oldest_unread_packet_idx;
         return true;
     }
 }
+
+// --- Single instance ---
+BluetoothDecoder g_bluetooth_decoder;

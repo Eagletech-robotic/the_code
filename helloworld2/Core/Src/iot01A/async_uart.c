@@ -51,7 +51,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     /* Vérifie quelle UART a reçu un octet */
     if (huart == &huart3) {
         // Bluetooth data
-        bluetooth_decode(RxData1);
+        g_bluetooth_decoder.byte_received(RxData1);
         // Relancer la réception en IT
         HAL_UART_Receive_IT(&huart3, &RxData1, 1);
     } else if (huart == &hlpuart1) {

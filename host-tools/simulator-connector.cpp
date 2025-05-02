@@ -49,7 +49,7 @@ EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output, ui
 
     if (bluetooth_block != NULL) {
         for (size_t i = 0; i < bluetooth_block_size; i++) {
-            bluetooth_decode(bluetooth_block[i]);
+            g_bluetooth_decoder.byte_received(bluetooth_block[i]);
         }
     }
 
