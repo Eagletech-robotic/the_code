@@ -6,7 +6,6 @@
  */
 
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/cc_retour.hpp"
 #include "eaglesteward/pelle.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
@@ -36,19 +35,19 @@ int isInRange(float min_, float val, float max_) {
 }
 
 // A autour de 0.5 je détecte le sol à ~ 40 cm
-int isNearSpaceFree(state_t *state) { return state->filtered_tof_m > 0.46f; }
+int isNearSpaceFree(state_t *state) { return state->filtered_tof_m > 0.5f; }
 
 // Le robot ou une bordure ou un grand gradin sont proches (<15cm)
 // La chose est détecté aussi avec un gradin au contact
-int isBigThingClose(state_t *state) { return state->filtered_tof_m < 0.25f; }
+int isBigThingClose(state_t *state) { return state->filtered_tof_m < 0.26f; }
 
 // On a ces chiffres si le gradin est là mais aussi si on approche
-int isBleacherPossiblyAtContact(state_t *state) { return isInRange(0.36f, state->filtered_tof_m, 0.47); }
+int isBleacherPossiblyAtContact(state_t *state) { return isInRange(0.32f, state->filtered_tof_m, 0.49); }
 
 // On passe par le mini vers 0.3 puis cela remonte.
-int isPossiblyBleacherApproch(state_t *state) { return isInRange(0.3f, state->filtered_tof_m, 0.48); }
+int isPossiblyBleacherApproch(state_t *state) { return isInRange(0.28f, state->filtered_tof_m, 0.5); }
 
-int isPossiblyBleacherApprochMinimum(state_t *state) { return state->filtered_tof_m < 0.31f; }
+int isPossiblyBleacherApprochMinimum(state_t *state) { return state->filtered_tof_m < 0.32f; } // ~15cm, ceux minimum peut descendre à 0.27 mais pas toujours
 
 // Machine d'état qui suit l'approche d'un gradin et en déduit que l'on est au contact
 // L'idée est de la faire tourner tout le temps
@@ -267,7 +266,7 @@ Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float targ
     return Status::RUNNING;
 }
 
-// c'et prévu pour être utilisé dans une clause alternaltive, d'ou le Failure en retour
+// c'est prévu pour être utilisé dans une clause alternaltive, d'ou le Failure en retour
 auto print(char const *s) {
     return [s](input_t *input, output_t *output, state_t *state) -> Status {
     	myprintf("%s\n",s); return Status::FAILURE;
@@ -300,12 +299,12 @@ Status infinite_rectangle(input_t *input, output_t *output, state_t *func_state)
 // Arbre de haut niveau
 Status cc_root_behavior_tree(input_t *input, output_t *output, state_t *state) {
 	fsm_getbleacher(state);
-    auto start = alternative(print("start"),isJackGone, waiting);
-    auto ending = alternative(print("ending"),isGameOn, waiting);
-    auto safe = alternative(print("safe"),isSafe,avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
-    auto backstage = alternative(print("backstage"),isNotTimeToGoToBackstage, gotoBackstage);
-    auto find = alternative(print("start"),haveBleacher, gotoClosestBleacher);
-    auto deposit = alternative(print("deposit"),gotoClosestArea);
+    auto start = alternative(isJackGone,print("start"), waiting);
+    auto ending = alternative(isGameOn,print("ending"), waiting);
+    auto safe = alternative(isSafe,print("safe"),avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
+    auto backstage = alternative(isNotTimeToGoToBackstage, print("backstage"),gotoBackstage);
+    auto find = alternative(haveBleacher, print("start"), gotoClosestBleacher);
+    auto deposit = alternative(gotoClosestArea, print("deposit"));
     auto root = sequence(start, ending, safe, infinite_rectangle, backstage, find, deposit);
 
     return root(input, output, state);
