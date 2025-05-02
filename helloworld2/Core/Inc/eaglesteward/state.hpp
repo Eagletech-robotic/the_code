@@ -4,7 +4,7 @@
 #include "robotic/pid.hpp"
 
 enum class Color { BLUE = 0, YELLOW = 1 };
-typedef enum  getbleacher_state_t {GB_RESET, GB_NON_FREE, GB_CLOSE, GB_GET_IT} getbleacher_state_t;
+typedef enum getbleacher_state_t { GB_RESET, GB_NON_FREE, GB_CLOSE, GB_GET_IT } getbleacher_state_t;
 typedef struct state_t {
     enum Color color;
     // IMU coordinate system
