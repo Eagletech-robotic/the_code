@@ -34,9 +34,9 @@ output_t output;
 // code executé au reset
 void top_init_driver() {
     printf("\r\ntop Hello world !\r\n");
-    input_init(&input);
-    output_init(&output);
-    top_init(&config);
+    input_init(input);
+    output_init(output);
+    top_init(config);
     motorInit();
 }
 
@@ -58,12 +58,12 @@ void top_init_driver() {
 //  test du bouton bleue pour un autotest ?
 
 void top_in_loop() {
-    input_get(&input);
+    input_get(input);
     myprintf("\x1B[2J"); // efface l'écran de debug
-    print_input(&input);
-    top_step(&config, &input, &output);
-    print_output(&output);
-    output_set(&output);
+    print_input(input);
+    top_step(config, input, output);
+    print_output(output);
+    output_set(output);
     fflush(stdout); // forcer la sortie pour mieux la lire
 }
 

@@ -92,15 +92,6 @@ constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
 constexpr float INITIAL_X = 1.225f;
 constexpr float INITIAL_Y = 0.225f;
 
-void thibault_top_init(config_t *config) {
-    config->time_step_s = 0.004f;
-    printf("cycle : %.0f ms\r\n", config->time_step_s * 1000.0);
-    motor_init(*config, thibault_state);
-    init_potential_field();
-
-    save_imu_to_field_transform(thibault_state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
-}
-
 std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     Bleacher *closest = &bleachers[0];
     float closest_distance = 9.999f;
@@ -139,19 +130,13 @@ void move_to_target(Command &command, float const x, float const y, float const 
     myprintf("Angle diff: %f\n", angle_diff);
 }
 
-void update_position_and_orientation(const input_t *input, const config_t *config) {
-    float delta_x_m, delta_y_m, delta_theta_deg;
-    fusion_odo_imu_fuse(input->imu_accel_x_mss, input->imu_accel_y_mss, input->delta_yaw_deg, input->delta_encoder_left,
-                        input->delta_encoder_right, config->time_step_s, thibault_state.theta_deg, &delta_x_m,
-                        &delta_y_m, &delta_theta_deg, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
-    thibault_state.x_m += delta_x_m;
-    thibault_state.y_m += delta_y_m;
-    thibault_state.theta_deg += delta_theta_deg;
-    thibault_state.theta_deg = angle_normalize_deg(thibault_state.theta_deg);
-    print_state(&thibault_state);
-}
+void next_command(state_t &state, const input_t &input, Command &command) {
+    if (!input.jack_removed) {
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        myprintf("STOPPING because jack has not been removed\n");
+        return;
+    }
 
-void calculate_command(state_t &state, const input_t &input, Command &command) {
     float x, y, orientation_deg;
     get_field_position_and_orientation(state, x, y, orientation_deg);
 
@@ -215,47 +200,34 @@ void calculate_command(state_t &state, const input_t &input, Command &command) {
         myprintf("Target angle: %f\n", target_angle_deg);
         myprintf("Angle diff: %f\n", angle_diff);
     }
-
-    if (!input.jack_removed) {
-        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
-        myprintf("STOPPING because jack has not been removed\n");
-        return;
-    }
 }
 
-void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
+void thibault_top_init(config_t &config) {
+    config.time_step_s = 0.004f;
+    printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
+    motor_init(config, thibault_state);
+    init_potential_field();
+    save_imu_to_field_transform(thibault_state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
+}
+
+void thibault_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
-    // print_complete_input(*input);
+    // print_complete_input(input);
 
-    // Read until the last available packet
-    const uint8_t *packet, *last_packet = nullptr;
-    while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)
-        last_packet = packet;
+    // 2. Update position and orientation from IMU and encoders
+    update_from_imu_and_encoders(config, input, thibault_state);
 
-    if (last_packet != nullptr) {
-        // Decode the packet
-        EaglePacket eagle_packet{};
-        if (decode_eagle_packet(last_packet, PACKET_SIZE, eagle_packet)) {
-            RobotColour robot_colour = eagle_packet.robot_colour;
-            float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-            float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-            float theta_deg = eagle_packet.robot_orientation_deg;
-            myprintf("Eagle packet: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
-                     robot_colour == RobotColour::Blue ? "B" : "Y", x, y, theta_deg);
+    // 3. Read the last Bluetooth packet (if available) and update the state
+    update_from_last_bluetooth_packet(thibault_state);
 
-            // Calculate the IMU -> field coordinate transformation
-            save_imu_to_field_transform(thibault_state, x, y, theta_deg);
-        }
-    }
-
-    update_position_and_orientation(input, config);
-
+    // 4. Calculate the next command
     Command command{};
-    calculate_command(thibault_state, *input, command);
+    next_command(thibault_state, input, command);
 
-    // Send the command to the actuators (motors, shovel, LED)
-    set_output(*config, *input, command, *output, thibault_state);
+    // 5. Convert the command to actuator commands (output)
+    set_output(config, input, command, output, thibault_state);
 
-    // print_complete_output(*output);
+    // 6. Debug: print output
+    // print_complete_output(output);
     // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }

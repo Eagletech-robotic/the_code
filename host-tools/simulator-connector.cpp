@@ -9,7 +9,7 @@ config_t config;
 
 extern "C" {
 
-EMSCRIPTEN_KEEPALIVE void exported_top_init() { top_init(&config); }
+EMSCRIPTEN_KEEPALIVE void exported_top_init() { top_init(config); }
 
 EMSCRIPTEN_KEEPALIVE input_t *create_input() {
     input_t *ptr = (input_t *)malloc(sizeof(input_t));
@@ -53,7 +53,7 @@ EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output, ui
         }
     }
 
-    top_step(&config, input, output);
+    top_step(config, *input, *output);
 }
 
 } // extern "C"

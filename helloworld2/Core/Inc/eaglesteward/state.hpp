@@ -1,4 +1,7 @@
 #pragma once
+#include "iot01A/config.h"
+#include "iot01A/input.h"
+
 #include <stdint.h>
 
 #include "robotic/pid.hpp"
@@ -32,8 +35,9 @@ typedef struct state_t {
     int getbleacher_state;
 } state_t;
 
-void print_state(state_t *state);
+void print_state(const state_t &state);
 void state_init(state_t *);
-
+void update_from_imu_and_encoders(const config_t &config, const input_t &input, state_t &state);
+void update_from_last_bluetooth_packet(state_t &state);
 void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field);
 void get_field_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta);

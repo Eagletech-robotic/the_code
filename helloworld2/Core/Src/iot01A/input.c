@@ -25,7 +25,7 @@ extern TIM_HandleTypeDef htim15; // pwm sur la led
 extern TIM_HandleTypeDef htim16; // pwm16 servo
 extern TIM_HandleTypeDef htim17; // pwm17 servo
 
-void input_init(input_t *input) {
+void input_init(input_t &input) {
     startToF();
     encoder_init(&htim5);
     encoder_init(&htim3);
@@ -54,7 +54,7 @@ bool jack_removed() {
     return pinState == GPIO_PIN_SET;
 }
 
-void input_get(input_t *input) {
+void input_get(input_t &input) {
     encoder_old[0] = encoder_raw[0];
     encoder_old[1] = encoder_raw[1];
     encoder_raw[0] = encoder_get_value(&htim3);
@@ -86,7 +86,7 @@ void input_get(input_t *input) {
     // printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input->delta_yaw_deg);
 }
 
-void print_input(input_t *input) {
-    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input->delta_encoder_left, (int32_t)input->delta_encoder_right,
-             input->jack_removed, input->tof_m);
+void print_input(const input_t &input) {
+    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input.delta_encoder_left, (int32_t)input.delta_encoder_right,
+             input.jack_removed, input.tof_m);
 }

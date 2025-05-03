@@ -285,7 +285,7 @@ auto print(char const *s) {
 }
 
 // execution une fois par cycle de tout l'arbre
-Status infinite_rectangle(input_t *input, Command *command, state_t *func_state) {
+Status cc_infinite_rectangle(const input_t *input, Command *command, state_t *func_state) {
     auto seq = sequence(
         [](input_t *lambda_input, Command *lambda_command, state_t *state) {
             return gotoTarget(0.0, 0.0, 0.6, 0.0, 0.6, 0.6, 0, lambda_input, lambda_command, state);
@@ -304,11 +304,11 @@ Status infinite_rectangle(input_t *input, Command *command, state_t *func_state)
             return Status::SUCCESS;
         });
 
-    return seq(input, command, func_state);
+    return seq(const_cast<input_t *>(input), command, func_state);
 }
 
 // Arbre de haut niveau
-Status cc_root_behavior_tree(input_t *input, Command *command, state_t *state) {
+Status cc_root_behavior_tree(const input_t *input, Command *command, state_t *state) {
     fsm_getbleacher(state);
     auto start = alternative(isJackGone, print("start"), waiting);
     auto ending = alternative(isGameOn, print("ending"), waiting);
@@ -319,7 +319,7 @@ Status cc_root_behavior_tree(input_t *input, Command *command, state_t *state) {
     auto findBleacher = alternative(haveBleacher, print("start"), gotoClosestBleacher);
     auto dropBleacher = alternative(gotoClosestBuildingArea, print("deposit"));
     auto root =
-        sequence(start, ending, safe, infinite_rectangle, backstage, backstageStaging, findBleacher, dropBleacher);
+        sequence(start, ending, safe, cc_infinite_rectangle, backstage, backstageStaging, findBleacher, dropBleacher);
 
-    return root(input, command, state);
+    return root(const_cast<input_t *>(input), command, state);
 }

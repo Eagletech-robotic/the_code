@@ -6,7 +6,7 @@
 #include "eaglesteward/guidance/nicolas.hpp"
 #endif
 
-void top_init(config_t *config) {
+void top_init(config_t &config) {
 #ifdef THIBAULT_GUIDANCE
     thibault_top_init(config);
 #else
@@ -14,7 +14,7 @@ void top_init(config_t *config) {
 #endif
 }
 
-void top_step(config_t *config, input_t *input, output_t *output) {
+void top_step(const config_t &config, const input_t &input, output_t &output) {
 #ifdef THIBAULT_GUIDANCE
     thibault_top_step(config, input, output);
 #else
