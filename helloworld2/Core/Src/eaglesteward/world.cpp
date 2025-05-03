@@ -1,4 +1,5 @@
 #include "eaglesteward/world.hpp"
+#include "eaglesteward/shortest_path.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -53,6 +54,40 @@ std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
             best_d = d, best = b;
     }
     return {best, best_d};
+}
+
+void World::path_to_closest_bleacher(const float robotX, const float robotY, const float opponentX,
+                                     const float opponentY,
+                                     SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath) {
+    constexpr int OPPONENT_RADIUS_SQ = 4;
+
+    const int opponentCoordX = std::floor(opponentX / SQUARE_SIZE_M);
+    const int opponentCoordY = std::floor(opponentY / SQUARE_SIZE_M);
+
+    std::array<std::array<GridSquare, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> grid{};
+    for (size_t i = 0; i < FIELD_WIDTH_SQ; ++i) {
+        for (size_t j = 0; j < FIELD_HEIGHT_SQ; ++j) {
+            const int distX = static_cast<int>(i) - opponentCoordX;
+            const int distY = static_cast<int>(j) - opponentCoordY;
+            const int distSquared = distX * distX + distY * distY;
+            if (distSquared < OPPONENT_RADIUS_SQ * OPPONENT_RADIUS_SQ) {
+                grid[i][j] = GridSquare::Obstacle;
+            } else {
+                grid[i][j] = GridSquare::Empty;
+            }
+        }
+    }
+
+    for (const Bleacher &bleacher : bleachers_) {
+        const int bleacherCoordX = std::floor(bleacher.x / SQUARE_SIZE_M);
+        const int bleacherCoordY = std::floor(bleacher.y / SQUARE_SIZE_M);
+        grid[bleacherCoordX][bleacherCoordY] = GridSquare::Target;
+    }
+
+    const Coord robotCoord = {.x = static_cast<uint8_t>(std::floor(robotX / SQUARE_SIZE_M)),
+                              .y = static_cast<uint8_t>(std::floor(robotY / SQUARE_SIZE_M))};
+
+    compute_shortest_path(grid, robotCoord, outPath);
 }
 
 void World::build_potential_field() {

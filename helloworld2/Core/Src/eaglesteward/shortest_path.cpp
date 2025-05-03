@@ -27,8 +27,6 @@ Coord compute_distances(const std::array<std::array<GridSquare, FIELD_HEIGHT_SQ>
 
                     if (grid[newX][newY] == GridSquare::Target) {
                         outDistances[newX][newY] = currDst;
-                        printf("Found target at (%d, %d)\n", newX, newY);
-                        printf("Shortest path distance: %d\n", outDistances[newX][newY]);
                         return {static_cast<uint8_t>(newX), static_cast<uint8_t>(newY)};
                     }
 

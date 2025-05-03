@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eaglesteward/shortest_path.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
@@ -20,6 +21,9 @@ class World {
     /* read‑only access for planners / visualisation */
     const auto &potential() const { return potential_field_; }
     const auto &bleacher_list() const { return bleachers_; }
+
+    void path_to_closest_bleacher(float robotX, float robotY, float opponentX, float opponentY,
+                                         SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath);
 
   private:
     /* data ----------------------------------------------------------- */
