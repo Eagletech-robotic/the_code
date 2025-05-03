@@ -170,7 +170,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
             float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
             float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
             float theta_deg = eagle_packet.robot_orientation_deg;
-            myprintf("!!! Eagle vision: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
+            myprintf("Eagle packet: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
                      robot_colour == RobotColour::Blue ? "B" : "Y", x, y, theta_deg);
 
             // Calculate the IMU -> field coordinate transformation

@@ -155,7 +155,7 @@ bool robot_border_outward(float w, float h, float s, float x, float y, float the
 
 // --- Comportement
 
-// on n'utilise pas la présence du robot adverse,pour être robuste sur ce sujet
+// On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
 Status isSafe(input_t *input, output_t *output, state_t *state) {
     if (state->filtered_tof_m < 0.2) { // failsafe si tout à merder avant
         myprintf("Failsafe\n");
@@ -183,20 +183,21 @@ Status avoidOpponent(input_t *input, output_t *output, state_t *state) {
 
 // Détection d'un gradin accrocher au aimant ?
 Status haveBleacher(input_t *input, output_t *output, state_t *state) {
-    myprintf("est-ce que j'ai un gradin accrocher ? Camera ou pelle out ou contacteur");
+    myprintf("Est-ce que j'ai un gradin accroché ? Camera ou pelle out ou TOF");
     if (isBleacherPossiblyAtContact(state)) { //-> la pelle doit avoir été sorti avant
         return Status::SUCCESS;
     }
     return Status::FAILURE;
 }
-Status gotoClosestArea(input_t *input, output_t *output, state_t *state) {
-    myprintf("Approcher d'une zone et lacher le gradin");
+
+Status gotoClosestBuildingArea(input_t *input, output_t *output, state_t *state) {
+    myprintf("Aller vers une aire de construction et lâcher le gradin");
     return Status::RUNNING;
 }
 
 // TODO
 Status gotoClosestBleacher(input_t *input, output_t *output, state_t *state) {
-    myprintf("Approcher d'un gradin et l'attraper");
+    myprintf("Aller vers un gradin et l'attraper");
     return Status::RUNNING;
 }
 
@@ -226,19 +227,31 @@ Status isGameOn(input_t *input, output_t *output, state_t *state) {
     return Status::FAILURE;
 }
 
-Status isNotTimeToGoToBackstage(input_t *input, output_t *output, state_t *state) {
-    if (state->elapsed_time_s > 70.0f) {
+Status isNotTimeToGoToBackstageStaging(input_t *input, output_t *output, state_t *state) {
+    if (state->elapsed_time_s > 75.0f) {
         return Status::FAILURE;
     }
     return Status::SUCCESS;
 }
 
-Status gotoBackstage(input_t *input, output_t *output, state_t *state) {
-    myprintf("Fini on rentre en backsage\n");
+Status isNotTimeToGoToBackstage(input_t *input, output_t *output, state_t *state) {
+    if (state->elapsed_time_s > 95.0f) {
+        return Status::FAILURE;
+    }
+    return Status::SUCCESS;
+}
+
+Status goToBackstageStaging(input_t *input, output_t *output, state_t *state) {
+    myprintf("Aller vers la zone d'attente du backstage\n");
     return Status::RUNNING;
 }
 
-// Attente indéfinit
+Status gotoBackstage(input_t *input, output_t *output, state_t *state) {
+    myprintf("Aller en backstage\n");
+    return Status::RUNNING;
+}
+
+// Attente indéfinie
 Status waiting(input_t *input, output_t *output, state_t *state) {
     myprintf("Waiting\n");
     output->motor_right_ratio = 0.0f;
@@ -301,10 +314,13 @@ Status cc_root_behavior_tree(input_t *input, output_t *output, state_t *state) {
     auto start = alternative(isJackGone, print("start"), waiting);
     auto ending = alternative(isGameOn, print("ending"), waiting);
     auto safe = alternative(isSafe, print("safe"), avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
+    auto backstageStaging =
+        alternative(isNotTimeToGoToBackstageStaging, print("backstage-staging"), goToBackstageStaging);
     auto backstage = alternative(isNotTimeToGoToBackstage, print("backstage"), gotoBackstage);
-    auto find = alternative(haveBleacher, print("start"), gotoClosestBleacher);
-    auto deposit = alternative(gotoClosestArea, print("deposit"));
-    auto root = sequence(start, ending, safe, infinite_rectangle, backstage, find, deposit);
+    auto findBleacher = alternative(haveBleacher, print("start"), gotoClosestBleacher);
+    auto dropBleacher = alternative(gotoClosestBuildingArea, print("deposit"));
+    auto root =
+        sequence(start, ending, safe, infinite_rectangle, backstage, backstageStaging, findBleacher, dropBleacher);
 
     return root(input, output, state);
 }
