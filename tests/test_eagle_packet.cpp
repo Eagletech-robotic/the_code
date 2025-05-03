@@ -39,12 +39,12 @@ std::vector<uint8_t> build_payload(const EaglePacket &pkt) {
 
     BitPacker bp;
     bp.push(static_cast<uint8_t>(pkt.robot_colour), 1);
-    bp.push(pkt.robot_x, 9);
-    bp.push(pkt.robot_y, 8);
+    bp.push(pkt.robot_x_cm, 9);
+    bp.push(pkt.robot_y_cm, 8);
     bp.push(static_cast<uint16_t>(pkt.robot_orientation_deg + 180), 9);
 
-    bp.push(pkt.opponent_x, 9);
-    bp.push(pkt.opponent_y, 8);
+    bp.push(pkt.opponent_x_cm, 9);
+    bp.push(pkt.opponent_y_cm, 8);
     bp.push(static_cast<uint16_t>(pkt.opponent_orientation_deg + 180), 9);
 
     bp.push(pkt.object_count, 6); // header ends at bit 58
@@ -52,8 +52,8 @@ std::vector<uint8_t> build_payload(const EaglePacket &pkt) {
     for (uint8_t i = 0; i < pkt.object_count; ++i) {
         const auto &o = pkt.objects[i];
         bp.push(static_cast<uint8_t>(o.type), 2);
-        bp.push(o.x, 6);
-        bp.push(o.y, 5);
+        bp.push(o.x_cm, 6);
+        bp.push(o.y_cm, 5);
         bp.push(o.orientation_deg / 30, 3); // 0‑6
     }
     return bp.to_bytes();
@@ -65,15 +65,15 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
         return true;
     if (a.robot_colour != b.robot_colour)
         return false;
-    if (a.robot_x != b.robot_x)
+    if (a.robot_x_cm != b.robot_x_cm)
         return false;
-    if (a.robot_y != b.robot_y)
+    if (a.robot_y_cm != b.robot_y_cm)
         return false;
     if (a.robot_orientation_deg != b.robot_orientation_deg)
         return false;
-    if (a.opponent_x != b.opponent_x)
+    if (a.opponent_x_cm != b.opponent_x_cm)
         return false;
-    if (a.opponent_y != b.opponent_y)
+    if (a.opponent_y_cm != b.opponent_y_cm)
         return false;
     if (a.opponent_orientation_deg != b.opponent_orientation_deg)
         return false;
@@ -83,9 +83,9 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
     for (uint8_t i = 0; i < a.object_count; ++i) {
         if (a.objects[i].type != b.objects[i].type)
             return false;
-        if (a.objects[i].x != b.objects[i].x)
+        if (a.objects[i].x_cm != b.objects[i].x_cm)
             return false;
-        if (a.objects[i].y != b.objects[i].y)
+        if (a.objects[i].y_cm != b.objects[i].y_cm)
             return false;
         if (a.objects[i].orientation_deg != b.objects[i].orientation_deg)
             return false;
@@ -102,12 +102,12 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
 TEST(EaglePacketDecode, RoundTripOneObject) {
     EaglePacket src{};
     src.robot_colour = RobotColour::Blue;
-    src.robot_x = 150;
-    src.robot_y = 100;
+    src.robot_x_cm = 150;
+    src.robot_y_cm = 100;
     src.robot_orientation_deg = 45;
 
-    src.opponent_x = 200;
-    src.opponent_y = 50;
+    src.opponent_x_cm = 200;
+    src.opponent_y_cm = 50;
     src.opponent_orientation_deg = -90;
 
     src.object_count = 1;
@@ -123,11 +123,11 @@ TEST(EaglePacketDecode, RoundTripOneObject) {
 TEST(EaglePacketDecode, ZeroObjects) {
     EaglePacket src{};
     src.robot_colour = RobotColour::Blue;
-    src.robot_x = 1;
-    src.robot_y = 2;
+    src.robot_x_cm = 1;
+    src.robot_y_cm = 2;
     src.robot_orientation_deg = 0;
-    src.opponent_x = 3;
-    src.opponent_y = 4;
+    src.opponent_x_cm = 3;
+    src.opponent_y_cm = 4;
     src.opponent_orientation_deg = 0;
     src.object_count = 0;
 
@@ -185,19 +185,19 @@ TEST(EaglePacketDecode, TooShortForObjects) {
     EaglePacket out{};
     ASSERT_TRUE(decode_eagle_packet(truncated.data(), truncated.size(), out));
     EXPECT_EQ(out.object_count, 3);
-    EXPECT_EQ(out.objects[0].x, 0); // zero‑padded
+    EXPECT_EQ(out.objects[0].x_cm, 0); // zero‑padded
     EXPECT_EQ(out.objects[0].orientation_deg, 0);
 }
 
 TEST(EaglePacketDecode, BoundaryValues) {
     EaglePacket src{};
     src.robot_colour = RobotColour::Yellow;
-    src.robot_x = 300;
-    src.robot_y = 200;
+    src.robot_x_cm = 300;
+    src.robot_y_cm = 200;
     src.robot_orientation_deg = 180;
 
-    src.opponent_x = 0;
-    src.opponent_y = 0;
+    src.opponent_x_cm = 0;
+    src.opponent_y_cm = 0;
     src.opponent_orientation_deg = -180;
 
     src.object_count = 1;

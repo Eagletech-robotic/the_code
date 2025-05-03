@@ -4,6 +4,7 @@
 
 /* --------------------------------------------------------------------------
    Bluetooth packet format (little‑endian bit order).
+   Packet length: 128 bytes.
 
    Byte   Bit‑index  Purpose                                Size (bits)
    ───────────────────────────────────────────────────────────────────────
@@ -29,19 +30,19 @@ enum class ObjectType : uint8_t { Bleacher = 0, Plank = 1, Can = 2 };
 
 struct EagleObject {
     ObjectType type;
-    uint16_t x;
-    uint8_t y;
+    uint16_t x_cm;
+    uint8_t y_cm;
     uint8_t orientation_deg;
 };
 
 struct EaglePacket {
     RobotColour robot_colour;
-    uint16_t robot_x;
-    uint8_t robot_y;
+    uint16_t robot_x_cm;
+    uint8_t robot_y_cm;
     int16_t robot_orientation_deg;
 
-    uint16_t opponent_x;
-    uint8_t opponent_y;
+    uint16_t opponent_x_cm;
+    uint8_t opponent_y_cm;
     int16_t opponent_orientation_deg;
 
     uint8_t object_count;

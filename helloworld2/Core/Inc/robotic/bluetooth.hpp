@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-constexpr int PACKET_SIZE = 20;
+constexpr int PACKET_SIZE = 128;
 
 class BluetoothDecoder {
   public:
