@@ -9,11 +9,11 @@
 #include <stdexcept>
 
 #include "eaglesteward/motor.hpp"
-#include "eaglesteward/pelle.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/bluetooth.hpp"
+#include "robotic/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "robotic/fusion_odo_imu.hpp"
 #include "utils/constants.hpp"
@@ -115,28 +115,25 @@ std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     return {*closest, closest_distance};
 }
 
-void move_to_target(const config_t *config, const input_t *input, output_t *output, float const x, float const y,
-                    float const orientation_deg, float const target_x, float const target_y) {
+void move_to_target(Command &command, float const x, float const y, float const orientation_deg, float const target_x,
+                    float const target_y) {
     float const delta_x = x - target_x;
     float const delta_y = y - target_y;
     float const target_angle_deg = std::atan2(-delta_y, -delta_x) / static_cast<float>(M_PI) * 180;
     float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
 
-    float speed_left, speed_right;
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff >= 0) {
-            speed_left = 0.0f;
-            speed_right = 0.5f;
+            command.target_left_speed = 0.0f;
+            command.target_right_speed = 0.5f;
         } else {
-            speed_left = 0.5f;
-            speed_right = 0.0f;
+            command.target_left_speed = 0.5f;
+            command.target_right_speed = 0.0f;
         }
     } else {
-        speed_left = 0.5f - angle_diff / 180.0f;
-        speed_right = 0.5f + angle_diff / 180.0f;
+        command.target_left_speed = 0.5f - angle_diff / 180.0f;
+        command.target_right_speed = 0.5f + angle_diff / 180.0f;
     }
-    motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
-                           output->motor_right_ratio);
 
     myprintf("Target angle: %f\n", target_angle_deg);
     myprintf("Angle diff: %f\n", angle_diff);
@@ -154,7 +151,80 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
     print_state(&thibault_state);
 }
 
+void calculate_command(state_t &state, const input_t &input, Command &command) {
+    float x, y, orientation_deg;
+    get_field_position_and_orientation(state, x, y, orientation_deg);
+
+    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
+    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+
+    if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
+        // throw std::out_of_range("Coordinates out of range");
+    }
+
+    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
+
+    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
+    myprintf("Closest target distance: %f\n", closest_bleacher_distance);
+    myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
+
+    constexpr float STOP_DISTANCE = 0.25f;
+    constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
+    if (closest_bleacher_distance <= STOP_DISTANCE) {
+        myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        command.shovel = ShovelCommand::SHOVEL_EXTEND;
+        return;
+    }
+    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
+        myprintf("Moving to target");
+        move_to_target(command, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
+        return;
+    }
+
+    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
+    constexpr float SLOPE_THRESHOLD = 0.05f;
+    constexpr float MAX_SPEED = 1.0f; // m/s
+
+    float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
+    float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
+
+    if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
+        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+    } else {
+        float const target_angle_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
+        float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+
+        if (std::abs(angle_diff) >= 90) {
+            if (angle_diff >= 0) {
+                command.target_left_speed = 0.0f;
+                command.target_right_speed = 0.5f;
+            } else {
+                command.target_left_speed = 0.5f;
+                command.target_right_speed = 0.0f;
+            }
+        } else {
+            float const speed_left = 0.5f - angle_diff / 180.0f;
+            float const speed_right = 0.5f + angle_diff / 180.0f;
+            float const max = std::max(speed_left, speed_right);
+            command.target_left_speed = MAX_SPEED / max * speed_left;
+            command.target_right_speed = MAX_SPEED / max * speed_right;
+        }
+
+        myprintf("Target angle: %f\n", target_angle_deg);
+        myprintf("Angle diff: %f\n", angle_diff);
+    }
+
+    if (!input.jack_removed) {
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        myprintf("STOPPING because jack has not been removed\n");
+        return;
+    }
+}
+
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
+    // 1. Debug: print input
     // print_complete_input(*input);
 
     // Read until the last available packet
@@ -179,81 +249,13 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     }
 
     update_position_and_orientation(input, config);
-    float x, y, orientation_deg;
-    convert_from_imu_to_field(thibault_state, x, y, orientation_deg);
 
-    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
-    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+    Command command{};
+    calculate_command(thibault_state, *input, command);
 
-    if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-        // throw std::out_of_range("Coordinates out of range");
-    }
+    // Send the command to the actuators (motors, shovel, LED)
+    set_output(*config, *input, command, *output, thibault_state);
 
-    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
-
-    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
-    myprintf("Closest target distance: %f\n", closest_bleacher_distance);
-    myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
-
-    constexpr float STOP_DISTANCE = 0.25f;
-    constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
-    if (closest_bleacher_distance <= STOP_DISTANCE) {
-        myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        pelle_out(output);
-        return;
-    }
-    if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
-        myprintf("Moving to target");
-        move_to_target(config, input, output, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
-        return;
-    }
-
-    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
-    constexpr float SLOPE_THRESHOLD = 0.05f;
-    constexpr float MAX_SPEED = 1.0f; // m/s
-
-    float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
-    float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
-
-    if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        pelle_out(output);
-    } else {
-        float const target_angle_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
-        float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
-
-        if (std::abs(angle_diff) >= 90) {
-            if (angle_diff >= 0) {
-                motor_calculate_ratios(*config, thibault_state, *input, 0.0f, 0.5f, output->motor_left_ratio,
-                                       output->motor_right_ratio);
-            } else {
-                motor_calculate_ratios(*config, thibault_state, *input, 0.5f, 0.0f, output->motor_left_ratio,
-                                       output->motor_right_ratio);
-            }
-        } else {
-            float const speed_left = 0.5f - angle_diff / 180.0f;
-            float const speed_right = 0.5f + angle_diff / 180.0f;
-            float const max = std::max(speed_left, speed_right);
-            float const throttled_speed_left = MAX_SPEED / max * speed_left;
-            float const throttled_speed_right = MAX_SPEED / max * speed_right;
-            motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
-                                   output->motor_left_ratio, output->motor_right_ratio);
-        }
-
-        myprintf("Target angle: %f\n", target_angle_deg);
-        myprintf("Angle diff: %f\n", angle_diff);
-    }
-
-    if (!input->jack_removed) {
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        myprintf("STOPPING because jack has not been removed\n");
-        return;
-    } // S100150042
     // print_complete_output(*output);
     // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }
