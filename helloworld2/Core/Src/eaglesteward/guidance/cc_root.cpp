@@ -198,6 +198,8 @@ Status gotoClosestBuildingArea(input_t *input, Command *command, state_t *state)
 
 // TODO
 Status gotoClosestBleacher(input_t *input, Command *command, state_t *state) {
+    // world.getShortestPathToBleacher(robotx, roboty, obstacles, &state.current_path)
+    // gradient_descent(state.current_path, command)
     myprintf("Aller vers un gradin et l'attraper");
     return Status::RUNNING;
 }

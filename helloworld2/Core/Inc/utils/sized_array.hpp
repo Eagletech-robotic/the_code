@@ -1,5 +1,4 @@
-#ifndef SIZED_ARRAY_H
-#define SIZED_ARRAY_H
+#pragma once
 
 #include <array>
 #include <initializer_list>
@@ -104,6 +103,11 @@ template <typename T, size_t Capacity> class SizedArray {
     void clear() { size_ = 0; }
 
     /**
+     * @return True if full, false otherwise.
+     */
+    [[nodiscard]] bool full() const { return size_ == Capacity; }
+
+    /**
      * @return The current dynamic size of the array.
      */
     [[nodiscard]] size_t size() const { return size_; }
@@ -142,5 +146,3 @@ template <typename T, size_t Capacity> class SizedArray {
      */
     typename std::array<T, Capacity>::const_iterator end() const { return data_.begin() + size_; }
 };
-
-#endif // SIZED_ARRAY_H

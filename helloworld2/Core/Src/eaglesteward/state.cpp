@@ -37,6 +37,7 @@ void state_init(state_t &state) {
     state.elapsed_time_s = .0f;
     state.filtered_tof_m = .0f;
     state.previous_jack_removed = false;
+    state.world = World();
 
     // Set the initial state for the IMU to field coordinate transformation.
     save_imu_to_field_transform(state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
@@ -109,4 +110,7 @@ void update_state_from_bluetooth(state_t &state) {
     state.opponent_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
     state.opponent_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
     state.opponent_theta_deg = eagle_packet.robot_orientation_deg;
+
+    // Update the world from the packet
+    state.world.reset_from_eagle_packet(eagle_packet);
 }

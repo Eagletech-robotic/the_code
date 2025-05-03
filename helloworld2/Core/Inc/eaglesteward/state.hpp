@@ -1,4 +1,6 @@
 #pragma once
+
+#include "eaglesteward/world.hpp"
 #include "iot01A/config.h"
 #include "iot01A/input.h"
 
@@ -24,6 +26,8 @@ typedef struct state_t {
     float opponent_theta_deg;
     // TOF
     float filtered_tof_m;
+    // World
+    World world;
     // --- Ecrit par retour
     uint32_t start_time_ms; // "date du début du match" en ms
     float elapsed_time_s;   // temps écoulé depuis le début du match

@@ -7,8 +7,8 @@
 #include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
 
-void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ], const int width,
-                               const int height) {
+void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field,
+                               const int width, const int height) {
     int const colors[] = {
         17, 19, 20, 26, 32, 38, 46, 82, 118, 154, 190, 226, 214, 208, 202, 196, 160, 124, 88, 52,
     };

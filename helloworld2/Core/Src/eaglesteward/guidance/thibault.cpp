@@ -11,93 +11,14 @@
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
+#include "eaglesteward/world.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/constants.hpp"
-#include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
-#include "utils/sized_array.hpp"
 
 state_t thibault_state;
-
-float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGHT_SQ]{};
-SizedArray<Bleacher, 10> bleachers;
-
-void add_walls() {
-    constexpr float INFLUENCE_DISTANCE = 0.35f;
-    constexpr float MAX_POTENTIAL = 35.0f;
-
-    constexpr int wall_influence_squares = static_cast<int>(INFLUENCE_DISTANCE / SQUARE_SIZE_M);
-    for (int i = 0; i < FIELD_WIDTH_SQ; i++) {
-        for (int j = 0; j < FIELD_HEIGHT_SQ; j++) {
-            if (i < wall_influence_squares) {
-                potential_field[i][j] +=
-                    MAX_POTENTIAL * static_cast<float>(wall_influence_squares - i) / wall_influence_squares;
-            } else if (i >= FIELD_WIDTH_SQ - wall_influence_squares) {
-                potential_field[i][j] += MAX_POTENTIAL *
-                                         static_cast<float>(i - (FIELD_WIDTH_SQ - wall_influence_squares)) /
-                                         wall_influence_squares;
-            }
-
-            if (j < wall_influence_squares) {
-                potential_field[i][j] +=
-                    MAX_POTENTIAL * static_cast<float>(wall_influence_squares - j) / wall_influence_squares;
-            } else if (j >= FIELD_HEIGHT_SQ - wall_influence_squares) {
-                potential_field[i][j] += MAX_POTENTIAL *
-                                         static_cast<float>(j - (FIELD_HEIGHT_SQ - wall_influence_squares)) /
-                                         wall_influence_squares;
-            }
-        }
-    }
-}
-
-void add_bleachers() {
-    bleachers = {
-        Bleacher(2.925f, 1.255f, 0.0f),
-    };
-
-    for (auto &bleacher : bleachers) {
-        auto &field = bleacher.potential_field();
-
-        int const field_width = static_cast<int>(field.size());
-        int const field_height = static_cast<int>(field[0].size());
-
-        int const bleacher_i = static_cast<int>(std::round(bleacher.x / SQUARE_SIZE_M)) - field_width / 2;
-        int const bleacher_j = static_cast<int>(std::round(bleacher.y / SQUARE_SIZE_M)) - field_height / 2;
-
-        for (int field_i = 0; field_i < field_width; field_i++) {
-            for (int field_j = 0; field_j < field_height; field_j++) {
-                int const i = bleacher_i + field_i;
-                int const j = bleacher_j + field_j;
-
-                if (i < 0 || j < 0 || i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ)
-                    continue;
-
-                potential_field[i][j] += field[field_i][field_j];
-            }
-        }
-    }
-}
-
-void init_potential_field() {
-    add_walls();
-    add_bleachers();
-}
-
-std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
-    Bleacher *closest = &bleachers[0];
-    float closest_distance = 9.999f;
-    for (const auto bleacher : bleachers) {
-        float const delta_x = std::abs(x - bleacher.x);
-        float const delta_y = std::abs(y - bleacher.y);
-        float const distance = std::sqrt(delta_x * delta_x + delta_y * delta_y);
-        if (distance < closest_distance)
-            closest_distance = distance, *closest = bleacher;
-    }
-
-    return {*closest, closest_distance};
-}
 
 void move_to_target(Command &command, float const x, float const y, float const orientation_deg, float const target_x,
                     float const target_y) {
@@ -130,6 +51,8 @@ void next_command(state_t &state, const input_t &input, Command &command) {
         return;
     }
 
+    auto const world = thibault_state.world;
+
     float x, y, orientation_deg;
     get_position_and_orientation(state, x, y, orientation_deg);
 
@@ -142,7 +65,7 @@ void next_command(state_t &state, const input_t &input, Command &command) {
 
     myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
 
-    auto [closest_bleacher, closest_bleacher_distance] = get_closest_bleacher(x, y);
+    auto [closest_bleacher, closest_bleacher_distance] = world.closest_bleacher(x, y);
     myprintf("Closest target distance: %f\n", closest_bleacher_distance);
     myprintf("Target pos x: %f, y: %f\n", closest_bleacher.x, closest_bleacher.y);
 
@@ -164,6 +87,7 @@ void next_command(state_t &state, const input_t &input, Command &command) {
     constexpr float SLOPE_THRESHOLD = 0.05f;
     constexpr float MAX_SPEED = 1.0f; // m/s
 
+    const auto potential_field = world.potential();
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
@@ -199,7 +123,6 @@ void thibault_top_init(config_t &config) {
     config.time_step_s = 0.004f;
     printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
     motor_init(config, thibault_state);
-    init_potential_field();
     state_init(thibault_state);
 }
 
