@@ -11,9 +11,10 @@ enable_testing()
 # Common compiler flags
 set(COMMON_FLAGS "-Wall -Wextra -Wshadow -O3 -Wno-unused-parameter -Wno-missing-field-initializers")
 
-if (NOT CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
-   set(COMMON_FLAGS "${COMMON_FLAGS} -g -fsanitize=address,undefined -fno-omit-frame-pointer")
-endif()
+# Should only apply to GCC target, not to STM32 and WASM targets
+#if (NOT CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
+#   set(COMMON_FLAGS "${COMMON_FLAGS} -g -fsanitize=address,undefined -fno-omit-frame-pointer")
+#endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
