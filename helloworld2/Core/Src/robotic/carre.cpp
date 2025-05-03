@@ -79,7 +79,7 @@ void carre_sequence(carre_t *c, output_t *output) {
 //
 //// avance sur une ligne
 //// retourne true quand la ligne est faite, false sinon
-// int line_step(line * line, float v, float d_m, float x_m, float y_m, float theta_deg) {
+// int line_step(line * line, float v, float d_m, float imu_x, float imu_y, float theta_deg) {
 //	if(line->first_call) {
 //		line->
 //	}

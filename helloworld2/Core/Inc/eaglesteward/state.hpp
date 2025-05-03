@@ -11,13 +11,17 @@ typedef enum getbleacher_state_t { GB_RESET, GB_NON_FREE, GB_CLOSE, GB_GET_IT } 
 typedef struct state_t {
     enum Color color;
     // IMU coordinate system
-    float x_m;
-    float y_m;
-    float theta_deg;
+    float imu_x; // meters
+    float imu_y;
+    float imu_theta_deg;
     // IMU to field coordinate transformation
-    float x_offset_m;       // X translation offset after rotation
-    float y_offset_m;       // Y translation offset after rotation
-    float theta_offset_deg; // Rotation offset between IMU and field
+    float transformation_x;         // X translation offset after rotation (meters)
+    float transformation_y;         // Y translation offset after rotation
+    float transformation_theta_deg; // Rotation offset between IMU and field
+    // Opponent
+    float opponent_x; // meters
+    float opponent_y;
+    float opponent_theta_deg;
     // TOF
     float filtered_tof_m;
     // --- Ecrit par retour

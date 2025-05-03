@@ -167,7 +167,8 @@ Status isSafe(input_t *input, Command *command, state_t *state) {
         return Status::FAILURE;
     }
 
-    //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->x_m, state->y_m, state->theta_deg,
+    //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->imu_x, state->imu_y,
+    // state->theta_deg,
     // 0.01f)) { 		return Status::FAILURE;
     //	}
 
@@ -267,8 +268,9 @@ Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float targ
         return Status::SUCCESS;
     }
     myprintf("B%d\r\n", func_state->target);
-    int isArrived = controller_pid(func_state->x_m, func_state->y_m, func_state->theta_deg, target_x_m, target_y_m,
-                                   0.8f, WHEELBASE_M, 0.08, &command->target_left_speed, &command->target_right_speed);
+    int isArrived =
+        controller_pid(func_state->imu_x, func_state->imu_y, func_state->imu_theta_deg, target_x_m, target_y_m, 0.8f,
+                       WHEELBASE_M, 0.08, &command->target_left_speed, &command->target_right_speed);
     if (isArrived) {
         func_state->target++;
         return Status::SUCCESS;
