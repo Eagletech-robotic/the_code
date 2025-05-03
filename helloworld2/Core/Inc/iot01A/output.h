@@ -8,7 +8,7 @@ typedef struct output_t {
     float led_ratio; // définit la luminosité
 } output_t;
 
-void output_set(output_t *output);
-void output_init(output_t *output);
+void output_set(const output_t &output);
+void output_init(output_t &output);
 
-void print_output(output_t *output);
+void print_output(const output_t &output);

@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 void carre_init(carre_t *carre, float cycle_period_s) {
-    // output_init(&carre->output);
+    // output_init(carre->output);
     carre->time_from_start_s = 0.0;
     carre->start_sequence_time_s = 0.0;
     carre->timer_period_s = cycle_period_s; // cela dépend de la vitesse de cycle choisi à la configuration
@@ -87,7 +87,7 @@ void carre_sequence(carre_t *c, output_t *output) {
 
 // void carre_output_commit(carre_t * c) {
 ////	printf("v : %f %f \r\n", c->output.ratio15, c->output.ratio2);
-//	output_set(&c->output);
+//	output_set(c->output);
 //}
 
 void carre_in_loop(carre_t *c, output_t *output) {

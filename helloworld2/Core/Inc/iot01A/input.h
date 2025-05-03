@@ -22,6 +22,6 @@ typedef struct input_t {
 } input_t;
 
 // fonction inutilisable dans le module eaglesteward
-void input_init(input_t *input);
-void input_get(input_t *input);
-void print_input(input_t *input);
+void input_init(input_t &input);
+void input_get(input_t &input);
+void print_input(const input_t &input);
