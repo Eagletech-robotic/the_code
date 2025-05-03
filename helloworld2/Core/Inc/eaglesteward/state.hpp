@@ -18,26 +18,22 @@ typedef struct state_t {
     float x_offset_m;       // X translation offset after rotation
     float y_offset_m;       // Y translation offset after rotation
     float theta_offset_deg; // Rotation offset between IMU and field
-    // ...
-    int target; // for rectangle test
+    // TOF
     float filtered_tof_m;
     // --- Ecrit par retour
     uint32_t start_time_ms; // "date du début du match" en ms
     float elapsed_time_s;   // temps écoulé depuis le début du match
     bool previous_jack_removed;
-    // --- Géré par autopilot
+    // --- Motor PID
     PID_t pid_diff;
     PID_t pid_sum;
-    // -- Position de l'adversaire
-    float opponent_x_m;
-    float opponent_y_m;
     // -- fsm de gestion de l'approche d'un bleacher
+    int target; // for rectangle test
     int getbleacher_state;
 } state_t;
 
 void print_state(const state_t &state);
-void state_init(state_t *);
+void state_init(state_t &state);
 void update_state_from_input(const config_t &config, const input_t &input, state_t &state);
 void update_state_from_bluetooth(state_t &state);
-void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field);
 void get_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta);

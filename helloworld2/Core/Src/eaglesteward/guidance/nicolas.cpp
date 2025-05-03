@@ -6,7 +6,6 @@
 #include "eaglesteward/guidance/cc_root.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
-#include "eaglesteward/tof.hpp"
 #include "robotic/carre.hpp"
 #include "robotic/command.hpp"
 #include "utils/myprintf.hpp"
@@ -19,7 +18,7 @@ void nicolas_top_init(config_t &config) {
     printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
     carre_init(&carre, config.time_step_s);
     motor_init(config, nicolas_state);
-    state_init(&nicolas_state);
+    state_init(nicolas_state);
 }
 
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {

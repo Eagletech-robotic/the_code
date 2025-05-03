@@ -6,23 +6,13 @@
 #include "robotic/bluetooth.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "robotic/fusion_odo_imu.hpp"
+#include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
 
 #include <math.h>
 
 void print_state(const state_t &state) {
     myprintf("S %.2f %.2f  %.1f  %.3f\n", state.x_m, state.y_m, state.theta_deg, state.filtered_tof_m);
-}
-
-void state_init(state_t *state) {
-    state->elapsed_time_s = .0f;
-    state->filtered_tof_m = .0f;
-    state->previous_jack_removed = false;
-    state->start_time_ms = 0;
-    state->target = 0;
-    state->theta_deg = .0f;
-    state->x_m = .0f;
-    state->y_m = .0f;
 }
 
 /**
@@ -36,6 +26,20 @@ void save_imu_to_field_transform(state_t &state, float x_field, float y_field, f
     float theta_offset_rad = state.theta_offset_deg * (M_PI / 180.0f);
     state.x_offset_m = x_field - (state.x_m * cos(theta_offset_rad) - state.y_m * sin(theta_offset_rad));
     state.y_offset_m = y_field - (state.x_m * sin(theta_offset_rad) + state.y_m * cos(theta_offset_rad));
+}
+
+void state_init(state_t &state) {
+    state.x_m = .0f;
+    state.y_m = .0f;
+    state.theta_deg = .0f;
+    state.target = 0;
+    state.start_time_ms = 0;
+    state.elapsed_time_s = .0f;
+    state.filtered_tof_m = .0f;
+    state.previous_jack_removed = false;
+
+    // Set the initial state for the IMU to field coordinate transformation.
+    save_imu_to_field_transform(state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
 
 /**

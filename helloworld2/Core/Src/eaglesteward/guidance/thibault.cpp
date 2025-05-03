@@ -12,12 +12,9 @@
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
-#include "robotic/bluetooth.hpp"
 #include "robotic/command.hpp"
 #include "robotic/eagle_packet.hpp"
-#include "robotic/fusion_odo_imu.hpp"
 #include "utils/constants.hpp"
-#include "utils/debug.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/myprintf.hpp"
 #include "utils/sized_array.hpp"
@@ -87,10 +84,6 @@ void init_potential_field() {
     add_walls();
     add_bleachers();
 }
-
-constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
-constexpr float INITIAL_X = 1.225f;
-constexpr float INITIAL_Y = 0.225f;
 
 std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     Bleacher *closest = &bleachers[0];
@@ -207,7 +200,7 @@ void thibault_top_init(config_t &config) {
     printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
     motor_init(config, thibault_state);
     init_potential_field();
-    save_imu_to_field_transform(thibault_state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
+    state_init(thibault_state);
 }
 
 void thibault_top_step(const config_t &config, const input_t &input, output_t &output) {
