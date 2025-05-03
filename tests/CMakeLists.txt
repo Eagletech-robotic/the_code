@@ -11,6 +11,7 @@ include_directories(
 # We compile the .cpp directly into the test executable.
 set(PROGRAM_SOURCES
     ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/robotic/bluetooth.cpp
+    ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/robotic/eagle_packet.cpp
     # ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/utils/myprintf.cpp
 )
 

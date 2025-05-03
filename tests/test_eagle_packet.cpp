@@ -1,0 +1,211 @@
+#include "robotic/eagle_packet.hpp"
+
+#include <cstdint>
+#include <cstring>
+#include <gtest/gtest.h>
+#include <stdexcept>
+#include <vector>
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Helper: encode an EaglePacket into the raw payload that sits between
+   the starter byte and the checksum.  The layout exactly mirrors what the
+   BitReader in eagle_packet.cpp expects (LSB‑first, 59‑bit header,
+   no padding, each object = 16 bits).
+   ──────────────────────────────────────────────────────────────────────── */
+namespace {
+
+class BitPacker {
+  public:
+    void push(uint32_t value, unsigned n_bits) {
+        for (unsigned i = 0; i < n_bits; ++i) // LSB first
+            bits_.push_back((value >> i) & 1u);
+    }
+
+    std::vector<uint8_t> to_bytes() const {
+        std::vector<uint8_t> out((bits_.size() + 7) / 8, 0u);
+        for (std::size_t i = 0; i < bits_.size(); ++i)
+            if (bits_[i])
+                out[i / 8] |= (1u << (i & 7));
+        return out;
+    }
+
+  private:
+    std::vector<uint8_t> bits_;
+};
+
+std::vector<uint8_t> build_payload(const EaglePacket &pkt) {
+    if (pkt.object_count > 60)
+        throw std::invalid_argument("object_count > 60");
+
+    BitPacker bp;
+    bp.push(static_cast<uint8_t>(pkt.robot_colour), 1);
+    bp.push(pkt.robot_x, 9);
+    bp.push(pkt.robot_y, 8);
+    bp.push(static_cast<uint16_t>(pkt.robot_orientation_deg + 180), 9);
+
+    bp.push(pkt.opponent_x, 9);
+    bp.push(pkt.opponent_y, 8);
+    bp.push(static_cast<uint16_t>(pkt.opponent_orientation_deg + 180), 9);
+
+    bp.push(pkt.object_count, 6); // header ends at bit 58
+
+    for (uint8_t i = 0; i < pkt.object_count; ++i) {
+        const auto &o = pkt.objects[i];
+        bp.push(static_cast<uint8_t>(o.type), 2);
+        bp.push(o.x, 6);
+        bp.push(o.y, 5);
+        bp.push(o.orientation_deg / 30, 3); // 0‑6
+    }
+    return bp.to_bytes();
+}
+
+/* quick equality helper */
+bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
+    if (std::memcmp(&a, &b, sizeof(EaglePacket)) == 0)
+        return true;
+    if (a.robot_colour != b.robot_colour)
+        return false;
+    if (a.robot_x != b.robot_x)
+        return false;
+    if (a.robot_y != b.robot_y)
+        return false;
+    if (a.robot_orientation_deg != b.robot_orientation_deg)
+        return false;
+    if (a.opponent_x != b.opponent_x)
+        return false;
+    if (a.opponent_y != b.opponent_y)
+        return false;
+    if (a.opponent_orientation_deg != b.opponent_orientation_deg)
+        return false;
+    if (a.object_count != b.object_count)
+        return false;
+
+    for (uint8_t i = 0; i < a.object_count; ++i) {
+        if (a.objects[i].type != b.objects[i].type)
+            return false;
+        if (a.objects[i].x != b.objects[i].x)
+            return false;
+        if (a.objects[i].y != b.objects[i].y)
+            return false;
+        if (a.objects[i].orientation_deg != b.objects[i].orientation_deg)
+            return false;
+    }
+    return true;
+}
+
+} // namespace
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TESTS
+   ──────────────────────────────────────────────────────────────────────── */
+
+TEST(EaglePacketDecode, RoundTripOneObject) {
+    EaglePacket src{};
+    src.robot_colour = RobotColour::Blue;
+    src.robot_x = 150;
+    src.robot_y = 100;
+    src.robot_orientation_deg = 45;
+
+    src.opponent_x = 200;
+    src.opponent_y = 50;
+    src.opponent_orientation_deg = -90;
+
+    src.object_count = 1;
+    src.objects[0] = {ObjectType::Bleacher, 25, 15, 60};
+
+    const auto payload = build_payload(src);
+
+    EaglePacket dst{};
+    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
+    EXPECT_TRUE(packets_equal(src, dst));
+}
+
+TEST(EaglePacketDecode, ZeroObjects) {
+    EaglePacket src{};
+    src.robot_colour = RobotColour::Blue;
+    src.robot_x = 1;
+    src.robot_y = 2;
+    src.robot_orientation_deg = 0;
+    src.opponent_x = 3;
+    src.opponent_y = 4;
+    src.opponent_orientation_deg = 0;
+    src.object_count = 0;
+
+    const auto payload = build_payload(src);
+
+    EaglePacket dst{};
+    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
+    EXPECT_TRUE(packets_equal(src, dst));
+}
+
+TEST(EaglePacketDecode, MaxObjects) {
+    EaglePacket src{};
+    src.robot_colour = RobotColour::Yellow;
+    for (uint8_t i = 0; i < 60; ++i) {
+        src.objects[i] = {static_cast<ObjectType>(i % 3), uint16_t(i & 63), uint8_t(i % 32), uint8_t((i % 7) * 30)};
+    }
+    src.robot_orientation_deg = 30;
+    src.opponent_orientation_deg = -30;
+    src.object_count = 60;
+
+    const auto payload = build_payload(src);
+
+    EaglePacket dst{};
+    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
+    EXPECT_TRUE(packets_equal(src, dst));
+}
+
+TEST(EaglePacketDecode, InvalidObjectCount)
+{
+    /* object_count = 61 (binary 111101, LSB‑first)
+       bits 53‑55 → bits 5‑7 of byte 6
+       bits 56‑58 → bits 0‑2 of byte 7 */
+    std::vector<uint8_t> payload(8, 0);
+    payload[6] = 0b1010'0000;   // bit 5 =1, bit 6 =0, bit 7 =1
+    payload[7] = 0b0000'0111;   // bits 0‑2 =111
+
+    EaglePacket out{};
+    EXPECT_FALSE(decode_eagle_packet(payload.data(), payload.size(), out));
+}
+
+TEST(EaglePacketDecode, TooShortHeader) {
+    std::vector<uint8_t> tiny{0xAA, 0xBB, 0xCC}; // three bytes only
+    EaglePacket out{};
+    ASSERT_TRUE(decode_eagle_packet(tiny.data(), tiny.size(), out));
+    EXPECT_EQ(out.object_count, 0); // zero‑padded under‑read
+}
+
+TEST(EaglePacketDecode, TooShortForObjects) {
+    /* declare 3 objects but supply none */
+    EaglePacket hdr_only{};
+    hdr_only.object_count = 3;
+    const auto payload = build_payload(hdr_only);
+    std::vector<uint8_t> truncated(payload.begin(), payload.begin() + 8); // keep header only
+
+    EaglePacket out{};
+    ASSERT_TRUE(decode_eagle_packet(truncated.data(), truncated.size(), out));
+    EXPECT_EQ(out.object_count, 3);
+    EXPECT_EQ(out.objects[0].x, 0); // zero‑padded
+    EXPECT_EQ(out.objects[0].orientation_deg, 0);
+}
+
+TEST(EaglePacketDecode, BoundaryValues) {
+    EaglePacket src{};
+    src.robot_colour = RobotColour::Yellow;
+    src.robot_x = 300;
+    src.robot_y = 200;
+    src.robot_orientation_deg = 180;
+
+    src.opponent_x = 0;
+    src.opponent_y = 0;
+    src.opponent_orientation_deg = -180;
+
+    src.object_count = 1;
+    src.objects[0] = {ObjectType::Plank, 0, 0, 0};
+
+    const auto payload = build_payload(src);
+
+    EaglePacket dst{};
+    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
+    EXPECT_TRUE(packets_equal(src, dst));
+}
