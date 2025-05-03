@@ -48,7 +48,7 @@ int32_t diff_with_overflow(int64_t new_, int64_t old, int64_t max) {
     return r;
 }
 
-int is_jack_gone() {
+bool jack_removed() {
     GPIO_PinState pinState = HAL_GPIO_ReadPin(JACK_GPIO_Port, JACK_Pin);
 
     return pinState == GPIO_PIN_SET;
@@ -67,7 +67,7 @@ void input_get(input_t *input) {
     input->delta_encoder_left = -diff_with_overflow(encoder_raw[1], encoder_old[1], 4294967295);
     input->delta_encoder_right = diff_with_overflow(encoder_raw[0], encoder_old[0], 65535);
     input->tof_m = dist_mm / 1000.0;
-    input->is_jack_gone = is_jack_gone();
+    input->jack_removed = jack_removed();
     um7_t um7;
     um7_get_pos(&um7);
     yaw_raw = -um7.yaw; // sign du yaw inversé
@@ -88,5 +88,5 @@ void input_get(input_t *input) {
 
 void print_input(input_t *input) {
     myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input->delta_encoder_left, (int32_t)input->delta_encoder_right,
-             input->is_jack_gone, input->tof_m);
+             input->jack_removed, input->tof_m);
 }

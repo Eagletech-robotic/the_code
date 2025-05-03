@@ -1,10 +1,3 @@
-/*
- * state.c
- *
- *  Created on: Apr 6, 2025
- *      Author: nboulay
- */
-
 #include "eaglesteward/state.hpp"
 
 #include "robotic/angle.hpp"
@@ -19,7 +12,7 @@ void print_state(state_t *state) {
 void state_init(state_t *state) {
     state->elapsed_time_s = .0f;
     state->filtered_tof_m = .0f;
-    state->previous_is_jack_gone = 0;
+    state->previous_jack_removed = false;
     state->start_time_ms = 0;
     state->target = 0;
     state->theta_deg = .0f;
@@ -43,7 +36,7 @@ void save_imu_to_field_transform(state_t &state, float x_field, float y_field, f
 /**
  * Converts coordinates from IMU coordinate system to field coordinate system.
  */
-void convert_from_imu_to_field(state_t &state, float &out_x, float &out_y, float &out_theta) {
+void get_field_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta) {
     // Apply rotation and translation to convert coordinates
     float theta_offset_rad = state.theta_offset_deg * (M_PI / 180.0f);
     out_x = state.x_m * cos(theta_offset_rad) - state.y_m * sin(theta_offset_rad) + state.x_offset_m;

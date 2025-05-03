@@ -9,11 +9,11 @@
 #include <stdexcept>
 
 #include "eaglesteward/motor.hpp"
-#include "eaglesteward/pelle.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/bluetooth.hpp"
+#include "robotic/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "robotic/fusion_odo_imu.hpp"
 #include "utils/constants.hpp"
@@ -115,28 +115,25 @@ std::pair<Bleacher, float> get_closest_bleacher(float const x, float const y) {
     return {*closest, closest_distance};
 }
 
-void move_to_target(const config_t *config, const input_t *input, output_t *output, float const x, float const y,
-                    float const orientation_deg, float const target_x, float const target_y) {
+void move_to_target(Command &command, float const x, float const y, float const orientation_deg, float const target_x,
+                    float const target_y) {
     float const delta_x = x - target_x;
     float const delta_y = y - target_y;
     float const target_angle_deg = std::atan2(-delta_y, -delta_x) / static_cast<float>(M_PI) * 180;
     float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
 
-    float speed_left, speed_right;
     if (std::abs(angle_diff) >= 90) {
         if (angle_diff >= 0) {
-            speed_left = 0.0f;
-            speed_right = 0.5f;
+            command.target_left_speed = 0.0f;
+            command.target_right_speed = 0.5f;
         } else {
-            speed_left = 0.5f;
-            speed_right = 0.0f;
+            command.target_left_speed = 0.5f;
+            command.target_right_speed = 0.0f;
         }
     } else {
-        speed_left = 0.5f - angle_diff / 180.0f;
-        speed_right = 0.5f + angle_diff / 180.0f;
+        command.target_left_speed = 0.5f - angle_diff / 180.0f;
+        command.target_right_speed = 0.5f + angle_diff / 180.0f;
     }
-    motor_calculate_ratios(*config, thibault_state, *input, speed_left, speed_right, output->motor_left_ratio,
-                           output->motor_right_ratio);
 
     myprintf("Target angle: %f\n", target_angle_deg);
     myprintf("Angle diff: %f\n", angle_diff);
@@ -154,33 +151,9 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
     print_state(&thibault_state);
 }
 
-void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
-    // print_complete_input(*input);
-
-    uint8_t raw_packet[PACKET_SIZE];
-    bool packet_read = false;
-    while (g_bluetooth_decoder.read_packet(raw_packet))
-        packet_read = true;
-
-    if (packet_read) {
-        // Read the packet
-        EaglePacket eagle_packet{};
-        if (decode_eagle_packet(raw_packet, PACKET_SIZE, eagle_packet)) {
-            RobotColour robot_colour = eagle_packet.robot_colour;
-            float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-            float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-            float theta_deg = eagle_packet.robot_orientation_deg;
-            myprintf("Eagle packet: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
-                     robot_colour == RobotColour::Blue ? "B" : "Y", x, y, theta_deg);
-
-            // Calculate the IMU -> field coordinate transformation
-            save_imu_to_field_transform(thibault_state, x, y, theta_deg);
-        }
-    }
-
-    update_position_and_orientation(input, config);
+void calculate_command(state_t &state, const input_t &input, Command &command) {
     float x, y, orientation_deg;
-    convert_from_imu_to_field(thibault_state, x, y, orientation_deg);
+    get_field_position_and_orientation(state, x, y, orientation_deg);
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -199,14 +172,13 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        pelle_out(output);
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        command.shovel = ShovelCommand::SHOVEL_EXTEND;
         return;
     }
     if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
         myprintf("Moving to target");
-        move_to_target(config, input, output, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
+        move_to_target(command, x, y, orientation_deg, closest_bleacher.x, closest_bleacher.y);
         return;
     }
 
@@ -219,41 +191,71 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
-        pelle_out(output);
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
     } else {
         float const target_angle_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
         float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
 
         if (std::abs(angle_diff) >= 90) {
             if (angle_diff >= 0) {
-                motor_calculate_ratios(*config, thibault_state, *input, 0.0f, 0.5f, output->motor_left_ratio,
-                                       output->motor_right_ratio);
+                command.target_left_speed = 0.0f;
+                command.target_right_speed = 0.5f;
             } else {
-                motor_calculate_ratios(*config, thibault_state, *input, 0.5f, 0.0f, output->motor_left_ratio,
-                                       output->motor_right_ratio);
+                command.target_left_speed = 0.5f;
+                command.target_right_speed = 0.0f;
             }
         } else {
             float const speed_left = 0.5f - angle_diff / 180.0f;
             float const speed_right = 0.5f + angle_diff / 180.0f;
             float const max = std::max(speed_left, speed_right);
-            float const throttled_speed_left = MAX_SPEED / max * speed_left;
-            float const throttled_speed_right = MAX_SPEED / max * speed_right;
-            motor_calculate_ratios(*config, thibault_state, *input, throttled_speed_left, throttled_speed_right,
-                                   output->motor_left_ratio, output->motor_right_ratio);
+            command.target_left_speed = MAX_SPEED / max * speed_left;
+            command.target_right_speed = MAX_SPEED / max * speed_right;
         }
 
         myprintf("Target angle: %f\n", target_angle_deg);
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    if (!input->is_jack_gone) {
-        output->motor_left_ratio = 0.0f;
-        output->motor_right_ratio = 0.0f;
+    if (!input.jack_removed) {
+        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
         myprintf("STOPPING because jack has not been removed\n");
         return;
-    } // S100150042
+    }
+}
+
+void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
+    // 1. Debug: print input
+    // print_complete_input(*input);
+
+    // Read until the last available packet
+    const uint8_t *packet, *last_packet = nullptr;
+    while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)
+        last_packet = packet;
+
+    if (last_packet != nullptr) {
+        // Decode the packet
+        EaglePacket eagle_packet{};
+        if (decode_eagle_packet(last_packet, PACKET_SIZE, eagle_packet)) {
+            RobotColour robot_colour = eagle_packet.robot_colour;
+            float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
+            float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
+            float theta_deg = eagle_packet.robot_orientation_deg;
+            myprintf("Eagle packet: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
+                     robot_colour == RobotColour::Blue ? "B" : "Y", x, y, theta_deg);
+
+            // Calculate the IMU -> field coordinate transformation
+            save_imu_to_field_transform(thibault_state, x, y, theta_deg);
+        }
+    }
+
+    update_position_and_orientation(input, config);
+
+    Command command{};
+    calculate_command(thibault_state, *input, command);
+
+    // Send the command to the actuators (motors, shovel, LED)
+    set_output(*config, *input, command, *output, thibault_state);
+
     // print_complete_output(*output);
     // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
 }

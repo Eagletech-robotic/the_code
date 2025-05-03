@@ -12,16 +12,16 @@ typedef struct state_t {
     float y_m;
     float theta_deg;
     // IMU to field coordinate transformation
-    float theta_offset_deg; // Rotation offset between IMU and field
     float x_offset_m;       // X translation offset after rotation
     float y_offset_m;       // Y translation offset after rotation
+    float theta_offset_deg; // Rotation offset between IMU and field
     // ...
     int target; // for rectangle test
     float filtered_tof_m;
     // --- Ecrit par retour
     uint32_t start_time_ms; // "date du début du match" en ms
     float elapsed_time_s;   // temps écoulé depuis le début du match
-    int previous_is_jack_gone;
+    bool previous_jack_removed;
     // --- Géré par autopilot
     PID_t pid_diff;
     PID_t pid_sum;
@@ -36,4 +36,4 @@ void print_state(state_t *state);
 void state_init(state_t *);
 
 void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field);
-void convert_from_imu_to_field(state_t &state, float &out_x, float &out_y, float &out_theta);
+void get_field_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta);

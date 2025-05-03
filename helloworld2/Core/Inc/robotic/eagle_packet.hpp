@@ -18,10 +18,11 @@
          53‑58      object_count (0–60)                    6
          59‑63      padding (0)                            5
    8+2i  repeating object (0 <= i < 60):                   16 bits each
-         0-1        type (0=bleacher,  1=plank, 2=can)     2
+         0-1        type (0=bleacher, 1=plank, 2=can)      2
          2-7        x (0–300)                              6
          8-12       y (0–200)                              5
          13-15      θ_deg (0,30,…,180)                     3
+   ->127            padding (0)                            fill to 128 bytes
    -------------------------------------------------------------------------- */
 
 enum class RobotColour : uint8_t { Blue = 0, Yellow = 1 };
