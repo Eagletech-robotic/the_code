@@ -14,6 +14,7 @@
 #include "eaglesteward/state.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/bluetooth.hpp"
+#include "robotic/eagle_packet.hpp"
 #include "robotic/fusion_odo_imu.hpp"
 #include "utils/constants.hpp"
 #include "utils/debug.hpp"
@@ -156,21 +157,25 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
     // print_complete_input(*input);
 
-    uint8_t packet[PACKET_SIZE];
+    uint8_t raw_packet[PACKET_SIZE];
     bool packet_read = false;
-    while (g_bluetooth_decoder.read_packet(packet))
+    while (g_bluetooth_decoder.read_packet(raw_packet))
         packet_read = true;
 
     if (packet_read) {
         // Read the packet
-        float x_camera = ((packet[0] - '0') * 100 + (packet[1] - '0') * 10 + (packet[2] - '0')) / 100.0f;
-        float y_camera = ((packet[3] - '0') * 100 + (packet[4] - '0') * 10 + (packet[5] - '0')) / 100.0f;
-        float theta_camera_deg =
-            angle_normalize_deg(packet[6] - '0') * 100 + (packet[7] - '0') * 10 + (packet[8] - '0');
-        // myprintf("!!! Camera: x=%.3f y=%.3f theta=%.3f\n", x_camera, y_camera, theta_camera_deg);
+        EaglePacket eagle_packet{};
+        if (decode_eagle_packet(raw_packet, PACKET_SIZE, eagle_packet)) {
+            RobotColour robot_colour = eagle_packet.robot_colour;
+            float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
+            float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
+            float theta_deg = eagle_packet.robot_orientation_deg;
+            myprintf("!!! Eagle vision: colour=%s, x=%.3f y=%.3f theta=%.3f\n",
+                     robot_colour == RobotColour::Blue ? "B" : "Y", x, y, theta_deg);
 
-        // Calculate the IMU -> field coordinate transformation
-        save_imu_to_field_transform(thibault_state, x_camera, y_camera, theta_camera_deg);
+            // Calculate the IMU -> field coordinate transformation
+            save_imu_to_field_transform(thibault_state, x, y, theta_deg);
+        }
     }
 
     update_position_and_orientation(input, config);

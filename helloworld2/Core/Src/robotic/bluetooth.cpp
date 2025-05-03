@@ -73,13 +73,13 @@ bool BluetoothDecoder::read_packet(uint8_t out_packet[PACKET_SIZE]) {
         std::memcpy(out_packet, packets_buffer[oldest_unread_packet_idx], PACKET_SIZE); // Use member variable
 
         // Debug
-        char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
-        int str_pos = sprintf(output_str, "Packet %d read: ", oldest_unread_packet_idx);
-        int i = 0;
-        while (i < PACKET_SIZE)
-            output_str[str_pos++] = out_packet[i++];
-        output_str[str_pos] = '\0';
-        myprintf("Read packet: %s", output_str);
+        // char output_str[PACKET_SIZE + 30]; // Extra space for the prefix message
+        // int str_pos = sprintf(output_str, "Packet %d read: ", oldest_unread_packet_idx);
+        // int i = 0;
+        // while (i < PACKET_SIZE)
+        //     output_str[str_pos++] = out_packet[i++];
+        // output_str[str_pos] = '\0';
+        // myprintf("Read packet: %s", output_str);
         //  End of debug
 
         // Update the index of the last read packet
