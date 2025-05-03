@@ -204,15 +204,15 @@ Status gotoClosestBleacher(input_t *input, output_t *output, state_t *state) {
 // gestion du jack et du temps
 Status isJackGone(input_t *input, output_t *output, state_t *state) {
     // Départ
-    if (!state->previous_is_jack_gone) {
-        if (input->is_jack_gone) {
+    if (!state->previous_jack_removed) {
+        if (input->jack_removed) {
             // Start !
             state->start_time_ms = input->clock_ms;
         }
     }
-    state->previous_is_jack_gone = input->is_jack_gone;
+    state->previous_jack_removed = input->jack_removed;
     myprintf("T %f\n", state->elapsed_time_s);
-    if (input->is_jack_gone) {
+    if (input->jack_removed) {
         state->elapsed_time_s = (input->clock_ms - state->start_time_ms) / 1000.0f;
         return Status::SUCCESS;
     }

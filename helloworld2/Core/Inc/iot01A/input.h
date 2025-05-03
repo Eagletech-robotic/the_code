@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 typedef struct input_t {
-    int is_jack_gone;
+    bool jack_removed;
     float tof_m;
     float delta_yaw_deg; // différence avec l'appel précedent de ins.yaw
     int32_t delta_encoder_left;

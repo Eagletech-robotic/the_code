@@ -53,7 +53,7 @@ void nicolas_top_step(config_t *config, input_t *input, output_t *output) {
                            output->motor_left_ratio, output->motor_right_ratio);
 
     // gestion du jack / debug
-    if (!input->is_jack_gone) {
+    if (!input->jack_removed) {
         output->motor_left_ratio = 0;
         output->motor_right_ratio = 0;
         if (input->blue_button) {

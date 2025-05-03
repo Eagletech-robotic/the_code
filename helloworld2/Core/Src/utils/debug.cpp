@@ -40,9 +40,9 @@ void visualize_potential_field(float potential_field[FIELD_WIDTH_SQ][FIELD_HEIGH
 
 void print_complete_input(const input_t &input) {
     myprintf(
-        "Input: is_jack_gone:%d tof_m:%.3f delta_yaw_deg:%.3f delta_encoder_left:%d delta_encoder_right:%d "
+        "Input: jack_removed:%d tof_m:%.3f delta_yaw_deg:%.3f delta_encoder_left:%d delta_encoder_right:%d "
         "imu_yaw_deg:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
-        input.is_jack_gone, input.tof_m, input.delta_yaw_deg,
+        input.jack_removed, input.tof_m, input.delta_yaw_deg,
         static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
         static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
         input.imu_yaw_deg, input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss, input.blue_button,

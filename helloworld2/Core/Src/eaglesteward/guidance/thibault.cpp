@@ -248,7 +248,7 @@ void thibault_top_step(const config_t *config, const input_t *input, output_t *o
         myprintf("Angle diff: %f\n", angle_diff);
     }
 
-    if (!input->is_jack_gone) {
+    if (!input->jack_removed) {
         output->motor_left_ratio = 0.0f;
         output->motor_right_ratio = 0.0f;
         myprintf("STOPPING because jack has not been removed\n");

@@ -19,7 +19,7 @@ void print_state(state_t *state) {
 void state_init(state_t *state) {
     state->elapsed_time_s = .0f;
     state->filtered_tof_m = .0f;
-    state->previous_is_jack_gone = 0;
+    state->previous_jack_removed = false;
     state->start_time_ms = 0;
     state->target = 0;
     state->theta_deg = .0f;
