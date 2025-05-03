@@ -12,9 +12,9 @@ typedef struct state_t {
     float y_m;
     float theta_deg;
     // IMU to field coordinate transformation
-    float theta_offset_deg; // Rotation offset between IMU and field
     float x_offset_m;       // X translation offset after rotation
     float y_offset_m;       // Y translation offset after rotation
+    float theta_offset_deg; // Rotation offset between IMU and field
     // ...
     int target; // for rectangle test
     float filtered_tof_m;

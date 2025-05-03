@@ -7,13 +7,13 @@ constexpr int PACKET_SIZE = 128;
 class BluetoothDecoder {
   public:
     // Constants - needed by the test suite
-    static constexpr int NB_PACKETS = 10;
+    static constexpr int NB_PACKETS = 3;
     static constexpr int STARTER_BYTE = 0xFF;
 
     // Public Interface
     BluetoothDecoder();
     void byte_received(uint8_t byte);
-    bool read_packet(uint8_t out_packet[PACKET_SIZE]);
+    uint8_t *read_packet();
 
   private:
     // Internal State Machine

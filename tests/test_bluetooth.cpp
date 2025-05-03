@@ -29,13 +29,11 @@ class BluetoothDecoderTest : public ::testing::Test {
 
 // Test case: Initial state - should not have any packets ready
 TEST_F(BluetoothDecoderTest, InitialStateNoPacket) {
-    uint8_t packet_buffer[PACKET_SIZE];
-    EXPECT_FALSE(decoder.read_packet(packet_buffer));
+    EXPECT_EQ(decoder.read_packet(), nullptr);
 }
 
 // Test case: Feed a single valid packet
 TEST_F(BluetoothDecoderTest, ReceiveSingleValidPacket) {
-    uint8_t packet_buffer[PACKET_SIZE];
     std::vector<uint8_t> test_data(PACKET_SIZE);
     // Fill with some simple data, e.g., 0, 1, 2, ...
     std::iota(test_data.begin(), test_data.end(), 0);
@@ -51,20 +49,20 @@ TEST_F(BluetoothDecoderTest, ReceiveSingleValidPacket) {
     feedBytes(byte_stream);
 
     // Check if a packet is ready and if it matches the sent data
-    ASSERT_TRUE(decoder.read_packet(packet_buffer)) << "Decoder should have a packet ready";
+    uint8_t* received_packet = decoder.read_packet();
+    ASSERT_NE(received_packet, nullptr) << "Decoder should have a packet ready";
 
     // Compare buffer content with original data
     for (int i = 0; i < PACKET_SIZE; ++i) {
-        EXPECT_EQ(packet_buffer[i], test_data[i]) << "Packet data mismatch at index " << i;
+        EXPECT_EQ(received_packet[i], test_data[i]) << "Packet data mismatch at index " << i;
     }
 
     // Check that no more packets are available
-    EXPECT_FALSE(decoder.read_packet(packet_buffer)) << "Should be no more packets after reading one";
+    EXPECT_EQ(decoder.read_packet(), nullptr) << "Should be no more packets after reading one";
 }
 
 // Test case: Feed valid starter but incomplete packet
 TEST_F(BluetoothDecoderTest, IncompletePacket) {
-    uint8_t packet_buffer[PACKET_SIZE];
     std::vector<uint8_t> byte_stream;
     byte_stream.push_back(BluetoothDecoder::STARTER_BYTE);
     // Send only half the data bytes
@@ -73,12 +71,11 @@ TEST_F(BluetoothDecoderTest, IncompletePacket) {
     }
 
     feedBytes(byte_stream);
-    EXPECT_FALSE(decoder.read_packet(packet_buffer)) << "Packet should not be ready yet";
+    EXPECT_EQ(decoder.read_packet(), nullptr) << "Packet should not be ready yet";
 }
 
 // Test case: Feed packet with incorrect checksum
 TEST_F(BluetoothDecoderTest, InvalidChecksum) {
-    uint8_t packet_buffer[PACKET_SIZE];
     std::vector<uint8_t> test_data(PACKET_SIZE);
     std::iota(test_data.begin(), test_data.end(), 5); // Data 5, 6, ...
     uint8_t correct_checksum = calculate_checksum(test_data);
@@ -92,12 +89,12 @@ TEST_F(BluetoothDecoderTest, InvalidChecksum) {
     feedBytes(byte_stream);
 
     // Packet should be rejected due to checksum, buffer should remain empty
-    EXPECT_FALSE(decoder.read_packet(packet_buffer)) << "Packet with invalid checksum should be discarded";
+    EXPECT_EQ(decoder.read_packet(), nullptr) << "Packet with invalid checksum should be discarded";
 }
 
 // Test case: Feed multiple valid packets and read them
 TEST_F(BluetoothDecoderTest, ReceiveMultipleValidPackets) {
-    uint8_t packet_buffer[PACKET_SIZE];
+    uint8_t* received_packet = nullptr;
 
     // Packet 1
     std::vector<uint8_t> data1(PACKET_SIZE);
@@ -121,22 +118,24 @@ TEST_F(BluetoothDecoderTest, ReceiveMultipleValidPackets) {
     feedBytes(stream);
 
     // Read Packet 1
-    ASSERT_TRUE(decoder.read_packet(packet_buffer));
+    received_packet = decoder.read_packet();
+    ASSERT_NE(received_packet, nullptr);
     for (int i = 0; i < PACKET_SIZE; ++i)
-        EXPECT_EQ(packet_buffer[i], data1[i]);
+        EXPECT_EQ(received_packet[i], data1[i]);
 
     // Read Packet 2
-    ASSERT_TRUE(decoder.read_packet(packet_buffer));
+    received_packet = decoder.read_packet();
+    ASSERT_NE(received_packet, nullptr);
     for (int i = 0; i < PACKET_SIZE; ++i)
-        EXPECT_EQ(packet_buffer[i], data2[i]);
+        EXPECT_EQ(received_packet[i], data2[i]);
 
     // No more packets
-    EXPECT_FALSE(decoder.read_packet(packet_buffer));
+    EXPECT_EQ(decoder.read_packet(), nullptr);
 }
 
 // Test case: Interspersed noise between valid packets
 TEST_F(BluetoothDecoderTest, NoiseBetweenPackets) {
-    uint8_t packet_buffer[PACKET_SIZE];
+    uint8_t* received_packet = nullptr;
 
     // Packet 1
     std::vector<uint8_t> data1(PACKET_SIZE);
@@ -154,18 +153,19 @@ TEST_F(BluetoothDecoderTest, NoiseBetweenPackets) {
     feedBytes(stream);
 
     // Read Packet 1
-    ASSERT_TRUE(decoder.read_packet(packet_buffer));
+    received_packet = decoder.read_packet();
+    ASSERT_NE(received_packet, nullptr);
     for (int i = 0; i < PACKET_SIZE; ++i)
-        EXPECT_EQ(packet_buffer[i], data1[i]);
+        EXPECT_EQ(received_packet[i], data1[i]);
 
     // No more packets expected
-    EXPECT_FALSE(decoder.read_packet(packet_buffer));
+    EXPECT_EQ(decoder.read_packet(), nullptr);
 }
 
 // Test case: Buffer wrapping (requires NB_PACKETS + 1 packets)
 TEST_F(BluetoothDecoderTest, BufferWrapping) {
-    uint8_t packet_buffer[PACKET_SIZE];
-    const int num_packets_to_send = BluetoothDecoder::NB_PACKETS + 1;
+    uint8_t* received_packet = nullptr;
+    const int num_packets_to_send = BluetoothDecoder::NB_PACKETS + 1; // N+1 packets, indexed 0 to N
 
     // Send NB_PACKETS + 1 packets
     for (int p = 0; p < num_packets_to_send; ++p) {
@@ -185,14 +185,15 @@ TEST_F(BluetoothDecoderTest, BufferWrapping) {
         std::vector<uint8_t> expected_data(PACKET_SIZE);
         std::iota(expected_data.begin(), expected_data.end(), static_cast<uint8_t>(p * 100));
 
-        ASSERT_TRUE(decoder.read_packet(packet_buffer))
+        received_packet = decoder.read_packet();
+        ASSERT_NE(received_packet, nullptr)
             << "Failed reading packet corresponding to original index " << p;
         for (int i = 0; i < PACKET_SIZE; ++i) {
-            EXPECT_EQ(packet_buffer[i], expected_data[i])
+            EXPECT_EQ(received_packet[i], expected_data[i])
                 << "Data mismatch in packet for original index " << p << " at byte index " << i;
         }
     }
 
-    // After reading NB_PACKETS - 1, the buffer should be empty
-    EXPECT_FALSE(decoder.read_packet(packet_buffer));
+    // After reading N-1 packets (from index 2 to N), the buffer should be empty
+    EXPECT_EQ(decoder.read_packet(), nullptr);
 }

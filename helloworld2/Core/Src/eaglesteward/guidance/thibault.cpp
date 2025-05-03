@@ -157,15 +157,15 @@ void update_position_and_orientation(const input_t *input, const config_t *confi
 void thibault_top_step(const config_t *config, const input_t *input, output_t *output) {
     // print_complete_input(*input);
 
-    uint8_t raw_packet[PACKET_SIZE];
-    bool packet_read = false;
-    while (g_bluetooth_decoder.read_packet(raw_packet))
-        packet_read = true;
+    // Read until the last available packet
+    const uint8_t *packet, *last_packet = nullptr;
+    while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)
+        last_packet = packet;
 
-    if (packet_read) {
-        // Read the packet
+    if (last_packet != nullptr) {
+        // Decode the packet
         EaglePacket eagle_packet{};
-        if (decode_eagle_packet(raw_packet, PACKET_SIZE, eagle_packet)) {
+        if (decode_eagle_packet(last_packet, PACKET_SIZE, eagle_packet)) {
             RobotColour robot_colour = eagle_packet.robot_colour;
             float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
             float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
