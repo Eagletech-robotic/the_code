@@ -15,9 +15,12 @@
  * @tparam T Type of the elements.
  * @tparam Capacity Maximum number of elements the array can hold.
  */
-template <typename T, size_t Capacity> struct SizedArray : public std::array<T, Capacity> {
-    size_t size = 0; ///< Current number of elements in the array.
+template <typename T, size_t Capacity> class SizedArray {
+  private:
+    std::array<T, Capacity> data_;
+    size_t size_ = 0; ///< Current number of elements in the array.
 
+  public:
     /**
      * @brief Default constructor initializes an empty array.
      */
@@ -38,10 +41,10 @@ template <typename T, size_t Capacity> struct SizedArray : public std::array<T, 
      */
     SizedArray &operator=(std::initializer_list<T> list) {
         if (list.size() > Capacity) {
-            // throw std::out_of_range("Initializer list exceeds array capacity");
+            throw std::out_of_range("Initializer list exceeds array capacity");
         }
-        size = list.size();
-        std::copy(list.begin(), list.end(), std::array<T, Capacity>::begin());
+        size_ = list.size();
+        std::copy(list.begin(), list.end(), data_.begin());
         return *this;
     }
 
@@ -52,10 +55,10 @@ template <typename T, size_t Capacity> struct SizedArray : public std::array<T, 
      * @throws std::out_of_range if index is out of range.
      */
     T &operator[](size_t index) {
-        if (index >= size) {
-            // throw std::out_of_range("Index out of range");
+        if (index >= size_) {
+            throw std::out_of_range("Index out of range");
         }
-        return std::array<T, Capacity>::operator[](index);
+        return data_[index];
     }
 
     /**
@@ -65,10 +68,10 @@ template <typename T, size_t Capacity> struct SizedArray : public std::array<T, 
      * @throws std::out_of_range if index is out of range.
      */
     const T &operator[](size_t index) const {
-        if (index >= size) {
-            // throw std::out_of_range("Index out of range");
+        if (index >= size_) {
+            throw std::out_of_range("Index out of range");
         }
-        return std::array<T, Capacity>::operator[](index);
+        return data_[index];
     }
 
     /**
@@ -77,11 +80,11 @@ template <typename T, size_t Capacity> struct SizedArray : public std::array<T, 
      * @throws std::out_of_range if the array is at full capacity.
      */
     void push_back(const T &value) {
-        if (size >= Capacity) {
-            // throw std::out_of_range("Exceeds array capacity");
+        if (size_ >= Capacity) {
+            throw std::out_of_range("Exceeds array capacity");
         }
-        (*this)[size] = value;
-        size++;
+        data_[size_] = value;
+        size_++;
     }
 
     /**
@@ -89,40 +92,55 @@ template <typename T, size_t Capacity> struct SizedArray : public std::array<T, 
      * @throws std::out_of_range if the array is empty.
      */
     void pop_back() {
-        if (size == 0) {
-            // throw std::out_of_range("Array is empty");
+        if (size_ == 0) {
+            throw std::out_of_range("Array is empty");
         }
-        size--;
+        size_--;
     }
 
     /**
      * @brief Clears the array.
      */
-    void clear() { size = 0; }
+    void clear() { size_ = 0; }
+
+    /**
+     * @return The current dynamic size of the array.
+     */
+    [[nodiscard]] size_t size() const { return size_; }
+
+    /**
+     * @return A boolean indicating if the array is empty.
+     */
+    [[nodiscard]] bool empty() const { return size_ == 0; }
+
+    /**
+     * @return The capacity of the array.
+     */
+    [[nodiscard]] static size_t capacity() { return Capacity; }
 
     /**
      * @brief Returns an iterator to the beginning.
      * @return Iterator to the first element.
      */
-    typename std::array<T, Capacity>::iterator begin() { return std::array<T, Capacity>::begin(); }
+    typename std::array<T, Capacity>::iterator begin() { return data_.begin(); }
 
     /**
      * @brief Returns a const iterator to the beginning.
      * @return Const iterator to the first element.
      */
-    typename std::array<T, Capacity>::const_iterator begin() const { return std::array<T, Capacity>::begin(); }
+    typename std::array<T, Capacity>::const_iterator begin() const { return data_.begin(); }
 
     /**
      * @brief Returns an iterator to the end (up to current size).
      * @return Iterator to one past the last element.
      */
-    typename std::array<T, Capacity>::iterator end() { return std::array<T, Capacity>::begin() + size; }
+    typename std::array<T, Capacity>::iterator end() { return data_.begin() + size_; }
 
     /**
      * @brief Returns a const iterator to the end (up to current size).
      * @return Const iterator to one past the last element.
      */
-    typename std::array<T, Capacity>::const_iterator end() const { return std::array<T, Capacity>::begin() + size; }
+    typename std::array<T, Capacity>::const_iterator end() const { return data_.begin() + size_; }
 };
 
 #endif // SIZED_ARRAY_H
