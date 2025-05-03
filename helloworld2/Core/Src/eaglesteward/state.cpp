@@ -1,6 +1,7 @@
 #include "eaglesteward/state.hpp"
 
 #include "eaglesteward/robot_constants.hpp"
+#include "eaglesteward/tof.hpp"
 #include "robotic/angle.hpp"
 #include "robotic/bluetooth.hpp"
 #include "robotic/eagle_packet.hpp"
@@ -39,8 +40,9 @@ void save_imu_to_field_transform(state_t &state, float x_field, float y_field, f
 
 /**
  * Converts coordinates from IMU coordinate system to field coordinate system.
+ * Returns the position (x, y) and orientation (theta) in the field coordinate system.
  */
-void get_field_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta) {
+void get_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta) {
     // Apply rotation and translation to convert coordinates
     float theta_offset_rad = state.theta_offset_deg * (M_PI / 180.0f);
     out_x = state.x_m * cos(theta_offset_rad) - state.y_m * sin(theta_offset_rad) + state.x_offset_m;
@@ -52,9 +54,10 @@ void get_field_position_and_orientation(const state_t &state, float &out_x, floa
 }
 
 /**
- * Updates the robot's position and orientation based on the IMU and encoder data.
+ * Updates the state based on the input data: IMU, encoders, and TOF.
  */
-void update_from_imu_and_encoders(const config_t &config, const input_t &input, state_t &state) {
+void update_state_from_input(const config_t &config, const input_t &input, state_t &state) {
+    // Updates the robot's position and orientation based on the IMU and encoder data
     float delta_x_m, delta_y_m, delta_theta_deg;
     fusion_odo_imu_fuse(input.imu_accel_x_mss, input.imu_accel_y_mss, input.delta_yaw_deg, input.delta_encoder_left,
                         input.delta_encoder_right, config.time_step_s, state.theta_deg, &delta_x_m, &delta_y_m,
@@ -63,10 +66,14 @@ void update_from_imu_and_encoders(const config_t &config, const input_t &input, 
     state.y_m += delta_y_m;
     state.theta_deg += delta_theta_deg;
     state.theta_deg = angle_normalize_deg(state.theta_deg);
+
+    // Filter the TOF value
+    state.filtered_tof_m = tof_filter(state, input.tof_m);
+
     print_state(state);
 }
 
-void update_from_last_bluetooth_packet(state_t &state) {
+void update_state_from_bluetooth(state_t &state) {
     // Read until the last available packet
     const uint8_t *packet, *last_packet = nullptr;
     while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)

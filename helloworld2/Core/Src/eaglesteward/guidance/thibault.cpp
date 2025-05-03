@@ -138,7 +138,7 @@ void next_command(state_t &state, const input_t &input, Command &command) {
     }
 
     float x, y, orientation_deg;
-    get_field_position_and_orientation(state, x, y, orientation_deg);
+    get_position_and_orientation(state, x, y, orientation_deg);
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -215,10 +215,10 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
     // print_complete_input(input);
 
     // 2. Update position and orientation from IMU and encoders
-    update_from_imu_and_encoders(config, input, thibault_state);
+    update_state_from_input(config, input, thibault_state);
 
     // 3. Read the last Bluetooth packet (if available) and update the state
-    update_from_last_bluetooth_packet(thibault_state);
+    update_state_from_bluetooth(thibault_state);
 
     // 4. Calculate the next command
     Command command{};

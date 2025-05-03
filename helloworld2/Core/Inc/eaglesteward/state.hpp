@@ -37,7 +37,7 @@ typedef struct state_t {
 
 void print_state(const state_t &state);
 void state_init(state_t *);
-void update_from_imu_and_encoders(const config_t &config, const input_t &input, state_t &state);
-void update_from_last_bluetooth_packet(state_t &state);
+void update_state_from_input(const config_t &config, const input_t &input, state_t &state);
+void update_state_from_bluetooth(state_t &state);
 void save_imu_to_field_transform(state_t &state, float x_field, float y_field, float theta_field);
-void get_field_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta);
+void get_position_and_orientation(const state_t &state, float &out_x, float &out_y, float &out_theta);

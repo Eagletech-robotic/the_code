@@ -27,12 +27,10 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     // print_complete_input(input);
 
     // 2. Update position and orientation from IMU and encoders
-    update_from_imu_and_encoders(config, input, nicolas_state);
-
-    nicolas_state.filtered_tof_m = tof_filter(nicolas_state, input.tof_m);
+    update_state_from_input(config, input, nicolas_state);
 
     // 3. Read the last Bluetooth packet (if available) and update the state
-    update_from_last_bluetooth_packet(nicolas_state);
+    update_state_from_bluetooth(nicolas_state);
 
     // 4. Calculate the next command
     Command command{};
