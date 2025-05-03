@@ -1,8 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(the_code LANGUAGES C CXX)
 
 # Set C/C++ standard
 set(CMAKE_CXX_STANDARD 20)
+
+# Enable testing framework CTest (should be near the top)
+# Required for gtest_discover_tests to work correctly
+enable_testing()
 
 # Common compiler flags
 set(COMMON_FLAGS "-Wall -Wextra -Wshadow -O3 -Wno-unused-parameter -Wno-missing-field-initializers")
@@ -20,6 +24,12 @@ include_directories(helloworld2/Core/Inc)
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
 add_subdirectory(host-tools)
+
+# Add tests subdirectory (only when not cross-compiling for STM32)
+if(NOT CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
+    message(STATUS "Adding tests subdirectory")
+    add_subdirectory(tests)
+endif()
 
 # --- STM32 Target Definition ---
 if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")

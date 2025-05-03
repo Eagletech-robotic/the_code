@@ -8,6 +8,7 @@ FORMAT_DIRS="helloworld2/Core/Inc helloworld2/Core/Src"
 BUILD_DIR="build"
 BUILD_WASM_DIR="build-wasm"
 BUILD_STM32_DIR="build-stm32"
+TEST_BUILD_DIR="build" # Tests run in the native build dir
 
 # Helper function for format pre-checks
 _pre_format_checks() {
@@ -120,6 +121,7 @@ print_usage() {
     echo "  format           Format C/C++ code using clang-format"
     echo "  check-format     Check C/C++ code format; exit with 1 if changes needed"
     echo "  help             Show this help message"
+    echo "  test             Build and run native unit tests (using Debug config by default)"
     echo ""
     echo "Build Options (only applicable to 'build' command):"
     echo "  --native         Build native tools"
@@ -135,6 +137,8 @@ print_usage() {
     echo "  $0 format                 # Format C/C++ code"
     echo "  $0 clean                  # Remove all build directories"
     echo "  $0 build --native --debug # Build native tools with Debug configuration"
+    echo "  $0 test                  # Build and run native tests (uses Debug)"
+    echo "  $0 test --release        # Build and run native tests (uses Release)"
 }
 
 build_native() {
@@ -181,6 +185,43 @@ build_stm32() {
     echo "STM32 build complete. Output: ${BUILD_STM32_DIR}/helloworld2.elf"
 }
 
+test_native() {
+    local build_type="${1:-Debug}" # Default to Debug for tests
+    local cmake_build_dir="${TEST_BUILD_DIR}"
+    echo "=== Building and Running Native Tests (${build_type}) ==="
+
+    # 1. Configure (if necessary) - Ensure tests are enabled
+    #    We configure in the standard native build directory.
+    mkdir -p "${cmake_build_dir}"
+    # Check if CMakeCache exists, if not, run configure
+    if [ ! -f "${cmake_build_dir}/CMakeCache.txt" ]; then
+        echo "Configuring CMake for native build (including tests)..."
+        cmake -S . -B "${cmake_build_dir}" -DCMAKE_BUILD_TYPE=${build_type}
+    else
+         # If already configured, ensure build type matches or reconfigure?
+         # For simplicity, let's just proceed. User can clean if needed.
+         echo "Build directory already configured. Skipping CMake configure step."
+         echo "Run './build.sh clean && ./build.sh test' for a clean test build."
+    fi
+
+    # 2. Build the test runner target
+    echo "Building test runner..."
+    cmake --build "${cmake_build_dir}" --target test_runner -j$(nproc)
+
+    # 3. Run tests using CTest
+    echo "Running tests..."
+    cd "${cmake_build_dir}"
+    ctest --output-on-failure -C ${build_type} # -C specifies the configuration for multi-config generators
+    local test_exit_code=$?
+    cd ..
+
+    if [ ${test_exit_code} -ne 0 ]; then
+        echo "Error: Native tests failed." >&2
+        exit ${test_exit_code}
+    else
+        echo "Native tests passed successfully."
+    fi
+}
 
 # Main script logic
 if [ $# -eq 0 ]; then
@@ -204,6 +245,9 @@ case $COMMAND in
     check-format)
         check_format
         # check_format exits itself based on success/failure
+        ;;
+    test) # Added test command
+        # Handled below after parsing common options like --debug/--release
         ;;
     help|-h|--help)
         print_usage
@@ -265,6 +309,18 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
+
+# Handle the 'test' command here after parsing build type
+if [ "$COMMAND" = "test" ]; then
+    # Currently, tests only run natively.
+    # Clean if requested (only cleans the native build dir for tests)
+    if [ "$DO_CLEAN" = true ]; then
+        echo "Cleaning ${TEST_BUILD_DIR} before testing..."
+        rm -rf "${TEST_BUILD_DIR}"
+    fi
+    test_native "$BUILD_TYPE"
+    exit 0 # Exit after running tests
+fi
 
 # Default to 'all' targets if 'build' command is given but no specific target flags
 if [ "$TARGET_NATIVE" = false ] && [ "$TARGET_WASM" = false ] && [ "$TARGET_STM32" = false ]; then
