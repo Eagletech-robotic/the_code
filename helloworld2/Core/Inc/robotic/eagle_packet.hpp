@@ -32,18 +32,18 @@ enum class ObjectType : uint8_t { Bleacher = 0, Plank = 1, Can = 2 };
 struct EagleObject {
     ObjectType type;
     uint16_t x_cm;
-    uint8_t y_cm;
-    uint8_t orientation_deg;
+    uint16_t y_cm;
+    uint16_t orientation_deg;
 };
 
 struct EaglePacket {
     RobotColour robot_colour;
     uint16_t robot_x_cm;
-    uint8_t robot_y_cm;
+    uint16_t robot_y_cm;
     int16_t robot_orientation_deg;
 
     uint16_t opponent_x_cm;
-    uint8_t opponent_y_cm;
+    uint16_t opponent_y_cm;
     int16_t opponent_orientation_deg;
 
     uint8_t object_count;

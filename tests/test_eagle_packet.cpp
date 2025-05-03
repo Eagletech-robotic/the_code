@@ -1,5 +1,6 @@
 #include "robotic/eagle_packet.hpp"
 
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <gtest/gtest.h>
@@ -33,28 +34,32 @@ class BitPacker {
     std::vector<uint8_t> bits_;
 };
 
-std::vector<uint8_t> build_payload(const EaglePacket &pkt) {
-    if (pkt.object_count > 60)
+std::vector<uint8_t> build_payload(const EaglePacket &packet) {
+    if (packet.object_count > 60)
         throw std::invalid_argument("object_count > 60");
 
     BitPacker bp;
-    bp.push(static_cast<uint8_t>(pkt.robot_colour), 1);
-    bp.push(pkt.robot_x_cm, 9);
-    bp.push(pkt.robot_y_cm, 8);
-    bp.push(static_cast<uint16_t>(pkt.robot_orientation_deg + 180), 9);
+    bp.push(static_cast<uint8_t>(packet.robot_colour), 1);
+    bp.push(packet.robot_x_cm, 9);
+    bp.push(packet.robot_y_cm, 8);
+    bp.push(static_cast<uint16_t>(packet.robot_orientation_deg + 180), 9);
 
-    bp.push(pkt.opponent_x_cm, 9);
-    bp.push(pkt.opponent_y_cm, 8);
-    bp.push(static_cast<uint16_t>(pkt.opponent_orientation_deg + 180), 9);
+    bp.push(packet.opponent_x_cm, 9);
+    bp.push(packet.opponent_y_cm, 8);
+    bp.push(static_cast<uint16_t>(packet.opponent_orientation_deg + 180), 9);
 
-    bp.push(pkt.object_count, 6); // header ends at bit 58
+    bp.push(packet.object_count, 6); // header ends at bit 58
 
-    for (uint8_t i = 0; i < pkt.object_count; ++i) {
-        const auto &o = pkt.objects[i];
-        bp.push(static_cast<uint8_t>(o.type), 2);
-        bp.push(o.x_cm, 6);
-        bp.push(o.y_cm, 5);
-        bp.push(o.orientation_deg / 30, 3); // 0‑6
+    for (uint8_t i = 0; i < packet.object_count; ++i) {
+        const auto &object = packet.objects[i];
+        bp.push(static_cast<uint8_t>(object.type), 2);
+
+        const auto raw_x = static_cast<uint8_t>(std::round(static_cast<float>(object.x_cm) * 63.0f / 300.0f));
+        const auto raw_y = static_cast<uint8_t>(std::round(static_cast<float>(object.y_cm) * 31.0f / 200.0f));
+
+        bp.push(raw_x, 6); // 0‑63
+        bp.push(raw_y, 5); // 0‑31
+        bp.push(object.orientation_deg / 30, 3);
     }
     return bp.to_bytes();
 }
@@ -81,11 +86,12 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
         return false;
 
     for (uint8_t i = 0; i < a.object_count; ++i) {
+        const auto cm_tol = 3; // ≤3 cm difference is OK after quantisation
         if (a.objects[i].type != b.objects[i].type)
             return false;
-        if (a.objects[i].x_cm != b.objects[i].x_cm)
+        if (std::abs(int(a.objects[i].x_cm) - int(b.objects[i].x_cm)) > cm_tol)
             return false;
-        if (a.objects[i].y_cm != b.objects[i].y_cm)
+        if (std::abs(int(a.objects[i].y_cm) - int(b.objects[i].y_cm)) > cm_tol)
             return false;
         if (a.objects[i].orientation_deg != b.objects[i].orientation_deg)
             return false;
@@ -155,14 +161,13 @@ TEST(EaglePacketDecode, MaxObjects) {
     EXPECT_TRUE(packets_equal(src, dst));
 }
 
-TEST(EaglePacketDecode, InvalidObjectCount)
-{
+TEST(EaglePacketDecode, InvalidObjectCount) {
     /* object_count = 61 (binary 111101, LSB‑first)
        bits 53‑55 → bits 5‑7 of byte 6
        bits 56‑58 → bits 0‑2 of byte 7 */
     std::vector<uint8_t> payload(8, 0);
-    payload[6] = 0b1010'0000;   // bit 5 =1, bit 6 =0, bit 7 =1
-    payload[7] = 0b0000'0111;   // bits 0‑2 =111
+    payload[6] = 0b1010'0000; // bit 5 =1, bit 6 =0, bit 7 =1
+    payload[7] = 0b0000'0111; // bits 0‑2 =111
 
     EaglePacket out{};
     EXPECT_FALSE(decode_eagle_packet(payload.data(), payload.size(), out));

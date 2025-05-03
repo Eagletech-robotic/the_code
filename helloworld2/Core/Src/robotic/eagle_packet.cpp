@@ -1,5 +1,6 @@
 #include "robotic/eagle_packet.hpp"
 
+#include <cmath>
 #include <cstdint>
 
 // --- tiny helper ----------------------------------------------------------
@@ -42,11 +43,15 @@ bool decode_eagle_packet(const uint8_t *payload, size_t payload_len, EaglePacket
         return false;
 
     for (uint8_t i = 0; i < out.object_count; ++i) {
-        auto &o = out.objects[i];
-        o.type = static_cast<ObjectType>(br.get(2));
-        o.x_cm = br.get(6);
-        o.y_cm = br.get(5);
-        o.orientation_deg = static_cast<uint8_t>(br.get(3) * 30);
+        auto &object = out.objects[i];
+        object.type = static_cast<ObjectType>(br.get(2));
+
+        auto const raw_x = static_cast<float>(br.get(6)); // 0‑63
+        auto const raw_y = static_cast<float>(br.get(5)); // 0‑31
+
+        object.x_cm = static_cast<uint16_t>(std::round(raw_x * 300.0f / 63.0f)); // 0‑300 cm
+        object.y_cm = static_cast<uint16_t>(std::round(raw_y * 200.0f / 31.0f)); // 0‑200 cm
+        object.orientation_deg = static_cast<uint8_t>(br.get(3) * 30);
     }
     return true;
 }

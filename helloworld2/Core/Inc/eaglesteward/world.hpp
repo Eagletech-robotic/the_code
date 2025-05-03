@@ -23,7 +23,7 @@ class World {
     const auto &bleacher_list() const { return bleachers_; }
 
     void path_to_closest_bleacher(float robotX, float robotY, float opponentX, float opponentY,
-                                         SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath);
+                                  SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath);
 
   private:
     /* data ----------------------------------------------------------- */
