@@ -24,10 +24,10 @@
  * @param out_speed_right, out_speed_left : Résultats, vitesses des roues (m/s).
  * @return true si on est arrivé à target
  */
-int stanley_controller(float robot_x_m, float robot_y_m, float robot_theta_deg, float x_start_m, float y_start_m,
-                       float x_target_m, float y_target_m, float x_next_m, float y_next_m, float Vmax, float Wmax,
-                       float kStanley, float wheelBase_m, float arrivalThreshold, float *out_speed_left,
-                       float *out_speed_right) {
+bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta_deg, float x_start_m, float y_start_m,
+                        float x_target_m, float y_target_m, float x_next_m, float y_next_m, float Vmax, float Wmax,
+                        float kStanley, float wheelBase_m, float arrivalThreshold, float *out_speed_left,
+                        float *out_speed_right) {
     //------------------------------------------------------------------
     // 1) Calcul de la distance du robot à la cible
     //------------------------------------------------------------------
@@ -151,7 +151,7 @@ int stanley_controller(float robot_x_m, float robot_y_m, float robot_theta_deg, 
 
     *out_speed_left = v_left;
     *out_speed_right = v_right;
-    return 0;
+    return false;
 }
 
 /**
@@ -174,11 +174,11 @@ int stanley_controller(float robot_x_m, float robot_y_m, float robot_theta_deg, 
  * @param out_speed_left [out] Vitesse roue gauche (m/s)
  * @param out_speed_right  [out] Vitesse roue droite (m/s)
  *
- * @return int  1 si le robot est dans le rayon d'arrivée, sinon 0
+ * @return true si le robot est dans le rayon d'arrivée, sinon false
  */
-int controller_pid(float robot_x_m, float robot_y_m, float robot_theta_deg, float x_target_m, float y_target_m,
-                   float Vmax, float wheelBase_m, float arrivalThreshold, float *out_speed_left,
-                   float *out_speed_right) {
+bool controller_pid(float robot_x_m, float robot_y_m, float robot_theta_deg, float x_target_m, float y_target_m,
+                    float Vmax, float wheelBase_m, float arrivalThreshold, float *out_speed_left,
+                    float *out_speed_right) {
     //----------------------------------------------------------------------
     // 1) Calcul de la distance à la cible
     //----------------------------------------------------------------------
@@ -190,7 +190,7 @@ int controller_pid(float robot_x_m, float robot_y_m, float robot_theta_deg, floa
     if (distance <= arrivalThreshold) {
         *out_speed_left = 0.0f;
         *out_speed_right = 0.0f;
-        return 1; // arrivé
+        return true; // arrivé
     }
 
     //----------------------------------------------------------------------
@@ -248,5 +248,5 @@ int controller_pid(float robot_x_m, float robot_y_m, float robot_theta_deg, floa
     *out_speed_left = v_left;
     *out_speed_right = v_right;
 
-    return 0; // en cours
+    return false; // en cours
 }

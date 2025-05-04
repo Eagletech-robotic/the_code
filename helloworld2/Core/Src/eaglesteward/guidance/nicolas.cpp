@@ -32,7 +32,6 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
 
     // 4. Calculate the next command
     Command command{};
-    // cc_infinite_rectangle(&input, &command, &nicolas_state);
     cc_root_behavior_tree(&input, &command, &nicolas_state);
 
     // DEBUG -> to be moved to the behavior tree
