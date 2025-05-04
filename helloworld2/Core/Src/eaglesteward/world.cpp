@@ -6,6 +6,10 @@
 #include <cstring> // std::memset
 
 World::World() {
+    reset();
+}
+
+void World::reset() {
     init_default_bleachers();
     build_potential_field();
 }

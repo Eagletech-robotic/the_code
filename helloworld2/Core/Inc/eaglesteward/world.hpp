@@ -12,6 +12,9 @@ class World {
   public:
     World(); // default bleachers & potential field ready
 
+    /** Add default bleachers. */
+    void reset();
+
     /** Replace bleachers with those found in EaglePacket (object_type==0). */
     void reset_from_eagle_packet(const EaglePacket &packet);
 

@@ -29,6 +29,8 @@ void save_imu_to_field_transform(state_t &state, float x_field, float y_field, f
 }
 
 void state_init(state_t &state) {
+    state.world.reset();
+
     // Set the initial state for the IMU to field coordinate transformation.
     save_imu_to_field_transform(state, INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
