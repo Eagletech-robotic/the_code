@@ -24,7 +24,7 @@ void State::init() {
 void State::print() const {
     float x, y, theta_deg;
     getPositionAndOrientation(x, y, theta_deg);
-    myprintf("S %.2f %.2f  %.1f  %.3f\n", x, y, theta_deg, filtered_tof_m);
+    myprintf("S %.2f %.2f  %.1f     %.3f     %.2f %.2f %.1f \n", x, y, theta_deg, filtered_tof_m, opponent_x, opponent_y, opponent_theta_deg);
 }
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }

@@ -144,13 +144,16 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  top_init_driver();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  led_1(0.0);
+	  while(! top_is_time_to_start()) {}
+	  top_in_loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
