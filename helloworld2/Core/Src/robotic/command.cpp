@@ -2,8 +2,7 @@
 
 #include "eaglesteward/motor.hpp"
 
-void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output,
-                state_t &state) {
+void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output, State &state) {
     // Motors
     if (command.specialCommand == SpecialCommand::IMMEDIATE_STOP) {
         output.motor_left_ratio = 0.0f;

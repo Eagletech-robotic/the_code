@@ -11,14 +11,14 @@
 #include "utils/myprintf.hpp"
 
 carre_t carre;
-state_t nicolas_state;
+State nicolas_state;
 
 void nicolas_top_init(config_t &config) {
     config.time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
     printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
     carre_init(&carre, config.time_step_s);
     motor_init(config, nicolas_state);
-    state_init(nicolas_state);
+    nicolas_state.init();
 }
 
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
@@ -26,10 +26,10 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     // print_complete_input(input);
 
     // 2. Update position and orientation from IMU and encoders
-    update_state_from_input(config, input, nicolas_state);
+    nicolas_state.updateFromInput(config, input);
 
     // 3. Read the last Bluetooth packet (if available) and update the state
-    update_state_from_bluetooth(nicolas_state);
+    nicolas_state.updateFromBluetooth();
 
     // 4. Calculate the next command
     Command command{};

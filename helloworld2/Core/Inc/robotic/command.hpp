@@ -17,4 +17,4 @@ struct Command {
     LedCommand led;
 };
 
-void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output, state_t &state);
+void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output, State &state);
