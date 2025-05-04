@@ -44,7 +44,7 @@ void move_to_target(Command &command, float const x, float const y, float const 
     myprintf("Angle diff: %f\n", angle_diff);
 }
 
-void next_command(State &state, const input_t &input, Command &command) {
+void next_command(const input_t &input, Command &command) {
     if (!input.jack_removed) {
         command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
         myprintf("STOPPING because jack has not been removed\n");
@@ -54,7 +54,7 @@ void next_command(State &state, const input_t &input, Command &command) {
     auto const &world = thibault_state.world;
 
     float x, y, orientation_deg;
-    state.getPositionAndOrientation(x, y, orientation_deg);
+    thibault_state.getPositionAndOrientation(x, y, orientation_deg);
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -138,7 +138,7 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
 
     // 4. Calculate the next command
     Command command{};
-    next_command(thibault_state, input, command);
+    next_command(input, command);
 
     // 5. Convert the command to actuator commands (output)
     set_output(config, input, command, output, thibault_state);
