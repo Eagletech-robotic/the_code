@@ -43,7 +43,7 @@ Coord compute_distances(const std::array<std::array<GridSquare, FIELD_HEIGHT_SQ>
         currDst++;
     }
 
-   // throw std::runtime_error("Target not found");
+    // throw std::runtime_error("Target not found");
 }
 
 void compute_shortest_path(const std::array<std::array<GridSquare, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &grid,
