@@ -52,40 +52,40 @@ int isPossiblyBleacherApprochMinimum(State *state) {
 // si on est à BG_GET_IT, c'est qu'il faut déployer la pelle pour attraper un bleacher
 // Trop sensible pour être utilisable
 void fsm_getbleacher(State *state) {
-    switch (state->getbleacher_state) {
+    switch (state->bleacher_state) {
     case BleacherState::RESET: {
         myprintf("BleacherState::RESET\n");
         if (!isNearSpaceFree(state)) {
-            state->getbleacher_state = BleacherState::NON_FREE;
+            state->bleacher_state = BleacherState::NON_FREE;
             return;
         }
     }; break;
     case BleacherState::NON_FREE:
         myprintf("BleacherState::NON_FREE\n");
         if (isNearSpaceFree(state)) {
-            state->getbleacher_state = BleacherState::RESET;
+            state->bleacher_state = BleacherState::RESET;
             return;
         }
         if (isPossiblyBleacherApprochMinimum(state)) {
-            state->getbleacher_state = BleacherState::CLOSE;
+            state->bleacher_state = BleacherState::CLOSE;
             return;
         };
         break;
     case BleacherState::CLOSE:
         myprintf("BleacherState::CLOSE");
         if (isNearSpaceFree(state)) {
-            state->getbleacher_state = BleacherState::RESET;
+            state->bleacher_state = BleacherState::RESET;
             return;
         }
         if (isBleacherPossiblyAtContact(state)) {
-            state->getbleacher_state = BleacherState::GET_IT;
+            state->bleacher_state = BleacherState::GET_IT;
             return;
         };
         break;
     case BleacherState::GET_IT:
         myprintf("BleacherState::GET_IT");
         if (!isBleacherPossiblyAtContact(state)) {
-            state->getbleacher_state = BleacherState::RESET;
+            state->bleacher_state = BleacherState::RESET;
             return;
         };
         break;
@@ -167,9 +167,10 @@ Status isSafe(input_t *input, Command *command, State *state) {
         return Status::FAILURE;
     }
 
-    //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, state->imu_x, state->imu_y,
-    // state->theta_deg,
-    // 0.01f)) { 		return Status::FAILURE;
+    // float x, y, theta_deg;
+    // state->getPositionAndOrientation(x, y, theta_deg);
+    //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
+    //	return Status::FAILURE;
     //	}
 
     return Status::SUCCESS;
@@ -210,13 +211,12 @@ Status isJackGone(input_t *input, Command *command, State *state) {
     if (!state->previous_jack_removed) {
         if (input->jack_removed) {
             // Start !
-            state->start_time_ms = input->clock_ms;
+            state->startGame(input->clock_ms);
         }
     }
     state->previous_jack_removed = input->jack_removed;
-    myprintf("T %f\n", state->elapsed_time_s);
+    myprintf("T %f\n", state->elapsedTime(*input));
     if (input->jack_removed) {
-        state->elapsed_time_s = (input->clock_ms - state->start_time_ms) / 1000.0f;
         return Status::SUCCESS;
     }
 
@@ -224,21 +224,21 @@ Status isJackGone(input_t *input, Command *command, State *state) {
 }
 
 Status isGameOn(input_t *input, Command *command, State *state) {
-    if (state->elapsed_time_s < 90.0f) {
+    if (state->elapsedTime(*input) < 90.0f) {
         return Status::SUCCESS;
     }
     return Status::FAILURE;
 }
 
 Status isNotTimeToGoToBackstageStaging(input_t *input, Command *command, State *state) {
-    if (state->elapsed_time_s > 75.0f) {
+    if (state->elapsedTime(*input) > 75.0f) {
         return Status::FAILURE;
     }
     return Status::SUCCESS;
 }
 
 Status isNotTimeToGoToBackstage(input_t *input, Command *command, State *state) {
-    if (state->elapsed_time_s > 95.0f) {
+    if (state->elapsedTime(*input) > 95.0f) {
         return Status::FAILURE;
     }
     return Status::SUCCESS;
@@ -270,9 +270,10 @@ Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float targ
         return Status::SUCCESS;
     }
     myprintf("B%d\r\n", func_state->target);
-    int isArrived =
-        controller_pid(func_state->imu_x, func_state->imu_y, func_state->imu_theta_deg, target_x_m, target_y_m, 0.8f,
-                       WHEELBASE_M, 0.08, &command->target_left_speed, &command->target_right_speed);
+    float x, y, theta_deg;
+    func_state->getPositionAndOrientation(x, y, theta_deg);
+    int isArrived = controller_pid(x, y, theta_deg, target_x_m, target_y_m, 0.8f, WHEELBASE_M, 0.08,
+                                   &command->target_left_speed, &command->target_right_speed);
     if (isArrived) {
         func_state->target++;
         return Status::SUCCESS;

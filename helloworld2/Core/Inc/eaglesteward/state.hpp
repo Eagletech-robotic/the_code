@@ -19,22 +19,14 @@ class State {
 
     /* I/O ----------------------------------------------------- */
     void print() const;
+    void startGame(uint32_t clock_ms);
+    [[nodiscard]] float elapsedTime(const input_t &input) const;
     void updateFromInput(const config_t &cfg, const input_t &in);
     void updateFromBluetooth();
     void getPositionAndOrientation(float &x, float &y, float &theta) const;
 
-    /* data ---------------------------------------------------- */
+    /* PUBLIC DATA ---------------------------------------------------- */
     Color color{Color::BLUE};
-
-    // IMU coordinate system
-    float imu_x{0.f}; // meters
-    float imu_y{0.f};
-    float imu_theta_deg{0.f};
-
-    // IMU to field coordinate transformation
-    float transformation_x{0.f};         // X translation offset after rotation (meters)
-    float transformation_y{0.f};         // Y translation offset after rotation
-    float transformation_theta_deg{0.f}; // Rotation offset between IMU and field
 
     // Opponent
     float opponent_x{0.f}; // meters
@@ -47,19 +39,31 @@ class State {
     // World
     World world{};
 
-    // --- Ecrit par retour
-    uint32_t start_time_ms{0}; // "date du début du match" en ms
-    float elapsed_time_s{0.f}; // temps écoulé depuis le début du match
-    bool previous_jack_removed{false};
+    // Time management
+    uint32_t start_time_ms{0}; // The input's clock_ms at the start of the game
 
     // --- Motor PID
     PID_t pid_diff{};
     PID_t pid_sum{};
 
-    // -- fsm de gestion de l'approche d'un bleacher
+    // Nicolas
+    bool previous_jack_removed{false};
     int target{0}; // for rectangle test
-    BleacherState getbleacher_state{BleacherState::RESET};
+    BleacherState bleacher_state{BleacherState::RESET};
+    /* END PUBLIC DATA ------------------------------------ */
 
   private:
+    /* PRIVATE DATA ---------------------------------- */
+    // IMU coordinate system
+    float imu_x{0.f}; // meters
+    float imu_y{0.f};
+    float imu_theta_deg{0.f};
+
+    // IMU to field coordinate transformation
+    float transformation_x{0.f};         // X translation offset after rotation (meters)
+    float transformation_y{0.f};         // Y translation offset after rotation
+    float transformation_theta_deg{0.f}; // Rotation offset between IMU and field
+    /* END PRIVATE DATA --------------------- */
+
     void saveImuToFieldTransform(float x_field, float y_field, float theta_field);
 };

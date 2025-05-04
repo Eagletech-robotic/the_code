@@ -23,6 +23,12 @@ void State::init() {
 
 void State::print() const { myprintf("S %.2f %.2f  %.1f  %.3f\n", imu_x, imu_y, imu_theta_deg, filtered_tof_m); }
 
+void State::startGame(uint32_t clock_ms) { start_time_ms = clock_ms; }
+
+float State::elapsedTime(const input_t &input) const {
+    return static_cast<float>(input.clock_ms - start_time_ms) / 1000.0f;
+}
+
 /**
  * Calculates the transformation from IMU coordinates to field coordinates and saves it in the state.
  */
