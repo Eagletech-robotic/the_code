@@ -49,6 +49,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -69,43 +71,43 @@ void Error_Handler(void);
 #define SPBTLE_RF_IRQ_EXTI6_Pin GPIO_PIN_6
 #define SPBTLE_RF_IRQ_EXTI6_GPIO_Port GPIOE
 #define SPBTLE_RF_IRQ_EXTI6_EXTI_IRQn EXTI9_5_IRQn
-#define BUTTON_EXTI13_Pin GPIO_PIN_13
-#define BUTTON_EXTI13_GPIO_Port GPIOC
-#define BUTTON_EXTI13_EXTI_IRQn EXTI15_10_IRQn
-#define ARD_A5_Pin GPIO_PIN_0
-#define ARD_A5_GPIO_Port GPIOC
-#define ARD_A4_Pin GPIO_PIN_1
-#define ARD_A4_GPIO_Port GPIOC
+#define BLUE_BUTTON_Pin GPIO_PIN_13
+#define BLUE_BUTTON_GPIO_Port GPIOC
+#define BLUE_BUTTON_EXTI_IRQn EXTI15_10_IRQn
+#define INS_LP1_RX_Pin GPIO_PIN_0
+#define INS_LP1_RX_GPIO_Port GPIOC
+#define INS_LP1_TX_Pin GPIO_PIN_1
+#define INS_LP1_TX_GPIO_Port GPIOC
 #define ARD_A3_Pin GPIO_PIN_2
 #define ARD_A3_GPIO_Port GPIOC
-#define ARD_A2_Pin GPIO_PIN_3
-#define ARD_A2_GPIO_Port GPIOC
-#define ARD_D1_Pin GPIO_PIN_0
-#define ARD_D1_GPIO_Port GPIOA
-#define ARD_D0_Pin GPIO_PIN_1
-#define ARD_D0_GPIO_Port GPIOA
-#define ARD_D10_Pin GPIO_PIN_2
-#define ARD_D10_GPIO_Port GPIOA
+#define JACK_Pin GPIO_PIN_3
+#define JACK_GPIO_Port GPIOC
+#define encoder1_1_Pin GPIO_PIN_0
+#define encoder1_1_GPIO_Port GPIOA
+#define encoder1_2_Pin GPIO_PIN_1
+#define encoder1_2_GPIO_Port GPIOA
+#define PWM2_Pin GPIO_PIN_2
+#define PWM2_GPIO_Port GPIOA
 #define ARD_D4_Pin GPIO_PIN_3
 #define ARD_D4_GPIO_Port GPIOA
-#define ARD_D7_Pin GPIO_PIN_4
-#define ARD_D7_GPIO_Port GPIOA
-#define ARD_D13_Pin GPIO_PIN_5
-#define ARD_D13_GPIO_Port GPIOA
-#define ARD_D12_Pin GPIO_PIN_6
-#define ARD_D12_GPIO_Port GPIOA
-#define ARD_D11_Pin GPIO_PIN_7
-#define ARD_D11_GPIO_Port GPIOA
-#define ARD_A1_Pin GPIO_PIN_4
-#define ARD_A1_GPIO_Port GPIOC
-#define ARD_A0_Pin GPIO_PIN_5
-#define ARD_A0_GPIO_Port GPIOC
+#define sens2_Pin GPIO_PIN_4
+#define sens2_GPIO_Port GPIOA
+#define PWM1_Pin GPIO_PIN_5
+#define PWM1_GPIO_Port GPIOA
+#define encoder2_1_Pin GPIO_PIN_6
+#define encoder2_1_GPIO_Port GPIOA
+#define encoder2_2_Pin GPIO_PIN_7
+#define encoder2_2_GPIO_Port GPIOA
+#define BT_U3_TX_Pin GPIO_PIN_4
+#define BT_U3_TX_GPIO_Port GPIOC
+#define BT_U3_RX_Pin GPIO_PIN_5
+#define BT_U3_RX_GPIO_Port GPIOC
 #define ARD_D3_Pin GPIO_PIN_0
 #define ARD_D3_GPIO_Port GPIOB
 #define ARD_D6_Pin GPIO_PIN_1
 #define ARD_D6_GPIO_Port GPIOB
-#define ARD_D8_Pin GPIO_PIN_2
-#define ARD_D8_GPIO_Port GPIOB
+#define sens1_Pin GPIO_PIN_2
+#define sens1_GPIO_Port GPIOB
 #define DFSDM1_DATIN2_Pin GPIO_PIN_7
 #define DFSDM1_DATIN2_GPIO_Port GPIOE
 #define ISM43362_RST_Pin GPIO_PIN_8
@@ -132,14 +134,8 @@ void Error_Handler(void);
 #define ISM43362_BOOT0_GPIO_Port GPIOB
 #define ISM43362_WAKEUP_Pin GPIO_PIN_13
 #define ISM43362_WAKEUP_GPIO_Port GPIOB
-#define LED2_Pin GPIO_PIN_14
-#define LED2_GPIO_Port GPIOB
 #define SPSGRF_915_SDN_Pin GPIO_PIN_15
 #define SPSGRF_915_SDN_GPIO_Port GPIOB
-#define INTERNAL_UART3_TX_Pin GPIO_PIN_8
-#define INTERNAL_UART3_TX_GPIO_Port GPIOD
-#define INTERNAL_UART3_RX_Pin GPIO_PIN_9
-#define INTERNAL_UART3_RX_GPIO_Port GPIOD
 #define LPS22HB_INT_DRDY_EXTI10_Pin GPIO_PIN_10
 #define LPS22HB_INT_DRDY_EXTI10_GPIO_Port GPIOD
 #define LPS22HB_INT_DRDY_EXTI10_EXTI_IRQn EXTI15_10_IRQn
@@ -215,10 +211,10 @@ void Error_Handler(void);
 #define ST_LINK_UART1_TX_GPIO_Port GPIOB
 #define ST_LINK_UART1_RX_Pin GPIO_PIN_7
 #define ST_LINK_UART1_RX_GPIO_Port GPIOB
-#define ARD_D15_Pin GPIO_PIN_8
-#define ARD_D15_GPIO_Port GPIOB
-#define ARD_D14_Pin GPIO_PIN_9
-#define ARD_D14_GPIO_Port GPIOB
+#define PWM16_Pin GPIO_PIN_8
+#define PWM16_GPIO_Port GPIOB
+#define PWM17_Pin GPIO_PIN_9
+#define PWM17_GPIO_Port GPIOB
 #define ISM43362_SPI3_CSN_Pin GPIO_PIN_0
 #define ISM43362_SPI3_CSN_GPIO_Port GPIOE
 #define ISM43362_DRDY_EXTI1_Pin GPIO_PIN_1
