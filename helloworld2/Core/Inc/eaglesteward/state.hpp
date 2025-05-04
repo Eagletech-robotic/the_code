@@ -27,7 +27,7 @@ typedef struct state_t {
     // TOF
     float filtered_tof_m;
     // World
-    World world;
+    World world = World();
     // --- Ecrit par retour
     uint32_t start_time_ms; // "date du début du match" en ms
     float elapsed_time_s;   // temps écoulé depuis le début du match

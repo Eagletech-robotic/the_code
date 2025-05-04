@@ -51,7 +51,7 @@ void next_command(state_t &state, const input_t &input, Command &command) {
         return;
     }
 
-    auto const world = thibault_state.world;
+    auto const &world = thibault_state.world;
 
     float x, y, orientation_deg;
     get_position_and_orientation(state, x, y, orientation_deg);
@@ -87,7 +87,7 @@ void next_command(state_t &state, const input_t &input, Command &command) {
     constexpr float SLOPE_THRESHOLD = 0.05f;
     constexpr float MAX_SPEED = 1.0f; // m/s
 
-    const auto potential_field = world.potential();
+    const auto &potential_field = world.potential();
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
