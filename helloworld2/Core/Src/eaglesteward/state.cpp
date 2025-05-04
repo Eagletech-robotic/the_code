@@ -21,7 +21,11 @@ void State::init() {
     saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
 
-void State::print() const { myprintf("S %.2f %.2f  %.1f  %.3f\n", imu_x, imu_y, imu_theta_deg, filtered_tof_m); }
+void State::print() const {
+    float x, y, theta_deg;
+    getPositionAndOrientation(x, y, theta_deg);
+    myprintf("S %.2f %.2f  %.1f  %.3f\n", x, y, theta_deg, filtered_tof_m);
+}
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }
 
