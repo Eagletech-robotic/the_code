@@ -257,8 +257,9 @@ Status gotoBackstage(input_t *input, Command *command, State *state) {
 // Attente indéfinie
 Status waiting(input_t *input, Command *command, State *state) {
     myprintf("Waiting\n");
-    command->specialCommand = SpecialCommand::IMMEDIATE_STOP;
-    command->shovel = ShovelCommand::SHOVEL_RETRACT;
+    command->target_left_speed = 0.f;
+    command->target_right_speed = 0.f;
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
     return Status::RUNNING;
 }
 

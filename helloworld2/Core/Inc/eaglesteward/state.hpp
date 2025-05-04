@@ -46,6 +46,12 @@ class State {
     PID_t pid_diff{};
     PID_t pid_sum{};
 
+    // Bluetooth
+    bool packet_received_at_this_step{false};
+
+    // LED
+    int32_t led_lighted_at_ms{-1}; // Time in clock_ms when the LED was last turned on. -1 means off.
+
     // Nicolas
     bool previous_jack_removed{false};
     int target{0}; // for rectangle test

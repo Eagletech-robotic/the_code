@@ -46,7 +46,8 @@ void move_to_target(Command &command, float const x, float const y, float const 
 
 void next_command(const input_t &input, Command &command) {
     if (!input.jack_removed) {
-        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        command.target_left_speed = 0.f;
+        command.target_right_speed = 0.f;
         myprintf("STOPPING because jack has not been removed\n");
         return;
     }
@@ -59,10 +60,6 @@ void next_command(const input_t &input, Command &command) {
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
 
-    if (i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ) {
-        // throw std::out_of_range("Coordinates out of range");
-    }
-
     myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
 
     auto [closest_bleacher, closest_bleacher_distance] = world.closest_bleacher(x, y);
@@ -73,8 +70,9 @@ void next_command(const input_t &input, Command &command) {
     constexpr float MOVE_TO_TARGET_DISTANCE = 0.45f;
     if (closest_bleacher_distance <= STOP_DISTANCE) {
         myprintf("STOPPING because bleacher is near: %f\n", closest_bleacher_distance);
-        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
-        command.shovel = ShovelCommand::SHOVEL_EXTEND;
+        command.target_left_speed = 0.f;
+        command.target_right_speed = 0.f;
+        command.shovel = ShovelCommand::SHOVEL_EXTENDED;
         return;
     }
     if (closest_bleacher_distance <= MOVE_TO_TARGET_DISTANCE) {
@@ -93,7 +91,8 @@ void next_command(const input_t &input, Command &command) {
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         myprintf("STOPPING because slope is too flat - dx: %f, dy: %f\n", dx, dy);
-        command.specialCommand = SpecialCommand::IMMEDIATE_STOP;
+        command.target_left_speed = 0.f;
+        command.target_right_speed = 0.f;
     } else {
         float const target_angle_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
         float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);

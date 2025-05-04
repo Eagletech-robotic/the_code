@@ -113,5 +113,6 @@ void State::updateFromBluetooth() {
     // Update the world from the packet
     world.reset_from_eagle_packet(eagle_packet);
 
+    packet_received_at_this_step = true;
     myprintf("Packet received, state updated");
 }

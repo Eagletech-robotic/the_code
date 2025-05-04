@@ -50,8 +50,7 @@ void print_complete_input(const input_t &input) {
 }
 
 void print_complete_output(const output_t &output) {
-    myprintf("Output: motor_left_ratio:%.3f motor_right_ratio:%.3f servo_pelle_ratio:%.3f servo_extra_ratio:%.3f "
+    myprintf("Output: motor_left_ratio:%.3f motor_right_ratio:%.3f shovel_ratio:%.3f "
              "led_ratio:%.3f",
-             output.motor_left_ratio, output.motor_right_ratio, output.servo_pelle_ratio, output.servo_extra_ratio,
-             output.led_ratio);
+             output.motor_left_ratio, output.motor_right_ratio, output.shovel_ratio, output.led_ratio);
 }

@@ -4,26 +4,23 @@
 
 void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output, State &state) {
     // Motors
-    if (command.specialCommand == SpecialCommand::IMMEDIATE_STOP) {
-        output.motor_left_ratio = 0.0f;
-        output.motor_right_ratio = 0.0f;
-    } else {
-        motor_calculate_ratios(config, state, input, command.target_left_speed, command.target_right_speed,
-                               output.motor_left_ratio, output.motor_right_ratio);
-    }
+    motor_calculate_ratios(config, state, input, command.target_left_speed, command.target_right_speed,
+                           output.motor_left_ratio, output.motor_right_ratio);
 
     // Shovel
     switch (command.shovel) {
-    case ShovelCommand::SHOVEL_HOLD:
-        // Do nothing
+    case ShovelCommand::SHOVEL_EXTENDED:
+        output.shovel_ratio = 0.12f;
         break;
-    case ShovelCommand::SHOVEL_EXTEND:
-        output.servo_pelle_ratio = 0.12f;
-        break;
-    case ShovelCommand::SHOVEL_RETRACT:
-        output.servo_pelle_ratio = 0.05f;
+    case ShovelCommand::SHOVEL_RETRACTED:
+        output.shovel_ratio = 0.05f;
         break;
     }
 
     // LED
+    if (command.led) {
+        output.led_ratio = 0.5f;
+    } else {
+        output.led_ratio = 0.f;
+    }
 }

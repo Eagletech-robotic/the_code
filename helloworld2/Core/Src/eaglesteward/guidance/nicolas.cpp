@@ -41,9 +41,9 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
         command.target_left_speed = 0.0f;
         command.target_right_speed = 0.0f;
         if (input.blue_button) {
-            command.shovel = ShovelCommand::SHOVEL_EXTEND;
+            command.shovel = ShovelCommand::SHOVEL_EXTENDED;
         } else {
-            command.shovel = ShovelCommand::SHOVEL_RETRACT;
+            command.shovel = ShovelCommand::SHOVEL_RETRACTED;
         }
     }
     // END DEBUG
@@ -54,5 +54,5 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     // 6. Debug: print output
     // print_complete_output(output);
     // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,
-    //          output.servo_pelle_ratio);
+    //          output.shovel_ratio);
 }
