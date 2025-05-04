@@ -15,10 +15,9 @@ State nicolas_state;
 
 void nicolas_top_init(config_t &config) {
     config.time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
-    printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
-    carre_init(&carre, config.time_step_s);
-    motor_init(config, nicolas_state);
     nicolas_state.init();
+    motor_init(config, nicolas_state);
+    // carre_init(&carre, config.time_step_s);
 }
 
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {

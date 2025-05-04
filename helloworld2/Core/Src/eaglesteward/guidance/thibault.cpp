@@ -120,9 +120,8 @@ void next_command(const input_t &input, Command &command) {
 
 void thibault_top_init(config_t &config) {
     config.time_step_s = 0.004f;
-    printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
-    motor_init(config, thibault_state);
     thibault_state.init();
+    motor_init(config, thibault_state);
 }
 
 void thibault_top_step(const config_t &config, const input_t &input, output_t &output) {
