@@ -11,14 +11,13 @@
 #include "utils/myprintf.hpp"
 
 carre_t carre;
-state_t nicolas_state;
+State nicolas_state;
 
 void nicolas_top_init(config_t &config) {
     config.time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
-    printf("cycle : %.0f ms\r\n", config.time_step_s * 1000.0);
-    carre_init(&carre, config.time_step_s);
+    nicolas_state.init();
     motor_init(config, nicolas_state);
-    state_init(nicolas_state);
+    // carre_init(&carre, config.time_step_s);
 }
 
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
@@ -26,10 +25,10 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     // print_complete_input(input);
 
     // 2. Update position and orientation from IMU and encoders
-    update_state_from_input(config, input, nicolas_state);
+    nicolas_state.updateFromInput(config, input);
 
     // 3. Read the last Bluetooth packet (if available) and update the state
-    update_state_from_bluetooth(nicolas_state);
+    nicolas_state.updateFromBluetooth();
 
     // 4. Calculate the next command
     Command command{};
@@ -41,9 +40,9 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
         command.target_left_speed = 0.0f;
         command.target_right_speed = 0.0f;
         if (input.blue_button) {
-            command.shovel = ShovelCommand::SHOVEL_EXTEND;
+            command.shovel = ShovelCommand::SHOVEL_EXTENDED;
         } else {
-            command.shovel = ShovelCommand::SHOVEL_RETRACT;
+            command.shovel = ShovelCommand::SHOVEL_RETRACTED;
         }
     }
     // END DEBUG
@@ -54,5 +53,5 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     // 6. Debug: print output
     // print_complete_output(output);
     // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,
-    //          output.servo_pelle_ratio);
+    //          output.shovel_ratio);
 }

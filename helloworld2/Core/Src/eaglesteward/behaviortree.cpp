@@ -11,18 +11,18 @@
 #include "eaglesteward/behaviortree.hpp"
 #include <stdio.h>
 
-Status behavior_as_function(input_t *, Command *, state_t *) {
+Status behavior_as_function(input_t *, Command *, State *) {
     printf("function\n");
     return Status::SUCCESS;
 }
 
 int behaviortree_test() {
-    auto ok = [](input_t *, Command *, state_t *) {
+    auto ok = [](input_t *, Command *, State *) {
         printf("OK\n");
         return Status::SUCCESS;
     };
 
-    auto wait = [](input_t *, Command *, state_t *) {
+    auto wait = [](input_t *, Command *, State *) {
         puts("WAIT\n");
         return Status::RUNNING;
     };
@@ -32,26 +32,26 @@ int behaviortree_test() {
 
     input_t input;
     Command command{};
-    state_t state;
+    State state;
 
     seq(&input, &command, &state);
 
-    auto fail = [](input_t *, Command *, state_t *) {
+    auto fail = [](input_t *, Command *, State *) {
         puts("FAIL\n");
         return Status::FAILURE;
     };
 
-    auto running = [](input_t *, Command *, state_t *) {
+    auto running = [](input_t *, Command *, State *) {
         puts("RUNNING\n");
         return Status::RUNNING;
     };
 
-    auto success = [](input_t *, Command *, state_t *) {
+    auto success = [](input_t *, Command *, State *) {
         puts("SUCCESS\n");
         return Status::SUCCESS;
     };
 
-    auto sel = alternative(fail, seq, running, success, [](input_t *, Command *, state_t *) {
+    auto sel = alternative(fail, seq, running, success, [](input_t *, Command *, State *) {
         puts("SUCCESS\n");
         return Status::SUCCESS;
     }); // on s'arrête sur le 2e

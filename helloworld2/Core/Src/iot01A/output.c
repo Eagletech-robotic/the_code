@@ -15,8 +15,7 @@
 void output_init(output_t &output) {
     output.motor_left_ratio = 0.0f;
     output.motor_right_ratio = 0.0f;
-    output.servo_pelle_ratio = 0.0f; // 0.05 -> 1ms 0.1 -> 2ms, 0 off
-    output.servo_extra_ratio = 0.0f;
+    output.shovel_ratio = 0.0f; // 0.05 -> 1ms 0.1 -> 2ms, 0 off
 }
 
 void output_set(const output_t &output) {
@@ -28,11 +27,11 @@ void output_set(const output_t &output) {
     }
     motorSet(output.motor_right_ratio, output.motor_left_ratio);
 
-    PWMSet_16(output.servo_pelle_ratio);
-    PWMSet_17(output.servo_extra_ratio);
+    PWMSet_16(output.shovel_ratio);
+    // PWMSet_17(output.servo_extra_ratio); // NOT USED
     led_1(output.led_ratio);
 }
 
 void print_output(const output_t &output) {
-    myprintf("O %.4f\t%.4f\t%.4f\n", output.motor_left_ratio, output.motor_right_ratio, output.servo_pelle_ratio);
+    myprintf("O %.4f\t%.4f\t%.4f\n", output.motor_left_ratio, output.motor_right_ratio, output.shovel_ratio);
 }
