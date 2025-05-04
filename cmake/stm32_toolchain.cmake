@@ -17,7 +17,7 @@ set(CMAKE_SIZE ${TOOLCHAIN_PREFIX}size CACHE FILEPATH "Size utility")
 
 # Compiler flags based on STM32CubeIDE output
 set(CPU_FLAGS "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
-set(COMMON_FLAGS "${CPU_FLAGS} -Wall -fdata-sections -ffunction-sections --specs=nano.specs")
+set(COMMON_FLAGS "${CPU_FLAGS} -Wall -fdata-sections -ffunction-sections -fstack-usage --specs=nano.specs")
 
 set(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu11")
 set(CMAKE_CXX_FLAGS_INIT "${COMMON_FLAGS} -std=c++17") # Use a C++ standard, not gnu11 for C++
