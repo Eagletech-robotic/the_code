@@ -33,16 +33,16 @@ class State {
     float opponent_y{0.f};
     float opponent_theta_deg{0.f};
 
-    // TOF
-    float filtered_tof_m{0.f};
-
     // World
     World world{};
 
     // Time management
     uint32_t start_time_ms{0}; // The input's clock_ms at the start of the game
 
-    // --- Motor PID
+    // TOF
+    float filtered_tof_m{0.f};
+
+    // Motors
     PID_t pid_diff{};
     PID_t pid_sum{};
 
@@ -54,12 +54,12 @@ class State {
 
   private:
     /* PRIVATE DATA ---------------------------------- */
-    // IMU coordinate system
+    // IMU coordinates
     float imu_x{0.f}; // meters
     float imu_y{0.f};
     float imu_theta_deg{0.f};
 
-    // IMU to field coordinate transformation
+    // IMU-to-field transformation
     float transformation_x{0.f};         // X translation offset after rotation (meters)
     float transformation_y{0.f};         // Y translation offset after rotation
     float transformation_theta_deg{0.f}; // Rotation offset between IMU and field
