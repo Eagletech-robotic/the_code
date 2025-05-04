@@ -40,7 +40,7 @@ template <typename T, size_t Capacity> class SizedArray {
      */
     SizedArray &operator=(std::initializer_list<T> list) {
         if (list.size() > Capacity) {
-            throw std::out_of_range("Initializer list exceeds array capacity");
+      //      throw std::out_of_range("Initializer list exceeds array capacity");
         }
         size_ = list.size();
         std::copy(list.begin(), list.end(), data_.begin());
@@ -80,7 +80,7 @@ template <typename T, size_t Capacity> class SizedArray {
      */
     void push_back(const T &value) {
         if (size_ >= Capacity) {
-            throw std::out_of_range("Exceeds array capacity");
+           // throw std::out_of_range("Exceeds array capacity");
         }
         data_[size_] = value;
         size_++;
