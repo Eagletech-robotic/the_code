@@ -117,9 +117,9 @@ void State::updateFromBluetooth() {
     saveImuToFieldTransform(x, y, theta_deg);
 
     // Read the opponent's position and orientation
-    opponent_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-    opponent_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-    opponent_theta_deg = eagle_packet.robot_orientation_deg;
+    opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
+    opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
+    opponent_theta_deg = eagle_packet.opponent_orientation_deg;
 
     // Update the world from the packet
     world.reset_from_eagle_packet(eagle_packet);
