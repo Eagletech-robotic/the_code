@@ -1,5 +1,6 @@
 #include "eaglesteward/world.hpp"
 #include "eaglesteward/shortest_path.hpp"
+#include "utils/myprintf.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -13,18 +14,18 @@ void World::reset() {
 }
 
 void World::init_default_bleachers() {
-    bleachers_ = {
+    bleachers_ = {/*
         {0.075f, 0.400f, M_PI_2},       {0.075f, 1.325f, M_PI_2},       {0.775f, 0.250f, 0.f},
         {0.825f, 1.725f, 0.f},          {1.100f, 0.950f, 0.f},
 
-        {3.f - 0.075f, 0.400f, M_PI_2}, {3.f - 0.075f, 1.325f, M_PI_2}, {3.f - 0.775f, 0.250f, 0.f},
-        {3.f - 0.825f, 1.725f, 0.f},    {3.f - 1.100f, 0.950f, 0.f},
+        {3.f - 0.075f, 0.400f, M_PI_2},*/ {3.f - 0.075f, 1.325f, M_PI_2},/* {3.f - 0.775f, 0.250f, 0.f},
+        {3.f - 0.825f, 1.725f, 0.f},    {3.f - 1.100f, 0.950f, 0.f},*/
     };
 }
 
 void World::reset_from_eagle_packet(const EaglePacket &eagle_packet) {
     // Reset objects
-    bleachers_.clear();
+    // bleachers_.clear();
 
     // Insert objects from the packet
     for (uint8_t i = 0; i < eagle_packet.object_count; ++i) {
@@ -35,9 +36,10 @@ void World::reset_from_eagle_packet(const EaglePacket &eagle_packet) {
         float const x = object.x_cm * 0.01f;
         float const y = object.y_cm * 0.01f;
         float const orientation = object.orientation_deg;
-        bleachers_.push_back({x, y, orientation});
-        if (bleachers_.full())
-            break;
+        myprintf("BL IN PKT: ox:%d, oy:%d, x:%.2f, y:%.2f, orientation:%.1f\n", object.x_cm, object.y_cm, x, y, orientation);
+        // bleachers_.push_back({x, y, orientation});
+        // if (bleachers_.full())
+        //     break;
     }
 
     // Rebuild the potential field

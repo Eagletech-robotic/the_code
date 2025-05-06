@@ -156,27 +156,27 @@ bool robot_border_outward(float w, float h, float s, float x, float y, float the
 // --- Comportement
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
-Status isSafe(input_t *input, Command *command, State *state) {
-    if (state->filtered_tof_m < 0.2) { // failsafe si tout à merder avant
-        myprintf("Failsafe\n");
-        return Status::FAILURE;
-    }
-
-    if (isBigThingClose(state)) { // -> sensible à la detection autour de la table
-        myprintf("BigThing\n");
-        return Status::FAILURE;
-    }
-
+Status evaluateSafety(input_t *input, Command *command, State *state) {
     // float x, y, theta_deg;
     // state->getPositionAndOrientation(x, y, theta_deg);
-    //	if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
-    //	return Status::FAILURE;
-    //	}
 
-    return Status::SUCCESS;
+    if (state->filtered_tof_m < 0.2) {
+        // failsafe si tout à merder avant
+        myprintf("Failsafe\n");
+        return Status::FAILURE;
+    } else if (isBigThingClose(state)) {
+        // -> sensible à la detection autour de la table
+        myprintf("BigThing\n");
+        return Status::FAILURE;
+        // } else if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
+        //     return Status::FAILURE;
+    } else {
+        return Status::SUCCESS;
+    }
 }
 
-Status avoidOpponent(input_t *input, Command *command, State *state) {
+// Trop proche de l'adversaire, il faut se dérouter
+Status evadeOpponent(input_t *input, Command *command, State *state) {
     myprintf("goto 90° de l'adversaire du coté target\n");
     command->target_left_speed = 0.5;
     command->target_right_speed = -0.5;
@@ -184,15 +184,14 @@ Status avoidOpponent(input_t *input, Command *command, State *state) {
 }
 
 // Détection d'un gradin accrocher au aimant ?
-Status haveBleacher(input_t *input, Command *command, State *state) {
+Status hasBleacherAttached(input_t *input, Command *command, State *state) {
     myprintf("Est-ce que j'ai un gradin accroché ? Camera ou pelle out ou TOF");
-    if (isBleacherPossiblyAtContact(state)) { //-> la pelle doit avoir été sorti avant
-        return Status::SUCCESS;
-    }
-    return Status::FAILURE;
+
+    return isBleacherPossiblyAtContact(state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
+                                              : Status::FAILURE;
 }
 
-Status gotoClosestBuildingArea(input_t *input, Command *command, State *state) {
+Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     myprintf("Aller vers une aire de construction et lâcher le gradin");
     return Status::RUNNING;
 }
@@ -205,51 +204,32 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
-// gestion du jack et du temps
-Status isJackGone(input_t *input, Command *command, State *state) {
-    // Départ
-    if (!state->previous_jack_removed) {
-        if (input->jack_removed) {
-            // Start !
-            state->startGame(input->clock_ms);
-        }
+Status detectJackRemoval(input_t *input, Command *command, State *state) {
+    if (!state->hasGameStarted() && input->jack_removed) {
+        state->startGame(input->clock_ms);
     }
-    state->previous_jack_removed = input->jack_removed;
     myprintf("T %f\n", state->elapsedTime(*input));
-    if (input->jack_removed) {
-        return Status::SUCCESS;
-    }
-
-    return Status::FAILURE;
+    return input->jack_removed ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isGameOn(input_t *input, Command *command, State *state) {
-    if (state->elapsedTime(*input) < 90.0f) {
-        return Status::SUCCESS;
-    }
-    return Status::FAILURE;
+Status isGameActive(input_t *input, Command *command, State *state) {
+    return state->elapsedTime(*input) < 90.0f ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isNotTimeToGoToBackstageStaging(input_t *input, Command *command, State *state) {
-    if (state->elapsedTime(*input) > 75.0f) {
-        return Status::FAILURE;
-    }
-    return Status::SUCCESS;
+Status isStagingPhaseActive(input_t *input, Command *command, State *state) {
+    return state->elapsedTime(*input) > 75.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
-Status isNotTimeToGoToBackstage(input_t *input, Command *command, State *state) {
-    if (state->elapsedTime(*input) > 95.0f) {
-        return Status::FAILURE;
-    }
-    return Status::SUCCESS;
-}
-
-Status goToBackstageStaging(input_t *input, Command *command, State *state) {
+Status goToStaging(input_t *input, Command *command, State *state) {
     myprintf("Aller vers la zone d'attente du backstage\n");
     return Status::RUNNING;
 }
 
-Status gotoBackstage(input_t *input, Command *command, State *state) {
+Status isBackstagePhaseActive(input_t *input, Command *command, State *state) {
+    return state->elapsedTime(*input) > 95.0f ? Status::FAILURE : Status::SUCCESS;
+}
+
+Status goToBackstage(input_t *input, Command *command, State *state) {
     myprintf("Aller en backstage\n");
     return Status::RUNNING;
 }
@@ -263,69 +243,70 @@ Status waiting(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
-// -- Debug
-
-Status gotoTarget(float start_x_m, float start_y_m, float target_x_m, float target_y_m, float next_x_m, float next_y_m,
-                  int target, input_t *input, Command *command, State *func_state) {
-    if (func_state->target != target) {
-        return Status::SUCCESS;
-    }
-    myprintf("B%d\r\n", func_state->target);
-    float x, y, theta_deg;
-    func_state->getPositionAndOrientation(x, y, theta_deg);
-    int isArrived = controller_pid(x, y, theta_deg, target_x_m, target_y_m, 0.8f, WHEELBASE_M, 0.08,
-                                   &command->target_left_speed, &command->target_right_speed);
-    if (isArrived) {
-        func_state->target++;
-        return Status::SUCCESS;
-    }
-    return Status::RUNNING;
-}
-
-// c'est prévu pour être utilisé dans une clause alternaltive, d'ou le Failure en retour
-auto print(char const *s) {
+// For use in an alternative node, thus returning Status::FAILURE
+auto logAndFail(char const *s) {
     return [s](input_t *input, Command *command, State *state) -> Status {
         myprintf("%s\n", s);
         return Status::FAILURE;
     };
 }
 
-// execution une fois par cycle de tout l'arbre
-Status cc_infinite_rectangle(const input_t *input, Command *command, State *func_state) {
+// DEBUG - used by infiniteRectangle
+Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *input, Command *command,
+                  State *state) {
+    if (state->target_nb != target_nb) {
+        return Status::SUCCESS;
+    }
+
+    myprintf("B%d\r\n", state->target_nb);
+    const bool hasArrived =
+        controller_pid(state->imu_x, state->imu_y, state->imu_theta_deg, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
+                       0.08, &command->target_left_speed, &command->target_right_speed);
+    if (hasArrived) {
+        state->target_nb++;
+        return Status::SUCCESS;
+    } else {
+        return Status::RUNNING;
+    }
+}
+
+// DEBUG - move around a rectangle
+Status infiniteRectangle(const input_t *input, Command *command, State *state) {
     auto seq = sequence(
+        //
         [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.0, 0.0, 0.6, 0.0, 0.6, 0.6, 0, lambda_input, lambda_command, state);
+            return gotoTarget(0.6, 0.0, 0, lambda_input, lambda_command, state);
         },
         [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.6, 0.0, 0.6, 0.6, 0.0, 0.6, 1, lambda_input, lambda_command, state);
+            return gotoTarget(0.6, 0.6, 1, lambda_input, lambda_command, state);
         },
         [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.6, 0.6, 0.0, 0.6, 0.0, 0.0, 2, lambda_input, lambda_command, state);
+            return gotoTarget(0.0, 0.6, 2, lambda_input, lambda_command, state);
         },
         [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.0, 0.6, 0.0, 0.0, 0.6, 0.0, 3, lambda_input, lambda_command, state);
+            return gotoTarget(0.0, 0.0, 3, lambda_input, lambda_command, state);
         },
         [](input_t *, Command *, State *state) {
-            state->target = 0;
+            state->target_nb = 0;
             return Status::SUCCESS;
         });
 
-    return seq(const_cast<input_t *>(input), command, func_state);
+    return seq(const_cast<input_t *>(input), command, state);
 }
 
-// Arbre de haut niveau
+// Top level node
 Status cc_root_behavior_tree(const input_t *input, Command *command, State *state) {
     fsm_getbleacher(state);
-    auto start = alternative(isJackGone, print("start"), waiting);
-    auto ending = alternative(isGameOn, print("ending"), waiting);
-    auto safe = alternative(isSafe, print("safe"), avoidOpponent); // Trop proche de l'adversaire, il faut se dérouter
-    auto backstageStaging =
-        alternative(isNotTimeToGoToBackstageStaging, print("backstage-staging"), goToBackstageStaging);
-    auto backstage = alternative(isNotTimeToGoToBackstage, print("backstage"), gotoBackstage);
-    auto findBleacher = alternative(haveBleacher, print("start"), gotoClosestBleacher);
-    auto dropBleacher = alternative(gotoClosestBuildingArea, print("deposit"));
+
+    auto waitingStart = alternative(detectJackRemoval, logAndFail("waiting-to-start"), waiting);
+    auto ended = alternative(isGameActive, logAndFail("game-ended"), waiting);
+    auto safety = alternative(evaluateSafety, logAndFail("evade-opponent"), evadeOpponent);
+    auto staging = alternative(isStagingPhaseActive, logAndFail("go-to-staging"), goToStaging);
+    auto backstage = alternative(isBackstagePhaseActive, logAndFail("go-to-backstage"), goToBackstage);
+    auto findBleacher = alternative(hasBleacherAttached, logAndFail("find-bleacher"), gotoClosestBleacher);
+    auto dropBleacher = alternative(goToClosestBuildingArea, logAndFail("drop-bleacher"));
     auto root =
-        sequence(start, ending, safe, cc_infinite_rectangle, backstage, backstageStaging, findBleacher, dropBleacher);
+        sequence(waitingStart, ended, safety, infiniteRectangle, backstage, staging, findBleacher, dropBleacher);
 
     return root(const_cast<input_t *>(input), command, state);
 }

@@ -21,12 +21,23 @@ void State::init() {
     saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
 
-void State::print() const { myprintf("S %.2f %.2f  %.1f  %.3f\n", imu_x, imu_y, imu_theta_deg, filtered_tof_m); }
+void State::print() const {
+    float x, y, theta_deg;
+    getPositionAndOrientation(x, y, theta_deg);
+    myprintf("S %.2f %.2f %.1f TOF%.3f OPP%.2f %.2f %.1f\n", x, y, theta_deg, filtered_tof_m, opponent_x, opponent_y,
+             opponent_theta_deg);
+}
 
-void State::startGame(uint32_t clock_ms) { start_time_ms = clock_ms; }
+bool State::hasGameStarted() const { return start_time_ms != -1; }
+
+void State::startGame(const uint32_t clock_ms) { start_time_ms = static_cast<int32_t>(clock_ms); }
 
 float State::elapsedTime(const input_t &input) const {
-    return static_cast<float>(input.clock_ms - start_time_ms) / 1000.0f;
+    if (start_time_ms == -1) {
+        return 0.0f; // Game has not started yet
+    } else {
+        return static_cast<float>(input.clock_ms - start_time_ms) / 1000.0f;
+    }
 }
 
 /**
@@ -106,9 +117,9 @@ void State::updateFromBluetooth() {
     saveImuToFieldTransform(x, y, theta_deg);
 
     // Read the opponent's position and orientation
-    opponent_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-    opponent_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-    opponent_theta_deg = eagle_packet.robot_orientation_deg;
+    opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
+    opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
+    opponent_theta_deg = eagle_packet.opponent_orientation_deg;
 
     // Update the world from the packet
     world.reset_from_eagle_packet(eagle_packet);

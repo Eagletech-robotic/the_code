@@ -128,11 +128,11 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
     // 1. Debug: print input
     // print_complete_input(input);
 
-    // 2. Update position and orientation from IMU and encoders
-    thibault_state.updateFromInput(config, input);
-
-    // 3. Read the last Bluetooth packet (if available) and update the state
+    // 2. Read the last Bluetooth packet (if available) and update the state
     thibault_state.updateFromBluetooth();
+
+    // 3. Update position and orientation from IMU and encoders
+    thibault_state.updateFromInput(config, input);
 
     // 4. Calculate the next command
     Command command{};
