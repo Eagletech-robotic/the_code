@@ -1,11 +1,4 @@
-/*
- * cc_root.cpp
- *
- *  Created on: Apr 24, 2025
- *      Author: nboulay
- */
-
-#include "eaglesteward/guidance/cc_root.hpp"
+#include "eaglesteward/guidance/behavior.hpp"
 #include "eaglesteward/behaviortree.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
@@ -274,20 +267,20 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 Status infiniteRectangle(const input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
-        [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.6, 0.0, 0, lambda_input, lambda_command, state);
+        [](input_t *input_, Command *command_, State *state_) {
+            return gotoTarget(0.6, 0.0, 0, input_, command_, state_);
         },
-        [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.6, 0.6, 1, lambda_input, lambda_command, state);
+        [](input_t *input_, Command *command_, State *state_) {
+            return gotoTarget(0.6, 0.6, 1, input_, command_, state_);
         },
-        [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.0, 0.6, 2, lambda_input, lambda_command, state);
+        [](input_t *input_, Command *command_, State *state_) {
+            return gotoTarget(0.0, 0.6, 2, input_, command_, state_);
         },
-        [](input_t *lambda_input, Command *lambda_command, State *state) {
-            return gotoTarget(0.0, 0.0, 3, lambda_input, lambda_command, state);
+        [](input_t *input_, Command *command_, State *state_) {
+            return gotoTarget(0.0, 0.0, 3, input_, command_, state_);
         },
-        [](input_t *, Command *, State *state) {
-            state->target_nb = 0;
+        [](input_t *, Command *, State *state_) {
+            state_->target_nb = 0;
             return Status::SUCCESS;
         });
 

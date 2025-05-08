@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/guidance/cc_root.hpp"
+#include "eaglesteward/guidance/behavior.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/carre.hpp"

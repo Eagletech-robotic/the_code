@@ -9,9 +9,9 @@ constexpr int BLEACHER_INFLUENCE_SIZE = 400;
 
 // GameEntity struct
 struct GameEntity {
-    float x;
-    float y;
-    float orientation_degrees;
+    float x = 0.0f;
+    float y = 0.0f;
+    float orientation_degrees = 0.0f;
 
     GameEntity() = default;
 
@@ -22,10 +22,10 @@ struct GameEntity {
 // Bleacher class
 class Bleacher : public GameEntity {
   public:
+    Bleacher() = default;
+
     Bleacher(float x_val, float y_val, float orientation_degrees_val)
         : GameEntity(x_val, y_val, orientation_degrees_val) {}
-
-    Bleacher() = default;
 
     const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
                      BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM> &
