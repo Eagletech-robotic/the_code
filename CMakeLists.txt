@@ -43,8 +43,8 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
 
     # Define the STM32 target properties
     set(STM32_TARGET_NAME falcon)
-    set(STM32_MCU_FAMILY STM32L475xx)
-    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/falcon/STM32L475VGTX_FLASH.ld)
+    set(STM32_MCU_FAMILY STM32L4S5xx)
+    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/falcon/STM32L4S5VITX_FLASH.ld)
 
     # Check if linker script exists
     if(NOT EXISTS ${STM32_LINKER_SCRIPT})
@@ -69,7 +69,7 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
         "falcon/Drivers/STM32L4xx_HAL_Driver/Src/*.c"
         # Add other driver sources if needed, e.g., CMSIS RTOS
     )
-    set(STM32_STARTUP_FILE falcon/Core/Startup/startup_stm32l475vgtx.s)
+    set(STM32_STARTUP_FILE falcon/Core/Startup/startup_stm32l4s5vitx.s)
 
     # Tell CMake to treat all found .c files as C++ to mimic IDE behavior
     foreach(C_SOURCE_FILE ${STM32_CORE_SOURCES} ${STM32_DRIVER_SOURCES})
