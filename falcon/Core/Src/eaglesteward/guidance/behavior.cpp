@@ -2,7 +2,7 @@
 #include "eaglesteward/behaviortree.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
-#include "iot01A/top_driver.h"
+#include "eaglesteward/tof.hpp"
 #include "math.h"
 #include "robotic/controller_stanley.hpp"
 #include "utils/myprintf.hpp"
@@ -12,78 +12,6 @@
 // le reste est une action qui retourne normalement SUCCESS ou RUNNING
 // ce n'est pas obligatoire, juste un mini convention pour s'y retrouver
 
-float length(float x1, float y1, float x2, float y2) { return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)); }
-
-// --- TOF
-// Avec la position physique du 20250426
-//   > 0.48 il n'y a rien
-//   [0.47; 0.36], il y a un gradin collé
-//    [0.48; 0.26 mini ; 0.36/0.47] en approche de gradin
-//  <0.26 -> un robot approche
-
-int isInRange(float min_, float val, float max_) { return min_ < val && val < max_; }
-
-// A autour de 0.5 je détecte le sol à ~ 40 cm
-int isNearSpaceFree(State *state) { return state->filtered_tof_m > 0.5f; }
-
-// Le robot ou une bordure ou un grand gradin sont proches (<15cm)
-// La chose est détecté aussi avec un gradin au contact
-int isBigThingClose(State *state) { return state->filtered_tof_m < 0.26f; }
-
-// On a ces chiffres si le gradin est là mais aussi si on approche
-int isBleacherPossiblyAtContact(State *state) { return isInRange(0.32f, state->filtered_tof_m, 0.49); }
-
-// On passe par le mini vers 0.3 puis cela remonte.
-int isPossiblyBleacherApproch(State *state) { return isInRange(0.28f, state->filtered_tof_m, 0.5); }
-
-int isPossiblyBleacherApprochMinimum(State *state) {
-    return state->filtered_tof_m < 0.32f;
-} // ~15cm, ceux minimum peut descendre à 0.27 mais pas toujours
-
-// Machine d'état qui suit l'approche d'un gradin et en déduit que l'on est au contact
-// L'idée est de la faire tourner tout le temps
-// si on est à BG_GET_IT, c'est qu'il faut déployer la pelle pour attraper un bleacher
-// Trop sensible pour être utilisable
-void fsm_getbleacher(State *state) {
-    switch (state->bleacher_state) {
-    case BleacherState::RESET: {
-        myprintf("BleacherState::RESET\n");
-        if (!isNearSpaceFree(state)) {
-            state->bleacher_state = BleacherState::NON_FREE;
-            return;
-        }
-    }; break;
-    case BleacherState::NON_FREE:
-        myprintf("BleacherState::NON_FREE\n");
-        if (isNearSpaceFree(state)) {
-            state->bleacher_state = BleacherState::RESET;
-            return;
-        }
-        if (isPossiblyBleacherApprochMinimum(state)) {
-            state->bleacher_state = BleacherState::CLOSE;
-            return;
-        };
-        break;
-    case BleacherState::CLOSE:
-        myprintf("BleacherState::CLOSE");
-        if (isNearSpaceFree(state)) {
-            state->bleacher_state = BleacherState::RESET;
-            return;
-        }
-        if (isBleacherPossiblyAtContact(state)) {
-            state->bleacher_state = BleacherState::GET_IT;
-            return;
-        };
-        break;
-    case BleacherState::GET_IT:
-        myprintf("BleacherState::GET_IT");
-        if (!isBleacherPossiblyAtContact(state)) {
-            state->bleacher_state = BleacherState::RESET;
-            return;
-        };
-        break;
-    }
-}
 /*
  * Retourne true si le robot :
  *   • est entièrement contenu dans la carte (w × h),
@@ -149,7 +77,7 @@ bool robot_border_outward(float w, float h, float s, float x, float y, float the
 // --- Comportement
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
-Status evaluateSafety(input_t *input, Command *command, State *state) {
+Status isSafe(input_t *input, Command *command, State *state) {
     // float x, y, theta_deg;
     // state->getPositionAndOrientation(x, y, theta_deg);
 
@@ -157,7 +85,7 @@ Status evaluateSafety(input_t *input, Command *command, State *state) {
         // failsafe si tout à merder avant
         myprintf("Failsafe\n");
         return Status::FAILURE;
-    } else if (isBigThingClose(state)) {
+    } else if (isBigThingClose(*state)) {
         // -> sensible à la detection autour de la table
         myprintf("BigThing\n");
         return Status::FAILURE;
@@ -180,8 +108,8 @@ Status evadeOpponent(input_t *input, Command *command, State *state) {
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
     myprintf("Est-ce que j'ai un gradin accroché ? Camera ou pelle out ou TOF");
 
-    return isBleacherPossiblyAtContact(state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
-                                              : Status::FAILURE;
+    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
+                                               : Status::FAILURE;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
@@ -197,7 +125,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
-Status detectJackRemoval(input_t *input, Command *command, State *state) {
+Status isJackRemoved(input_t *input, Command *command, State *state) {
     if (!state->hasGameStarted() && input->jack_removed) {
         state->startGame(input->clock_ms);
     }
@@ -209,17 +137,8 @@ Status isGameActive(input_t *input, Command *command, State *state) {
     return state->elapsedTime(*input) < 90.0f ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isStagingPhaseActive(input_t *input, Command *command, State *state) {
-    return state->elapsedTime(*input) > 75.0f ? Status::FAILURE : Status::SUCCESS;
-}
-
-Status goToStaging(input_t *input, Command *command, State *state) {
-    myprintf("Aller vers la zone d'attente du backstage\n");
-    return Status::RUNNING;
-}
-
-Status isBackstagePhaseActive(input_t *input, Command *command, State *state) {
-    return state->elapsedTime(*input) > 95.0f ? Status::FAILURE : Status::SUCCESS;
+Status isBackstagePhaseNotActive(input_t *input, Command *command, State *state) {
+    return state->elapsedTime(*input) > 80.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
@@ -228,7 +147,7 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
 }
 
 // Attente indéfinie
-Status waiting(input_t *input, Command *command, State *state) {
+Status wait(input_t *input, Command *command, State *state) {
     myprintf("Waiting\n");
     command->target_left_speed = 0.f;
     command->target_right_speed = 0.f;
@@ -288,18 +207,15 @@ Status infiniteRectangle(const input_t *input, Command *command, State *state) {
 }
 
 // Top level node
-Status cc_root_behavior_tree(const input_t *input, Command *command, State *state) {
-    fsm_getbleacher(state);
+Status top_behavior(const input_t *input, Command *command, State *state) {
+    updateTofStateMachine(*state);
 
-    auto waitingStart = alternative(detectJackRemoval, logAndFail("waiting-to-start"), waiting);
-    auto ended = alternative(isGameActive, logAndFail("game-ended"), waiting);
-    auto safety = alternative(evaluateSafety, logAndFail("evade-opponent"), evadeOpponent);
-    auto staging = alternative(isStagingPhaseActive, logAndFail("go-to-staging"), goToStaging);
-    auto backstage = alternative(isBackstagePhaseActive, logAndFail("go-to-backstage"), goToBackstage);
-    auto findBleacher = alternative(hasBleacherAttached, logAndFail("find-bleacher"), gotoClosestBleacher);
-    auto dropBleacher = alternative(goToClosestBuildingArea, logAndFail("drop-bleacher"));
-    auto root =
-        sequence(waitingStart, ended, safety, infiniteRectangle, backstage, staging, findBleacher, dropBleacher);
-
+    auto root = sequence( //
+        alternative(isJackRemoved, logAndFail("wait-start"), wait),
+        alternative(isGameActive, logAndFail("hold-after-stop"), wait),
+        alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
+        alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
+        alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
+        alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
 }

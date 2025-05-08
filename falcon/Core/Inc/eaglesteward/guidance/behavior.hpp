@@ -5,4 +5,4 @@
 #include "iot01A/input.h"
 #include "robotic/command.hpp"
 
-Status cc_root_behavior_tree(const input_t *input, Command *command, State *state);
+Status top_behavior(const input_t *input, Command *command, State *state);

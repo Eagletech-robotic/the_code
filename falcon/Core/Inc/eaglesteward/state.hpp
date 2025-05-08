@@ -1,14 +1,13 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "eaglesteward/world.hpp"
 #include "iot01A/config.h"
 #include "iot01A/input.h"
-
-#include <stdint.h>
-
 #include "robotic/pid.hpp"
 
-enum class BleacherState { RESET, NON_FREE, CLOSE, GET_IT };
+enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_LIFTED };
 
 class State {
   public:
@@ -50,6 +49,7 @@ class State {
 
     // TOF
     float filtered_tof_m{0.f};
+    TofState tof_state{TofState::CLEAR_PATH};
 
     // Motors
     PID_t pid_diff{};
@@ -71,7 +71,7 @@ class State {
 
     // Use by the behavior tree
     int target_nb{0}; // for rectangle test
-    BleacherState bleacher_state{BleacherState::RESET};
+
     /* END PUBLIC DATA ------------------------------------ */
 
   private:
