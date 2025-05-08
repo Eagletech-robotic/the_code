@@ -4,15 +4,15 @@ project(BluetoothTests LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/helloworld2/Core/Inc
+    ${CMAKE_SOURCE_DIR}/falcon/Core/Inc
 )
 
 # The program source file(s) we are testing.
 # We compile the .cpp directly into the test executable.
 set(PROGRAM_SOURCES
-    ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/robotic/bluetooth.cpp
-    ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/robotic/eagle_packet.cpp
-    # ${CMAKE_SOURCE_DIR}/helloworld2/Core/Src/utils/myprintf.cpp
+    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/robotic/bluetooth.cpp
+    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/robotic/eagle_packet.cpp
+    # ${CMAKE_SOURCE_DIR}/falcon/Core/Src/utils/myprintf.cpp
 )
 
 # Find the test source file(s)

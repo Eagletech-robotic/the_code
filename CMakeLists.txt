@@ -26,7 +26,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 
 # Include directories
-include_directories(helloworld2/Core/Inc)
+include_directories(falcon/Core/Inc)
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
 add_subdirectory(host-tools)
@@ -42,9 +42,9 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
     message(STATUS "Building for STM32 target")
 
     # Define the STM32 target properties
-    set(STM32_TARGET_NAME helloworld2)
+    set(STM32_TARGET_NAME falcon)
     set(STM32_MCU_FAMILY STM32L475xx)
-    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/helloworld2/STM32L475VGTX_FLASH.ld)
+    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/falcon/STM32L475VGTX_FLASH.ld)
 
     # Check if linker script exists
     if(NOT EXISTS ${STM32_LINKER_SCRIPT})
@@ -53,23 +53,23 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
 
     # Include directories (relative to this CMakeLists.txt)
     include_directories(
-        helloworld2/Core/Inc
-        helloworld2/Drivers/STM32L4xx_HAL_Driver/Inc
-        helloworld2/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
-        helloworld2/Drivers/CMSIS/Device/ST/STM32L4xx/Include
-        helloworld2/Drivers/CMSIS/Include
+        falcon/Core/Inc
+        falcon/Drivers/STM32L4xx_HAL_Driver/Inc
+        falcon/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
+        falcon/Drivers/CMSIS/Device/ST/STM32L4xx/Include
+        falcon/Drivers/CMSIS/Include
     )
 
     # Find source files (adjust patterns if needed)
     file(GLOB_RECURSE STM32_CORE_SOURCES
-        "helloworld2/Core/Src/*.c"
-        "helloworld2/Core/Src/*.cpp"
+        "falcon/Core/Src/*.c"
+        "falcon/Core/Src/*.cpp"
     )
     file(GLOB_RECURSE STM32_DRIVER_SOURCES
-        "helloworld2/Drivers/STM32L4xx_HAL_Driver/Src/*.c"
+        "falcon/Drivers/STM32L4xx_HAL_Driver/Src/*.c"
         # Add other driver sources if needed, e.g., CMSIS RTOS
     )
-    set(STM32_STARTUP_FILE helloworld2/Core/Startup/startup_stm32l475vgtx.s)
+    set(STM32_STARTUP_FILE falcon/Core/Startup/startup_stm32l475vgtx.s)
 
     # Tell CMake to treat all found .c files as C++ to mimic IDE behavior
     foreach(C_SOURCE_FILE ${STM32_CORE_SOURCES} ${STM32_DRIVER_SOURCES})

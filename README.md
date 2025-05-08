@@ -5,7 +5,7 @@
 
 Tout le code pour un robot.
 
-helloworld2 est un projet STM32cubeide
+Ce dépôt est un projet STM32CubeIDE.
 
 Il y a 3 modules dans le code :
 

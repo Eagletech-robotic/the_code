@@ -29,6 +29,12 @@ class State {
     /* PUBLIC DATA ---------------------------------------------------- */
     Color color{Color::BLUE};
 
+    // TODO
+    // 1 - Should we overwrite the IMU coordinates with the field coordinates when we receive a packet?
+    // 2 - We should store the IMU movements for the last n milliseconds, where n is the average time from picture to
+    // packet reception. Alternatively, discard the camera position if the robot has moved too much in the last n
+    // milliseconds.
+
     // Our robot, in IMU coordinates. Use getPositionAndOrientation for field coordinates.
     float imu_x{0.f}; // meters
     float imu_y{0.f};
@@ -54,6 +60,14 @@ class State {
 
     // LED
     int32_t led_lighted_at_ms{-1}; // Time in clock_ms when the LED was last turned on. -1 means off.
+
+    // TimeTelemetry
+    // TODO: add time telemetries for step time and gradient descent (or whatever) time.
+    // class TimeTelemetry {
+    //   construtor(name);
+    //   void tick(step_nb, time_ms);
+    //   void dump(); -> "{name}: [379]0.008 [386]0.007 [AVG] 0.003"
+    // };
 
     // Use by the behavior tree
     int target_nb{0}; // for rectangle test
