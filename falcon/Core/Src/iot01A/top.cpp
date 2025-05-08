@@ -11,12 +11,12 @@
 
 #include "iot01A/config.h"
 #include "iot01A/input.h"
+#include "iot01A/led.h"
 #include "iot01A/motor.h"
 #include "iot01A/output.h"
 #include "iot01A/top_driver.h"
 #include "main.h" // top niveau du code, main.c est remplit de code généré cela permet de séparer
 #include "utils/myprintf.hpp"
-#include "iot01A/led.h"
 
 // TODO : to move to input or output
 extern TIM_HandleTypeDef htim1;  //

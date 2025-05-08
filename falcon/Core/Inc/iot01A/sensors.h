@@ -51,4 +51,3 @@ void getInertial6D(float *accx_, float *accy_, float *accz_, float *gyrox_, floa
 #ifdef __cplusplus
 }
 #endif
-
