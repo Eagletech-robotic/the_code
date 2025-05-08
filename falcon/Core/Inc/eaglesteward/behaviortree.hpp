@@ -1,9 +1,3 @@
-/*
- * behaviortree.hpp
- *
- *  Created on: Apr 8, 2025
- *      Author: nboulay
- */
 #pragma once
 
 #include "eaglesteward/state.hpp"
@@ -78,4 +72,3 @@ template <typename F, typename... Rest> auto alternative(F f, Rest... rest) {
 }
 
 int behaviortree_test();
-auto logAndFail(char const *s);

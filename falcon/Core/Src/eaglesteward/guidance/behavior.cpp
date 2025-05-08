@@ -147,6 +147,14 @@ Status wait(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
+// For use in an alternative node, thus returning Status::FAILURE
+auto logAndFail(char const *s) {
+    return [s](input_t *input, Command *command, State *state) -> Status {
+        myprintf("%s\n", s);
+        return Status::FAILURE;
+    };
+}
+
 // DEBUG - used by infiniteRectangle
 Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *input, Command *command,
                   State *state) {

@@ -1,10 +1,3 @@
-/*
- * behaviortree.cpp
- *
- *  Created on: Apr 8, 2025
- *      Author: nboulay
- */
-
 #include "eaglesteward/behaviortree.hpp"
 #include "utils/myprintf.hpp"
 #include <stdio.h>
@@ -60,12 +53,4 @@ int behaviortree_test() {
     // std::cout << "Final: " << static_cast<int>(s) << "\n";
     printf("Final : %d\n", static_cast<int>(s));
     return 0;
-}
-
-// For use in an alternative node, thus returning Status::FAILURE
-auto logAndFail(char const *s) {
-    return [s](input_t *input, Command *command, State *state) -> Status {
-        myprintf("%s\n", s);
-        return Status::FAILURE;
-    };
 }
