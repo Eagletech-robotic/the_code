@@ -9,14 +9,16 @@
    Byte   Bit‑index  Purpose                                Size (bits)
    ───────────────────────────────────────────────────────────────────────
    0-7   0          robot_colour (0=blue, 1=yellow)        1
-         1‑9        robot_x (0–300)                        9
-         10‑17      robot_y (0–200)                        8
-         18‑26      robot_orientation_deg (-180...180)     9   (value+180)
-         27‑35      opponent_x (0–300)                     9
-         36‑43      opponent_y (0–200)                     8
-         44‑52      opponent_orientation_deg (‑180…180)    9   (value+180)
-         53‑58      object_count (0–60)                    6
-         59‑63      padding (0)                            5
+         1          robot_detected (0=no, 1=yes)           1
+         2‑10       robot_x (0–300)                        9
+         11‑18      robot_y (0–200)                        8
+         19‑27      robot_orientation_deg (-180...180)     9   (value+180)
+         28         opponent_detected (0=no, 1=yes)        1
+         29‑37      opponent_x (0–300)                     9
+         38‑45      opponent_y (0–200)                     8
+         46‑54      opponent_orientation_deg (‑180…180)    9   (value+180)
+         55‑60      object_count (0–60)                    6
+         61‑63      padding (0)                            3
    8+2i  repeating object (0 <= i < 60):                   16 bits each
          0-1        type (0=bleacher, 1=plank, 2=can)      2
          2-7        x (0–300)                              6
@@ -38,10 +40,12 @@ struct EagleObject {
 
 struct EaglePacket {
     RobotColour robot_colour;
+    bool robot_detected;
     uint16_t robot_x_cm;
     uint16_t robot_y_cm;
     int16_t robot_orientation_deg;
 
+    bool opponent_detected;
     uint16_t opponent_x_cm;
     uint16_t opponent_y_cm;
     int16_t opponent_orientation_deg;
