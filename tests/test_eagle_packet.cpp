@@ -44,12 +44,12 @@ std::vector<uint8_t> build_payload(const EaglePacket &packet) {
     bp.push(packet.robot_detected ? 1u : 0u, 1);
     bp.push(packet.robot_x_cm, 9);
     bp.push(packet.robot_y_cm, 8);
-    bp.push(static_cast<uint16_t>(packet.robot_orientation_deg + 180), 9);
+    bp.push(static_cast<uint16_t>(packet.robot_theta_deg), 9);
 
     bp.push(packet.opponent_detected ? 1u : 0u, 1);
     bp.push(packet.opponent_x_cm, 9);
     bp.push(packet.opponent_y_cm, 8);
-    bp.push(static_cast<uint16_t>(packet.opponent_orientation_deg + 180), 9);
+    bp.push(static_cast<uint16_t>(packet.opponent_theta_deg), 9);
 
     bp.push(packet.object_count, 6); // object_count bits 55-60
     bp.push(0u, 3);                  // padding bits 61-63
@@ -80,7 +80,7 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
         return false;
     if (a.robot_y_cm != b.robot_y_cm)
         return false;
-    if (a.robot_orientation_deg != b.robot_orientation_deg)
+    if (a.robot_theta_deg != b.robot_theta_deg)
         return false;
     if (a.opponent_detected != b.opponent_detected)
         return false;
@@ -88,7 +88,7 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
         return false;
     if (a.opponent_y_cm != b.opponent_y_cm)
         return false;
-    if (a.opponent_orientation_deg != b.opponent_orientation_deg)
+    if (a.opponent_theta_deg != b.opponent_theta_deg)
         return false;
     if (a.object_count != b.object_count)
         return false;
@@ -119,12 +119,12 @@ TEST(EaglePacketDecode, RoundTripOneObject) {
     src.robot_detected = true;
     src.robot_x_cm = 150;
     src.robot_y_cm = 100;
-    src.robot_orientation_deg = 45;
+    src.robot_theta_deg = 45;
 
     src.opponent_detected = true;
     src.opponent_x_cm = 200;
     src.opponent_y_cm = 50;
-    src.opponent_orientation_deg = -90;
+    src.opponent_theta_deg = 90;
 
     src.object_count = 1;
     src.objects[0] = {ObjectType::Bleacher, 25, 15, 60};
@@ -142,10 +142,10 @@ TEST(EaglePacketDecode, ZeroObjects) {
     src.robot_detected = false;
     src.robot_x_cm = 1;
     src.robot_y_cm = 2;
-    src.robot_orientation_deg = 0;
+    src.robot_theta_deg = 0;
     src.opponent_x_cm = 3;
     src.opponent_y_cm = 4;
-    src.opponent_orientation_deg = 0;
+    src.opponent_theta_deg = 0;
     src.opponent_detected = false;
     src.object_count = 0;
 
@@ -163,9 +163,9 @@ TEST(EaglePacketDecode, MaxObjects) {
     for (uint8_t i = 0; i < 60; ++i) {
         src.objects[i] = {static_cast<ObjectType>(i % 3), uint16_t(i & 63), uint8_t(i % 32), uint8_t((i % 7) * 30)};
     }
-    src.robot_orientation_deg = 30;
+    src.robot_theta_deg = 30;
     src.opponent_detected = true;
-    src.opponent_orientation_deg = -30;
+    src.opponent_theta_deg = 330;
     src.object_count = 60;
 
     const auto payload = build_payload(src);
@@ -214,11 +214,11 @@ TEST(EaglePacketDecode, BoundaryValues) {
     src.robot_detected = true;
     src.robot_x_cm = 300;
     src.robot_y_cm = 200;
-    src.robot_orientation_deg = 180;
+    src.robot_theta_deg = 0;
 
     src.opponent_x_cm = 0;
     src.opponent_y_cm = 0;
-    src.opponent_orientation_deg = -180;
+    src.opponent_theta_deg = 359;
     src.opponent_detected = false;
 
     src.object_count = 1;
@@ -294,12 +294,12 @@ TEST(EaglePacketDecode, ManualBitPatternOneObject) {
     expected.robot_detected = true;
     expected.robot_x_cm = 10;
     expected.robot_y_cm = 20;
-    expected.robot_orientation_deg = 30;
+    expected.robot_theta_deg = 210;
 
     expected.opponent_detected = true;
     expected.opponent_x_cm = 5;
     expected.opponent_y_cm = 6;
-    expected.opponent_orientation_deg = -90;
+    expected.opponent_theta_deg = 90;
 
     expected.object_count = 1;
     expected.objects[0] = {ObjectType::Bleacher, 14, 32, 60};
@@ -314,11 +314,11 @@ TEST(EaglePacketDecode, ManualBitPatternOneObject) {
             << "robot_detected=" << out.robot_detected << "\n"
             << "robot_x_cm=" << out.robot_x_cm << "\n"
             << "robot_y_cm=" << out.robot_y_cm << "\n"
-            << "robot_orientation_deg=" << out.robot_orientation_deg << "\n"
+            << "robot_theta_deg=" << out.robot_theta_deg << "\n"
             << "opponent_detected=" << out.opponent_detected << "\n"
             << "opponent_x_cm=" << out.opponent_x_cm << "\n"
             << "opponent_y_cm=" << out.opponent_y_cm << "\n"
-            << "opponent_orientation_deg=" << out.opponent_orientation_deg << "\n"
+            << "opponent_theta_deg=" << out.opponent_theta_deg << "\n"
             << "object_count=" << static_cast<int>(out.object_count) << "\n"
             << "object[0].type=" << static_cast<int>(out.objects[0].type) << "\n"
             << "object[0].x_cm=" << out.objects[0].x_cm << "\n"

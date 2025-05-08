@@ -112,14 +112,14 @@ void State::updateFromBluetooth() {
     // Read our position and orientation, and calculate the transformation
     float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
     float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-    float theta_deg = eagle_packet.robot_orientation_deg;
+    float theta_deg = angle_normalize_deg(eagle_packet.robot_theta_deg);
     // Save the IMU -> field coordinate transformation in the state
     saveImuToFieldTransform(x, y, theta_deg);
 
     // Read the opponent's position and orientation
     opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
     opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
-    opponent_theta_deg = eagle_packet.opponent_orientation_deg;
+    opponent_theta_deg = angle_normalize_deg(eagle_packet.opponent_theta_deg);
 
     // Update the world from the packet
     world.reset_from_eagle_packet(eagle_packet);

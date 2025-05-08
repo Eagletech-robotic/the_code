@@ -33,12 +33,12 @@ bool decode_eagle_packet(const uint8_t *payload, size_t payload_len, EaglePacket
     out.robot_detected = static_cast<bool>(br.get(1));
     out.robot_x_cm = br.get(9);
     out.robot_y_cm = br.get(8);
-    out.robot_orientation_deg = static_cast<int16_t>(br.get(9)) - 180;
+    out.robot_theta_deg = static_cast<int16_t>(br.get(9));
 
     out.opponent_detected = static_cast<bool>(br.get(1));
     out.opponent_x_cm = br.get(9);
     out.opponent_y_cm = br.get(8);
-    out.opponent_orientation_deg = static_cast<int16_t>(br.get(9)) - 180;
+    out.opponent_theta_deg = static_cast<int16_t>(br.get(9));
 
     out.object_count = static_cast<uint8_t>(br.get(6));
     if (out.object_count > 60)
