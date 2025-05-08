@@ -7,11 +7,6 @@
 #include "robotic/controller_stanley.hpp"
 #include "utils/myprintf.hpp"
 
-// --- Comportement racine définit ici.
-// ce qui commence par is/has est seulement un test qui retourne Failure ou success
-// le reste est une action qui retourne normalement SUCCESS ou RUNNING
-// ce n'est pas obligatoire, juste un mini convention pour s'y retrouver
-
 /*
  * Retourne true si le robot :
  *   • est entièrement contenu dans la carte (w × h),
@@ -28,7 +23,7 @@
  *
  * La tolérance angulaire d’alignement est fixée à ±30° (modifiable).
  */
-bool robot_border_outward(float w, float h, float s, float x, float y, float theta_deg, float tol) {
+bool isLookingOutwards(float w, float h, float s, float x, float y, float theta_deg, float tol) {
     /* Directions cardinales en degrés                     +X  +Y  –X   –Y */
     const float dirs_deg[4] = {0.0f, 90.0f, 180.0f, 270.0f};
     const float ALIGN_TOL = 30.0f; /* ±30° d’ouverture                 */
@@ -74,26 +69,23 @@ bool robot_border_outward(float w, float h, float s, float x, float y, float the
     return dist < s - tol;
 }
 
-// --- Comportement
-
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
 Status isSafe(input_t *input, Command *command, State *state) {
-    // float x, y, theta_deg;
-    // state->getPositionAndOrientation(x, y, theta_deg);
+    float x, y, theta_deg;
+    state->getPositionAndOrientation(x, y, theta_deg);
 
     if (state->filtered_tof_m < 0.2) {
         // failsafe si tout à merder avant
         myprintf("Failsafe\n");
         return Status::FAILURE;
-    } else if (isBigThingClose(*state)) {
-        // -> sensible à la detection autour de la table
+    }
+
+    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
         myprintf("BigThing\n");
         return Status::FAILURE;
-        // } else if (isBigThingClose(state) && !robot_border_outward(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
-        //     return Status::FAILURE;
-    } else {
-        return Status::SUCCESS;
     }
+
+    return Status::SUCCESS;
 }
 
 // Trop proche de l'adversaire, il faut se dérouter
@@ -153,14 +145,6 @@ Status wait(input_t *input, Command *command, State *state) {
     command->target_right_speed = 0.f;
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
     return Status::RUNNING;
-}
-
-// For use in an alternative node, thus returning Status::FAILURE
-auto logAndFail(char const *s) {
-    return [s](input_t *input, Command *command, State *state) -> Status {
-        myprintf("%s\n", s);
-        return Status::FAILURE;
-    };
 }
 
 // DEBUG - used by infiniteRectangle

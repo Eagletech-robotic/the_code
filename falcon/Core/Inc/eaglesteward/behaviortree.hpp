@@ -76,4 +76,6 @@ template <typename F, typename... Rest> auto alternative(F f, Rest... rest) {
         return Status::FAILURE; // sécurité
     };
 }
+
 int behaviortree_test();
+auto logAndFail(char const *s);
