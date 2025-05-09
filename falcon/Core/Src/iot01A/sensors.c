@@ -232,7 +232,7 @@ uint16_t readreg(uint8_t reg) {
 }
 
 void startToF() {
-
+//	HAL_GPIO_WritePin(VL53L0X_XSHUT_GPIO_Port, VL53L0X_XSHUT_Pin, GPIO_PIN_SET); // !shutdown
     HAL_GPIO_WritePin(TOF_RESET_GPIO_Port, TOF_RESET_Pin, GPIO_PIN_SET);
     writereg(0x00, 0X1);
 
