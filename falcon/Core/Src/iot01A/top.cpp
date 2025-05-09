@@ -34,12 +34,12 @@ output_t output;
 
 // code executé au reset
 void top_init_driver() {
+	led_init();
     printf("\r\ntop Hello world !\r\n");
     input_init(input);
     output_init(output);
     top_init(config);
     motorInit();
-    led_init();
 }
 
 // code executer à la fréquence du timer systick

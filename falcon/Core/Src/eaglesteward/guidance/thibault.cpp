@@ -13,7 +13,7 @@
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/world.hpp"
 #include "robotic/angle.hpp"
-#include "robotic/command.hpp"
+#include "eaglesteward/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/constants.hpp"
 #include "utils/myprintf.hpp"

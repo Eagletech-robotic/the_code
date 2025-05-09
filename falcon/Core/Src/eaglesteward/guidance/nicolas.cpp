@@ -7,7 +7,7 @@
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
 #include "robotic/carre.hpp"
-#include "robotic/command.hpp"
+#include "eaglesteward/command.hpp"
 #include "utils/myprintf.hpp"
 #include "iot01A/top_driver.h"
 carre_t carre;
