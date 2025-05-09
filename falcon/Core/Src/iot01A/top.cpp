@@ -60,6 +60,7 @@ void top_init_driver() {
 //  test du bouton bleue pour un autotest ?
 
 void top_in_loop() {
+	timer_reset();
     input_get(input);
     myprintf("\x1B[2J"); // efface l'écran de debug
     print_input(input);

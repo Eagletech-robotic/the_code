@@ -1,5 +1,5 @@
 #include "iot01A/top_driver.h" // c'est la dépendance à l'interface, rien d'autre n'est authorisé à être inclus depuis iot01A
-
+#include "utils/myprintf.hpp"
 #ifdef THIBAULT_GUIDANCE
 #include "eaglesteward/guidance/thibault.hpp"
 #else
@@ -20,4 +20,5 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
 #else
     nicolas_top_step(config, input, output);
 #endif
+
 }

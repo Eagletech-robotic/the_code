@@ -9,7 +9,7 @@
 #include "robotic/carre.hpp"
 #include "robotic/command.hpp"
 #include "utils/myprintf.hpp"
-
+#include "iot01A/top_driver.h"
 carre_t carre;
 State nicolas_state;
 
@@ -23,7 +23,7 @@ void nicolas_top_init(config_t &config) {
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
     // print_complete_input(input);
-
+	myprintf("T %f \n", timer_get_us());
     // 2. Read the last Bluetooth packet (if available) and update the state
     nicolas_state.updateFromBluetooth();
 
