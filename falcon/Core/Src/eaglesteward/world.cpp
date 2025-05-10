@@ -56,9 +56,15 @@ void World::reset_dijkstra() {
         }
     } else if (target_ == TargetType::BuildingAreaWaypoint) {
         if (colour_ == RobotColour::Yellow) {
-            pqueue_.emplace(0, 2.5, 0.5);
+            pqueue_.emplace(0, 0.775, 0.35);
+            pqueue_.emplace(0, 1.225, 0.5);
+            pqueue_.emplace(0, 2.775, 0.35);
+            pqueue_.emplace(0, 2.5, 0.875);
         } else if (colour_ == RobotColour::Blue) {
-            pqueue_.emplace(0, 2.5, 0.5);
+            pqueue_.emplace(0, 3 - 0.775, 0.35);
+            pqueue_.emplace(0, 3 - 1.225, 0.5);
+            pqueue_.emplace(0, 3 - 2.775, 0.35);
+            pqueue_.emplace(0, 3 - 2.5, 0.875);
         }
     }
 }
