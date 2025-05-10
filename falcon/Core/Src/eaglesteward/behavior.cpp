@@ -1,11 +1,48 @@
-#include "eaglesteward/guidance/behavior.hpp"
+#include "eaglesteward/behavior.hpp"
 #include "eaglesteward/behaviortree.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
+#include "robotic/angle.hpp"
 #include "robotic/controller_stanley.hpp"
 #include "utils/myprintf.hpp"
+
+void descend(Command &command, State &state) {
+    constexpr float MAX_SPEED = 1.0f; // m/s
+    auto &world = state.world;
+
+    float x, y, orientation_deg;
+    state.getPositionAndOrientation(x, y, orientation_deg);
+    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
+
+    bool is_moving;
+    float target_angle_deg;
+    world.potential_field_descent(x, y, is_moving, target_angle_deg);
+
+    if (is_moving) {
+        float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+
+        if (std::abs(angle_diff) >= 90) {
+            if (angle_diff >= 0) {
+                command.target_left_speed = 0.0f;
+                command.target_right_speed = 0.5f;
+            } else {
+                command.target_left_speed = 0.5f;
+                command.target_right_speed = 0.0f;
+            }
+        } else {
+            float const speed_left = 0.5f - angle_diff / 180.0f;
+            float const speed_right = 0.5f + angle_diff / 180.0f;
+            float const max = std::max(speed_left, speed_right);
+            command.target_left_speed = MAX_SPEED / max * speed_left;
+            command.target_right_speed = MAX_SPEED / max * speed_right;
+        }
+    } else {
+        command.target_left_speed = 0.f;
+        command.target_right_speed = 0.f;
+    }
+}
 
 /*
  * Retourne true si le robot :
@@ -106,15 +143,74 @@ Status hasBleacherAttached(input_t *input, Command *command, State *state) {
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     myprintf("Aller vers une aire de construction et lâcher le gradin");
+    state->world.set_target(TargetType::BuildingAreaWaypoint);
+    descend(*command, *state);
+
     return Status::RUNNING;
 }
 
-// TODO
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-    // world.getShortestPathToBleacher(robotx, roboty, obstacles, &state.current_path)
-    // gradient_descent(state.current_path, command)
-    myprintf("Aller vers un gradin et l'attraper");
-    return Status::RUNNING;
+    auto seq = sequence(
+        //
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation_deg;
+            state_->getPositionAndOrientation(x, y, orientation_deg);
+            auto closest_bleacher = state_->world.closest_bleacher(x, y);
+            if (closest_bleacher.second > 0.4f) {
+                myprintf("Go to the nearest bleacher\n");
+                state_->world.set_target(TargetType::BleacherWaypoint);
+                descend(*command_, *state_);
+                return Status::RUNNING;
+            } else {
+                return Status::SUCCESS;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation_deg;
+            state_->getPositionAndOrientation(x, y, orientation_deg);
+            auto closest_bleacher = state_->world.closest_bleacher(x, y);
+
+            float const delta_x = x - closest_bleacher.first.x;
+            float const delta_y = y - closest_bleacher.first.y;
+            float const target_angle_deg = std::atan2(-delta_y, -delta_x) / static_cast<float>(M_PI) * 180;
+            float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+
+            if (angle_diff >= 10) {
+                if (angle_diff >= 0) {
+                    command_->target_left_speed = 0.5f;
+                    command_->target_right_speed = -0.5f;
+                } else {
+                    command_->target_left_speed = -0.5f;
+                    command_->target_right_speed = 0.5f;
+                }
+
+                myprintf("Rotating towards the bleacher - target angle: %f - angle diff: %f\n", target_angle_deg,
+                         angle_diff);
+                return Status::RUNNING;
+            } else {
+                return Status::SUCCESS;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation_deg;
+            state_->getPositionAndOrientation(x, y, orientation_deg);
+            auto closest_bleacher = state_->world.closest_bleacher(x, y);
+            if (closest_bleacher.second > 0.05f) {
+                myprintf("Slowly approaching bleacher\n");
+                command_->target_left_speed = 0.5f;
+                command_->target_right_speed = 0.5f;
+                return Status::RUNNING;
+            } else {
+                return Status::SUCCESS;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            myprintf("Bleacher is close enough, stop moving\n");
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            return Status::SUCCESS;
+        });
+
+    return seq(const_cast<input_t *>(input), command, state);
 }
 
 Status isJackRemoved(input_t *input, Command *command, State *state) {
@@ -135,6 +231,9 @@ Status isBackstagePhaseNotActive(input_t *input, Command *command, State *state)
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
     myprintf("Aller en backstage\n");
+    state->world.set_target(TargetType::BackstageWaypoint);
+    descend(*command, *state);
+
     return Status::RUNNING;
 }
 
@@ -175,6 +274,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 }
 
 float start = -1.0f;
+
 Status forward_onesec(const input_t *input, Command *command, State *state) {
     if (start < 0) {
         start = state->elapsedTime(*input);
@@ -221,7 +321,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("wait-start"), wait),
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-        alternative(logAndFail("forward_onsec"), forward_onesec),
+        // alternative(logAndFail("forward_onesec"), forward_onesec),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));

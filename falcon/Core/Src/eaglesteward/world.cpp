@@ -48,8 +48,18 @@ void World::reset_dijkstra() {
             auto y = static_cast<uint8_t>(std::round(bleacher.y / SQUARE_SIZE_M));
             pqueue_.emplace(0, x, y);
         }
-    } else if (target_ == TargetType::StagingWaypoint) {
+    } else if (target_ == TargetType::BackstageWaypoint) {
+        if (colour_ == RobotColour::Yellow) {
+            pqueue_.emplace(0, 0.35, 1.4);
+        } else if (colour_ == RobotColour::Blue) {
+            pqueue_.emplace(0, 2.65, 1.4);
+        }
     } else if (target_ == TargetType::BuildingAreaWaypoint) {
+        if (colour_ == RobotColour::Yellow) {
+            pqueue_.emplace(0, 2.5, 0.5);
+        } else if (colour_ == RobotColour::Blue) {
+            pqueue_.emplace(0, 2.5, 0.5);
+        }
     }
 }
 
@@ -136,10 +146,9 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-void World::potential_field_descent(float x, float y, float &out_speed, float &out_yaw_deg) const {
+void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
     constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
     constexpr float SLOPE_THRESHOLD = 1.0f;
-    constexpr float MAX_SPEED = 1.0f; // m/s
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -150,11 +159,25 @@ void World::potential_field_descent(float x, float y, float &out_speed, float &o
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         myprintf("STOPPING because slope is too flat - dx: %f, dy: %f", dx, dy);
-        out_speed = 0.f;
+        is_moving = false;
         out_yaw_deg = 0.f;
     } else {
-        out_speed = MAX_SPEED;
+        is_moving = true;
         out_yaw_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
         myprintf("Target angle: %f\n", out_yaw_deg);
     }
+}
+
+std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
+    Bleacher best;
+    float best_d = 1e9f;
+
+    for (const auto &b : bleachers_) {
+        float dx = x - b.x;
+        float dy = y - b.y;
+        float d = std::sqrt(dx * dx + dy * dy);
+        if (d < best_d)
+            best_d = d, best = b;
+    }
+    return {best, best_d};
 }

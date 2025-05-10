@@ -45,7 +45,7 @@ class State {
     World world{colour};
 
     // TOF
-    float filtered_tof_m{0.f};
+    float filtered_tof_m{1.f};
     TofState tof_state{TofState::CLEAR_PATH};
 
     // Motors
