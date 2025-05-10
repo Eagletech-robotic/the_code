@@ -31,7 +31,7 @@ void World::set_target(TargetType new_target) {
 }
 
 void World::reset_dijkstra() {
-    myprintf("!!!! RESET DIJSKTRA !!!!\n");
+    // myprintf("!!!! RESET DIJSKTRA !!!!\n");
 
     // Clear the potential field and the queue
     for (auto &row : potential_calculating()) {
@@ -54,14 +54,14 @@ void World::reset_dijkstra() {
 }
 
 bool World::do_some_calculations() {
-    // TODO: make partial_compute_dijkstra compute partially
-    partial_compute_dijkstra();
-    return false;
+    return partial_compute_dijkstra([]() { return true; });
 }
 
-void World::partial_compute_dijkstra() {
+bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {
     if (pqueue_.empty())
-        return;
+        return false;
+
+    constexpr int CHECK_INTERVAL = 200;
 
     constexpr float COST_STRAIGHT = 10.0f;
     constexpr float COST_DIAG = 14.0f;
@@ -80,7 +80,15 @@ void World::partial_compute_dijkstra() {
 
     float *potential = potential_calculating().data()->data();
 
-    while (!pqueue_.empty()) {
+    for (int it = 0; !pqueue_.empty(); ++it) {
+        if (it == CHECK_INTERVAL) [[unlikely]] {
+            if (can_continue()) {
+                it = 0;
+            } else {
+                return true;
+            }
+        }
+
         const PQueueNode &node = pqueue_.top();
 
         const auto x = node.x;
@@ -93,7 +101,7 @@ void World::partial_compute_dijkstra() {
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
-            if (newX < 0 || newX >= FIELD_WIDTH_SQ || newY < 0 || newY >= FIELD_HEIGHT_SQ)
+            if (newX < 0 || newX >= FIELD_WIDTH_SQ || newY < 0 || newY >= FIELD_HEIGHT_SQ) [[unlikely]]
                 continue;
 
             const float cost = step.cost + baseDist;
@@ -107,7 +115,8 @@ void World::partial_compute_dijkstra() {
         }
     }
 
-    ready_field_ = 1 - ready_field_;
+    ready_field_ ^= 1;
+    return false;
 }
 
 void World::update_from_eagle_packet(const EaglePacket &packet) {
