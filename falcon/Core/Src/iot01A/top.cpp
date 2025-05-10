@@ -34,7 +34,7 @@ output_t output;
 
 // code executé au reset
 void top_init_driver() {
-	led_init();
+    led_init();
     printf("\r\ntop Hello world !\r\n");
     input_init(input);
     output_init(output);
@@ -60,7 +60,7 @@ void top_init_driver() {
 //  test du bouton bleue pour un autotest ?
 
 void top_in_loop() {
-	timer_reset();
+    timer_reset();
     input_get(input);
     myprintf("\x1B[2J"); // efface l'écran de debug
     print_input(input);

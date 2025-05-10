@@ -34,9 +34,10 @@ void async_uart_init() {
     um7_reset_kalman_filter(&hlpuart1); // ne semble rien faire
     um7_set_position_rate(&hlpuart1, 250);
     // um7_set_pose_rate(&huart3, 10);
-    //uint8_t pData[] =
-    //    "AT+BAUD8"; // BT grande vitesse, il faudrait vérifier la vitesse, c'est lent je trouve. (uart3 est en autobaud)
-    //HAL_UART_Transmit(&huart3, pData, sizeof(pData), 0);
+    // uint8_t pData[] =
+    //    "AT+BAUD8"; // BT grande vitesse, il faudrait vérifier la vitesse, c'est lent je trouve. (uart3 est en
+    //    autobaud)
+    // HAL_UART_Transmit(&huart3, pData, sizeof(pData), 0);
 
     HAL_UART_Receive_IT(&huart3, &RxData1, 1);
     HAL_UART_Receive_IT(&hlpuart1, &RxData2, 1);

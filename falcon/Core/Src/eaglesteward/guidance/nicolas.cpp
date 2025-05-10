@@ -3,13 +3,13 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
+#include "eaglesteward/command.hpp"
 #include "eaglesteward/guidance/behavior.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
-#include "robotic/carre.hpp"
-#include "eaglesteward/command.hpp"
-#include "utils/myprintf.hpp"
 #include "iot01A/top_driver.h"
+#include "robotic/carre.hpp"
+#include "utils/myprintf.hpp"
 carre_t carre;
 State nicolas_state;
 
@@ -23,7 +23,7 @@ void nicolas_top_init(config_t &config) {
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
     // print_complete_input(input);
-	myprintf("T %f \n", timer_get_us());
+    // myprintf("T %f \n", timer_get_us());
     // 2. Read the last Bluetooth packet (if available) and update the state
     nicolas_state.updateFromBluetooth();
 
