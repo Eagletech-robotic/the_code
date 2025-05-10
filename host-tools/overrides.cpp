@@ -3,28 +3,14 @@
 
 #ifdef __EMSCRIPTEN__
 // WASM Implementation
-#include <emscripten.h>
-#include <time.h>
-
-// Global variable to store the starting time
-static struct timespec timer_start;
 
 extern "C" {
     void timer_reset() {
-        // Use clock_gettime which is directly supported in WASM and doesn't require going through JavaScript
-        clock_gettime(CLOCK_MONOTONIC, &timer_start);
+        // TO BE DONE
     }
 
     float timer_get_us() {
-        struct timespec current;
-        clock_gettime(CLOCK_MONOTONIC, &current);
-
-        // Calculate elapsed time in microseconds
-        uint64_t elapsed_ns = (current.tv_sec - timer_start.tv_sec) * 1000000000ULL +
-                             (current.tv_nsec - timer_start.tv_nsec);
-
-        // Convert nanoseconds to microseconds
-        return (float)(elapsed_ns / 1000.0);
+        return 0.0f; // TO BE DONE
     }
 }
 
