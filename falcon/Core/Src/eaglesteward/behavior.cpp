@@ -156,7 +156,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float x, y, orientation_deg;
             state_->getPositionAndOrientation(x, y, orientation_deg);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.4f) {
+            if (closest_bleacher.second > 0.35f) {
                 myprintf("Go to the nearest bleacher\n");
                 state_->world.set_target(TargetType::BleacherWaypoint);
                 descend(*command_, *state_);
@@ -195,8 +195,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float x, y, orientation_deg;
             state_->getPositionAndOrientation(x, y, orientation_deg);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.05f) {
-                myprintf("Slowly approaching bleacher\n");
+            if (closest_bleacher.second > 0.15f) {
                 command_->target_left_speed = 0.5f;
                 command_->target_right_speed = 0.5f;
                 return Status::RUNNING;
@@ -207,7 +206,9 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             myprintf("Bleacher is close enough, stop moving\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            return Status::SUCCESS;
+            command_->target_left_speed = 0.f;
+            command_->target_right_speed = 0.f;
+            return Status::RUNNING;
         });
 
     return seq(const_cast<input_t *>(input), command, state);
