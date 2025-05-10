@@ -7,7 +7,7 @@
 #include "iot01A/input.h"
 #include "robotic/pid.hpp"
 
-enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_LIFTED };
+enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTACT };
 
 class State {
   public:

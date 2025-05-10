@@ -23,7 +23,7 @@ void nicolas_top_init(config_t &config) {
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
     // print_complete_input(input);
-	myprintf("T %f \n", timer_get_us());
+
     // 2. Read the last Bluetooth packet (if available) and update the state
     nicolas_state.updateFromBluetooth();
 
@@ -48,7 +48,7 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
 
     // 5. Convert the command to actuator commands (output)
     set_output(config, input, command, output, nicolas_state);
-
+	myprintf("T %f \n", timer_get_us());
     // 6. Debug: print output
     // print_complete_output(output);
     // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,

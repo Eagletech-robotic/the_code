@@ -28,7 +28,7 @@ bool isNearSpaceFree(const State &state) { return state.filtered_tof_m > 0.5f; }
 bool isBigThingClose(const State &state) { return state.filtered_tof_m < 0.26f; }
 
 // On a ces chiffres si le gradin est là mais aussi si on approche
-bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.32f, state.filtered_tof_m, 0.49); }
+bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.36f, state.filtered_tof_m, 0.49); }
 
 // On passe par le mini vers 0.3 puis cela remonte.
 bool isPossiblyBleacherApproch(const State &state) { return isInRange(0.28f, state.filtered_tof_m, 0.5); }
@@ -68,11 +68,11 @@ void updateTofStateMachine(State &state) {
             return;
         }
         if (isBleacherPossiblyAtContact(state)) {
-            state.tof_state = TofState::BLEACHER_LIFTED;
+            state.tof_state = TofState::BLEACHER_CONTACT;
             return;
         };
         break;
-    case TofState::BLEACHER_LIFTED:
+    case TofState::BLEACHER_CONTACT:
         myprintf("TofState::BLEACHER_LIFTED");
         if (!isBleacherPossiblyAtContact(state)) {
             state.tof_state = TofState::CLEAR_PATH;
