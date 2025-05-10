@@ -8,16 +8,16 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "eaglesteward/command.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/world.hpp"
+#include "iot01A/top_driver.h"
 #include "robotic/angle.hpp"
-#include "eaglesteward/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
-#include "iot01A/top_driver.h"
 
 State thibault_state;
 
