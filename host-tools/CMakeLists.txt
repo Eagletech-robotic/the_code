@@ -18,6 +18,7 @@ file(GLOB_RECURSE SOURCES_NO_STM32_DEPENDENCY
 if (NOT EMSCRIPTEN)
     add_executable(thibault_debug
         ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/overrides.cpp
         ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
@@ -31,6 +32,7 @@ endif ()
 if (EMSCRIPTEN)
     add_executable(simulator_connector
         ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/overrides.cpp
         ${SOURCES_NO_STM32_DEPENDENCY}
     )
 

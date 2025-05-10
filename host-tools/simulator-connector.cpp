@@ -8,11 +8,10 @@
 config_t config;
 
 extern "C" {
-
 EMSCRIPTEN_KEEPALIVE void exported_top_init() { top_init(config); }
 
 EMSCRIPTEN_KEEPALIVE input_t *create_input() {
-    input_t *ptr = (input_t *)malloc(sizeof(input_t));
+    input_t *ptr = (input_t *) malloc(sizeof(input_t));
     if (!ptr) {
         printf("Error: Failed to allocate input_t\n");
         return NULL;
@@ -21,7 +20,7 @@ EMSCRIPTEN_KEEPALIVE input_t *create_input() {
 }
 
 EMSCRIPTEN_KEEPALIVE output_t *create_output() {
-    output_t *ptr = (output_t *)malloc(sizeof(output_t));
+    output_t *ptr = (output_t *) malloc(sizeof(output_t));
     if (!ptr) {
         printf("Error: Failed to allocate output_t\n");
         return NULL;
@@ -32,7 +31,7 @@ EMSCRIPTEN_KEEPALIVE output_t *create_output() {
 int constexpr BLUETOOTH_BLOCK_SIZE = 100;
 
 EMSCRIPTEN_KEEPALIVE uint8_t *create_bluetooth() {
-    uint8_t *ptr = (uint8_t *)malloc(sizeof(uint8_t) * BLUETOOTH_BLOCK_SIZE);
+    uint8_t *ptr = (uint8_t *) malloc(sizeof(uint8_t) * BLUETOOTH_BLOCK_SIZE);
     if (!ptr) {
         printf("Error: Failed to allocate bluetooth\n");
         return NULL;
@@ -55,7 +54,6 @@ EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output, ui
 
     top_step(config, *input, *output);
 }
-
 } // extern "C"
 
 int main() { return 0; }
