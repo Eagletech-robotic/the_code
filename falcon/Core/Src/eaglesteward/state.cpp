@@ -11,12 +11,9 @@
 
 #include <math.h>
 
-State::State() { }
+State::State() {}
 
 void State::init() {
-    // Initialize the bleachers default positions, etc.
-    world.reset();
-
     // Set the initial state for the IMU to field coordinate transformation.
     saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
@@ -108,8 +105,8 @@ void State::updateFromBluetooth() {
     }
 
     // ------ DECODING -------
-    // Read the color
-    color = eagle_packet.robot_colour == RobotColour::Blue ? Color::BLUE : Color::YELLOW;
+    // Read the colour
+    colour = eagle_packet.robot_colour;
 
     // Read our position and orientation, and calculate the transformation
     float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
@@ -124,7 +121,7 @@ void State::updateFromBluetooth() {
     opponent_theta_deg = angle_normalize_deg(eagle_packet.opponent_theta_deg);
 
     // Update the world from the packet
-    world.reset_from_eagle_packet(eagle_packet);
+    world.update_from_eagle_packet(eagle_packet);
 
     packet_received_at_this_step = true;
     myprintf("Packet received, state updated");

@@ -1,35 +1,134 @@
 #include "eaglesteward/world.hpp"
-#include "eaglesteward/shortest_path.hpp"
+
 #include "utils/myprintf.hpp"
 
+#include <cfloat>
 #include <cmath>
-#include <cstdint>
-#include <cstring> // std::memset
 
-World::World() { reset(); }
+World::World(RobotColour colour) {
+    colour_ = colour;
 
-void World::reset() {
-    init_default_bleachers();
-    build_potential_field();
-}
-
-void World::init_default_bleachers() {
+    // Some default values before we receive the first packet.
     bleachers_ = {
-        {0.075f, 0.400f, M_PI_2},       {0.075f, 1.325f, M_PI_2},       {0.775f, 0.250f, 0.f},
-        {0.825f, 1.725f, 0.f},          {1.100f, 0.950f, 0.f},
-
-        {3.f - 0.075f, 0.400f, M_PI_2}, {3.f - 0.075f, 1.325f, M_PI_2}, {3.f - 0.775f, 0.250f, 0.f},
-        {3.f - 0.825f, 1.725f, 0.f},    {3.f - 1.100f, 0.950f, 0.f},
+        {0.075f, 0.400f, M_PI_2},       {0.075f, 1.325f, M_PI_2},    {0.775f, 0.250f, 0.f},
+        {0.825f, 1.725f, 0.f},          {1.100f, 0.950f, 0.f},       {3.f - 0.075f, 0.400f, M_PI_2},
+        {3.f - 0.075f, 1.325f, M_PI_2}, {3.f - 0.775f, 0.250f, 0.f}, {3.f - 0.825f, 1.725f, 0.f},
+        {3.f - 1.100f, 0.950f, 0.f},
     };
+
+    // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
+    set_target(TargetType::BleacherWaypoint);
+    while (do_some_calculations())
+        ;
 }
 
-void World::reset_from_eagle_packet(const EaglePacket &eagle_packet) {
+void World::set_target(TargetType new_target) {
+    if (new_target == target_)
+        return;
+
+    target_ = new_target;
+    reset_dijkstra();
+}
+
+void World::reset_dijkstra() {
+    myprintf("!!!! RESET DIJSKTRA !!!!\n");
+
+    // Clear the potential field and the queue
+    for (auto &row : potential_calculating()) {
+        std::fill(row.begin(), row.end(), FLT_MAX);
+    }
+    pqueue_.clear();
+
+    // Add the target to the queue
+    if (target_ == TargetType::None) {
+        return;
+    } else if (target_ == TargetType::BleacherWaypoint) {
+        for (const auto &bleacher : bleachers_) {
+            auto x = static_cast<uint8_t>(std::round(bleacher.x / SQUARE_SIZE_M));
+            auto y = static_cast<uint8_t>(std::round(bleacher.y / SQUARE_SIZE_M));
+            pqueue_.emplace(0, x, y);
+        }
+    } else if (target_ == TargetType::BackstageWaypoint) {
+        if (colour_ == RobotColour::Yellow) {
+            pqueue_.emplace(0, 0.35, 1.4);
+        } else if (colour_ == RobotColour::Blue) {
+            pqueue_.emplace(0, 2.65, 1.4);
+        }
+    } else if (target_ == TargetType::BuildingAreaWaypoint) {
+        if (colour_ == RobotColour::Yellow) {
+            pqueue_.emplace(0, 2.5, 0.5);
+        } else if (colour_ == RobotColour::Blue) {
+            pqueue_.emplace(0, 2.5, 0.5);
+        }
+    }
+}
+
+bool World::do_some_calculations() {
+    // TODO: make partial_compute_dijkstra compute partially
+    partial_compute_dijkstra();
+    return false;
+}
+
+void World::partial_compute_dijkstra() {
+    if (pqueue_.empty())
+        return;
+
+    constexpr float COST_STRAIGHT = 10.0f;
+    constexpr float COST_DIAG = 14.0f;
+    // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
+
+    struct Step {
+        int dx, dy;
+        float cost;
+    };
+    static constexpr Step steps[8] = {{-1, -1, COST_DIAG},    {0, -1, COST_STRAIGHT}, {1, -1, COST_DIAG},
+                                      {-1, 0, COST_STRAIGHT}, {1, 0, COST_STRAIGHT},  {-1, 1, COST_DIAG},
+                                      {0, 1, COST_STRAIGHT},  {1, 1, COST_DIAG}};
+
+    /*const int MAX_DISTANCE = std::ceil(std::max(FIELD_WIDTH_SQ, FIELD_HEIGHT_SQ) *
+                                           std::max({COST_STRAIGHT, COST_DIAG, COST_MOVABLE_OBSTACLE}));*/
+
+    float *potential = potential_calculating().data()->data();
+
+    while (!pqueue_.empty()) {
+        const PQueueNode &node = pqueue_.top();
+
+        const auto x = node.x;
+        const auto y = node.y;
+        const auto baseDist = node.distance;
+
+        pqueue_.pop();
+
+        for (const Step &step : steps) {
+            const int newX = x + step.dx;
+            const int newY = y + step.dy;
+
+            if (newX < 0 || newX >= FIELD_WIDTH_SQ || newY < 0 || newY >= FIELD_HEIGHT_SQ)
+                continue;
+
+            const float cost = step.cost + baseDist;
+
+            const int newIdx = newX * FIELD_HEIGHT_SQ + newY;
+            float &distSquare = potential[newIdx];
+            if (distSquare > cost) {
+                distSquare = cost;
+                pqueue_.emplace(distSquare, newX, newY);
+            }
+        }
+    }
+
+    ready_field_ = 1 - ready_field_;
+}
+
+void World::update_from_eagle_packet(const EaglePacket &packet) {
+    colour_ = packet.robot_colour;
+
     // Reset objects
-    // bleachers_.clear();
+    bleachers_.clear();
 
     // Insert objects from the packet
-    for (uint8_t i = 0; i < eagle_packet.object_count; ++i) {
-        const auto &object = eagle_packet.objects[i];
+    for (uint8_t i = 0; i < packet.object_count; ++i) {
+        const auto &object = packet.objects[i];
         if (object.type != ObjectType::Bleacher)
             continue;
 
@@ -38,13 +137,35 @@ void World::reset_from_eagle_packet(const EaglePacket &eagle_packet) {
         float const orientation = object.orientation_deg;
         myprintf("BL IN PKT: ox:%d, oy:%d, x:%.2f, y:%.2f, orientation:%.1f\n", object.x_cm, object.y_cm, x, y,
                  orientation);
-        // bleachers_.push_back({x, y, orientation});
-        // if (bleachers_.full())
-        //     break;
+        bleachers_.push_back({x, y, orientation});
+        if (bleachers_.full())
+            break;
     }
 
-    // Rebuild the potential field
-    build_potential_field();
+    // Force the recalculation of the potential field
+    reset_dijkstra();
+}
+
+void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
+    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
+    constexpr float SLOPE_THRESHOLD = 1.0f;
+
+    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
+    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+
+    const auto &potential = potential_ready();
+    float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
+    float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
+
+    if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
+        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f", dx, dy);
+        is_moving = false;
+        out_yaw_deg = 0.f;
+    } else {
+        is_moving = true;
+        out_yaw_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
+        myprintf("Target angle: %f\n", out_yaw_deg);
+    }
 }
 
 std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
@@ -59,88 +180,4 @@ std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
             best_d = d, best = b;
     }
     return {best, best_d};
-}
-
-void World::path_to_closest_bleacher(const float robotX, const float robotY, const float opponentX,
-                                     const float opponentY,
-                                     SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath) {
-    constexpr int OPPONENT_RADIUS_SQ = 4;
-
-    const int opponentCoordX = std::floor(opponentX / SQUARE_SIZE_M);
-    const int opponentCoordY = std::floor(opponentY / SQUARE_SIZE_M);
-
-    std::array<std::array<GridSquare, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> grid{};
-    for (size_t i = 0; i < FIELD_WIDTH_SQ; ++i) {
-        for (size_t j = 0; j < FIELD_HEIGHT_SQ; ++j) {
-            const int distX = static_cast<int>(i) - opponentCoordX;
-            const int distY = static_cast<int>(j) - opponentCoordY;
-            const int distSquared = distX * distX + distY * distY;
-            if (distSquared < OPPONENT_RADIUS_SQ * OPPONENT_RADIUS_SQ) {
-                grid[i][j] = GridSquare::Obstacle;
-            } else {
-                grid[i][j] = GridSquare::Empty;
-            }
-        }
-    }
-
-    for (const Bleacher &bleacher : bleachers_) {
-        const int bleacherCoordX = std::floor(bleacher.x / SQUARE_SIZE_M);
-        const int bleacherCoordY = std::floor(bleacher.y / SQUARE_SIZE_M);
-        grid[bleacherCoordX][bleacherCoordY] = GridSquare::Target;
-    }
-
-    const Coord robotCoord = {.x = static_cast<uint8_t>(std::floor(robotX / SQUARE_SIZE_M)),
-                              .y = static_cast<uint8_t>(std::floor(robotY / SQUARE_SIZE_M))};
-
-    compute_shortest_path(grid, robotCoord, outPath);
-}
-
-void World::build_potential_field() {
-    std::memset(potential_field_.data(), 0, sizeof(potential_field_));
-    add_walls();
-    add_bleachers();
-}
-
-/* --- walls -------------------------------------------------------- */
-void World::add_walls() {
-    constexpr float INF_DIST = 0.35f; // m
-    constexpr float MAX_POT = 35.f;
-    const int w = static_cast<int>(INF_DIST / SQUARE_SIZE_M);
-
-    for (int i = 0; i < FIELD_WIDTH_SQ; ++i) {
-        for (int j = 0; j < FIELD_HEIGHT_SQ; ++j) {
-            float &cell = potential_field_[i][j];
-            if (i < w)
-                cell += MAX_POT * (w - i) / w;
-            else if (i >= FIELD_WIDTH_SQ - w)
-                cell += MAX_POT * (i - (FIELD_WIDTH_SQ - w)) / w;
-
-            if (j < w)
-                cell += MAX_POT * (w - j) / w;
-            else if (j >= FIELD_HEIGHT_SQ - w)
-                cell += MAX_POT * (j - (FIELD_HEIGHT_SQ - w)) / w;
-        }
-    }
-}
-
-/* --- bleacher --------------------------------------------- */
-void World::add_bleachers() {
-    for (auto &bleacher : bleachers_) {
-        const auto &field = bleacher.potential_field();
-
-        const int field_width = field.size();
-        const int field_height = static_cast<int>(field[0].size());
-
-        int bleacher_i = static_cast<int>(std::round(bleacher.x / SQUARE_SIZE_M)) - field_width / 2;
-        int bleacher_j = static_cast<int>(std::round(bleacher.y / SQUARE_SIZE_M)) - field_height / 2;
-
-        for (int field_i = 0; field_i < field_width; ++field_i)
-            for (int field_j = 0; field_j < field_height; ++field_j) {
-                int i = bleacher_i + field_i;
-                int j = bleacher_j + field_j;
-                if (i < 0 || j < 0 || i >= FIELD_WIDTH_SQ || j >= FIELD_HEIGHT_SQ)
-                    continue;
-                potential_field_[i][j] += field[field_i][field_j];
-            }
-    }
 }
