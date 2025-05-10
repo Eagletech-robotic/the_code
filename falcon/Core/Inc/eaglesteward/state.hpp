@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 #include "eaglesteward/world.hpp"
 #include "iot01A/config.h"
 #include "iot01A/input.h"

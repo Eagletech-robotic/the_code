@@ -20,5 +20,4 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
 #else
     nicolas_top_step(config, input, output);
 #endif
-
 }

@@ -27,8 +27,12 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 
     for (int y = height - 1; y >= 0; --y) {
         for (int x = 0; x < width; ++x) {
-            float const normalized = (potential_field[x][y] - minValue) / (maxValue - minValue);
-            int const index = std::floor(normalized * (sizeof(colors) / sizeof(colors[0]) - 1));
+            float range = maxValue - minValue;
+            if (range == 0)
+                range = FLT_MIN;
+
+            const float normalized = (potential_field[x][y] - minValue) / range;
+            const int index = std::floor(normalized * (sizeof(colors) / sizeof(colors[0]) - 1));
 
             printf("\033[48;5;%dm  \033[0m", colors[index]);
         }

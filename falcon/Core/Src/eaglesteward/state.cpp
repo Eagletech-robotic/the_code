@@ -11,7 +11,7 @@
 
 #include <math.h>
 
-State::State() { }
+State::State() {}
 
 void State::init() {
     // Initialize the bleachers default positions, etc.

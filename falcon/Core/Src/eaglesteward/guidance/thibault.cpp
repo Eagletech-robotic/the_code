@@ -8,16 +8,16 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "eaglesteward/command.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/world.hpp"
+#include "iot01A/top_driver.h"
 #include "robotic/angle.hpp"
-#include "eaglesteward/command.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
-#include "iot01A/top_driver.h"
 
 State thibault_state;
 
@@ -87,7 +87,7 @@ void next_command(const input_t &input, Command &command) {
     constexpr float SLOPE_THRESHOLD = 0.05f;
     constexpr float MAX_SPEED = 1.0f; // m/s
 
-    const auto &potential_field = world.potential();
+    const auto &potential_field = world.potential_ready();
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
@@ -135,12 +135,12 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
 
     // 3. Update position and orientation from IMU and encoders
     thibault_state.updateFromInput(config, input);
-    myprintf("T %.2f (input)\n", timer_get_us());
+    // myprintf("T %.2f (input)\n", timer_get_us());
 
     // 4. Calculate the next command
     Command command{};
     next_command(input, command);
-	myprintf("T %.2f (command)\n", timer_get_us());
+    // myprintf("T %.2f (command)\n", timer_get_us());
 
     // 5. Convert the command to actuator commands (output)
     set_output(config, input, command, output, thibault_state);
@@ -148,6 +148,5 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
     // 6. Debug: print output
     // print_complete_output(output);
     // myprintf("Current potential: %f - Current orientation: %f\n", potential_field[i][j], orientation_deg);
-	myprintf("T %.2f (fin)\n", timer_get_us());
-
+    // myprintf("T %.2f (fin)\n", timer_get_us());
 }

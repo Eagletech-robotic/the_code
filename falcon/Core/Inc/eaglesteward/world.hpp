@@ -1,12 +1,20 @@
 #pragma once
 
-#include "eaglesteward/shortest_path.hpp"
 #include "robotic/eagle_packet.hpp"
+#include "utils/bounded_pqueue.hpp"
 #include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
 
 #include <array>
 #include <utility>
+
+struct PQueueNode {
+    float distance;
+    uint8_t x;
+    uint8_t y;
+
+    bool operator<(const PQueueNode &other) const { return distance > other.distance; }
+};
 
 class World {
   public:
@@ -19,23 +27,25 @@ class World {
     void reset_from_eagle_packet(const EaglePacket &packet);
 
     /** (bleacher, distance) in metres; (undefined, 1e9f) if no bleacher left. */
-    std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
 
     /* read‑only access for planners / visualisation */
-    const auto &potential() const { return potential_field_; }
-    const auto &bleacher_list() const { return bleachers_; }
-
-    void path_to_closest_bleacher(float robotX, float robotY, float opponentX, float opponentY,
-                                  SizedArray<Coord, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> &outPath);
+    [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
+    [[nodiscard]] const auto &bleacher_list() const { return bleachers_; }
 
   private:
-    /* data ----------------------------------------------------------- */
-    std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_{};
+    // State of the world
     SizedArray<Bleacher, 10> bleachers_;
 
-    /* helpers -------------------------------------------------------- */
+    // Shortest path
+    uint8_t ready_field_ = 1;
+    std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
+
+    BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
+
+    [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
+
     void init_default_bleachers();
-    void build_potential_field();
-    void add_walls();
-    void add_bleachers();
+    void reset_dijkstra();
+    void partial_compute_dijkstra();
 };

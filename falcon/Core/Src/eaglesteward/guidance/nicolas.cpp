@@ -3,13 +3,13 @@
 #include <stdio.h>
 
 #include "eaglesteward/behaviortree.hpp"
+#include "eaglesteward/command.hpp"
 #include "eaglesteward/guidance/behavior.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
-#include "robotic/carre.hpp"
-#include "eaglesteward/command.hpp"
-#include "utils/myprintf.hpp"
 #include "iot01A/top_driver.h"
+#include "robotic/carre.hpp"
+#include "utils/myprintf.hpp"
 carre_t carre;
 State nicolas_state;
 
