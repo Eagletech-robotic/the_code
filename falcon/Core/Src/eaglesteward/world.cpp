@@ -27,11 +27,11 @@ void World::set_target(TargetType new_target) {
         return;
 
     target_ = new_target;
-    reset_potential_field();
+    reset_dijkstra();
 }
 
-void World::reset_potential_field() {
-    myprintf("!!!! RESET POTENTIAL FIELD !!!!\n");
+void World::reset_dijkstra() {
+    myprintf("!!!! RESET DIJSKTRA !!!!\n");
 
     // Clear the potential field and the queue
     for (auto &row : potential_calculating()) {
@@ -60,6 +60,9 @@ bool World::do_some_calculations() {
 }
 
 void World::partial_compute_dijkstra() {
+    if (pqueue_.empty())
+        return;
+
     constexpr float COST_STRAIGHT = 10.0f;
     constexpr float COST_DIAG = 14.0f;
     // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
@@ -130,12 +133,12 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     }
 
     // Force the recalculation of the potential field
-    reset_potential_field();
+    reset_dijkstra();
 }
 
 void World::potential_field_descent(float x, float y, float &out_speed, float &out_yaw_deg) const {
     constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
-    constexpr float SLOPE_THRESHOLD = 0.01f;
+    constexpr float SLOPE_THRESHOLD = 1.0f;
     constexpr float MAX_SPEED = 1.0f; // m/s
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));

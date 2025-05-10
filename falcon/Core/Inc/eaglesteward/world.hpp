@@ -56,6 +56,6 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
-    void reset_potential_field();
+    void reset_dijkstra();
     void partial_compute_dijkstra();
 };
