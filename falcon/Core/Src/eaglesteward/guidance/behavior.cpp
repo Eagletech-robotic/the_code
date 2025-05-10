@@ -176,17 +176,17 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 
 float start = -1.0f;
 Status forward_onesec(const input_t *input, Command *command, State *state) {
-	if (start < 0) {
-		start = state->elapsedTime(*input);
-	}
+    if (start < 0) {
+        start = state->elapsedTime(*input);
+    }
 
-	if( state->elapsedTime(*input) - start < 1.0f) {
-		command->target_left_speed = 0.5;
-		command->target_right_speed = 0.5;
-		return Status::RUNNING;
-	}
+    if (state->elapsedTime(*input) - start < 1.0f) {
+        command->target_left_speed = 0.5;
+        command->target_right_speed = 0.5;
+        return Status::RUNNING;
+    }
 
-	return Status::SUCCESS;
+    return Status::SUCCESS;
 }
 
 // DEBUG - move around a rectangle
@@ -221,7 +221,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("wait-start"), wait),
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-		alternative(logAndFail("forward_onsec"), forward_onesec),
+        alternative(logAndFail("forward_onsec"), forward_onesec),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
