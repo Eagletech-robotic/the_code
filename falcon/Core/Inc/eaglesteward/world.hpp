@@ -59,6 +59,7 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
+  public:
     void reset_dijkstra();
-    void partial_compute_dijkstra();
+    bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
 };
