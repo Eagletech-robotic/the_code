@@ -16,28 +16,39 @@ struct PQueueNode {
     bool operator<(const PQueueNode &other) const { return distance > other.distance; }
 };
 
+enum class TargetType {
+    None,
+    BleacherWaypoint,
+    StagingWaypoint,
+    BuildingAreaWaypoint,
+};
+
 class World {
   public:
-    World(); // default bleachers & potential field ready
+    explicit World(RobotColour colour);
 
-    /** Add default bleachers. */
-    void reset();
+    /** Set the next target for the robot. */
+    void set_target(TargetType target);
 
-    /** Replace bleachers with those found in EaglePacket (object_type==0). */
-    void reset_from_eagle_packet(const EaglePacket &packet);
+    /** Replace objects with those found in EaglePacket. */
+    void update_from_eagle_packet(const EaglePacket &packet);
 
-    /** (bleacher, distance) in metres; (undefined, 1e9f) if no bleacher left. */
-    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
+    /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
+    void potential_field_descent(float x, float y, float &out_speed, float &out_yaw_deg) const;
 
-    /* read‑only access for planners / visualisation */
+    /** Do some calculations that fit in a step. Returns true if calculations were done. */
+    bool do_some_calculations();
+
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
-    [[nodiscard]] const auto &bleacher_list() const { return bleachers_; }
 
   private:
+    RobotColour colour_;
+
     // State of the world
     SizedArray<Bleacher, 10> bleachers_;
 
-    // Shortest path
+    // Potential field
+    TargetType target_ = TargetType::None;
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
@@ -45,7 +56,6 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
-    void init_default_bleachers();
-    void reset_dijkstra();
+    void reset_potential_field();
     void partial_compute_dijkstra();
 };

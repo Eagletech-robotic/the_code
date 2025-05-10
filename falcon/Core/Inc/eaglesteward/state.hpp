@@ -9,9 +9,8 @@ enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTA
 
 class State {
   public:
-    enum class Color { BLUE = 0, YELLOW = 1 };
-
     State();
+
     void init();
 
     /* I/O ----------------------------------------------------- */
@@ -24,7 +23,7 @@ class State {
     void updateFromBluetooth();
 
     /* PUBLIC DATA ---------------------------------------------------- */
-    Color color{Color::BLUE};
+    RobotColour colour{RobotColour::Blue};
 
     // TODO
     // 1 - Should we overwrite the IMU coordinates with the field coordinates when we receive a packet?
@@ -43,7 +42,7 @@ class State {
     float opponent_theta_deg{0.f};
 
     // World
-    World world{};
+    World world{colour};
 
     // TOF
     float filtered_tof_m{0.f};
@@ -62,7 +61,7 @@ class State {
     // TimeTelemetry
     // TODO: add time telemetries for step time and gradient descent (or whatever) time.
     // class TimeTelemetry {
-    //   construtor(name);
+    //   constructor(name);
     //   void tick(step_nb, time_ms);
     //   void dump(); -> "{name}: [379]0.008 [386]0.007 [AVG] 0.003"
     // };

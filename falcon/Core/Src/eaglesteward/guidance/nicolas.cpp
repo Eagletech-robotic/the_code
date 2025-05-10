@@ -46,10 +46,14 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     }
     // END DEBUG
 
-    // 5. Convert the command to actuator commands (output)
+    // 5. Perform some computations that fit in a step
+    nicolas_state.world.do_some_calculations();
+
+    // 6. Convert the command to actuator commands (output)
     set_output(config, input, command, output, nicolas_state);
     myprintf("T %f \n", timer_get_us());
-    // 6. Debug: print output
+
+    // 7. Debug: print output
     // print_complete_output(output);
     // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,
     //          output.shovel_ratio);
