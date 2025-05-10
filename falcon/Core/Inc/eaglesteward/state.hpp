@@ -19,6 +19,7 @@ class State {
     /* I/O ----------------------------------------------------- */
     void print() const;
     [[nodiscard]] bool hasGameStarted() const;
+    void GameNotStarted();
     void startGame(uint32_t clock_ms);
     [[nodiscard]] float elapsedTime(const input_t &input) const;
     void getPositionAndOrientation(float &x, float &y, float &theta) const;

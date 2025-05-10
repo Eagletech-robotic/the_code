@@ -30,6 +30,8 @@ void State::print() const {
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }
 
+void State::GameNotStarted() { start_time_ms = -1; }
+
 void State::startGame(const uint32_t clock_ms) { start_time_ms = static_cast<int32_t>(clock_ms); }
 
 float State::elapsedTime(const input_t &input) const {

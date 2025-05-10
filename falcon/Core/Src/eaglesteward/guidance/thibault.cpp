@@ -125,7 +125,7 @@ void thibault_top_init(config_t &config) {
     thibault_state.init();
     motor_init(config, thibault_state);
 }
-
+Command command{};
 void thibault_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
     // print_complete_input(input);
@@ -138,7 +138,7 @@ void thibault_top_step(const config_t &config, const input_t &input, output_t &o
     myprintf("T %.2f (input)\n", timer_get_us());
 
     // 4. Calculate the next command
-    Command command{};
+
     next_command(input, command);
 	myprintf("T %.2f (command)\n", timer_get_us());
 

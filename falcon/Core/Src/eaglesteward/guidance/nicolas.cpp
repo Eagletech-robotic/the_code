@@ -20,6 +20,7 @@ void nicolas_top_init(config_t &config) {
     // carre_init(&carre, config.time_step_s);
 }
 
+Command commandt{};
 void nicolas_top_step(const config_t &config, const input_t &input, output_t &output) {
     // 1. Debug: print input
     // print_complete_input(input);
@@ -31,23 +32,22 @@ void nicolas_top_step(const config_t &config, const input_t &input, output_t &ou
     nicolas_state.updateFromInput(config, input);
 
     // 4. Calculate the next command
-    Command command{};
-    top_behavior(&input, &command, &nicolas_state);
+    top_behavior(&input, &commandt, &nicolas_state);
 
     // DEBUG -> to be moved to the behavior tree
     if (!input.jack_removed) {
-        command.target_left_speed = 0.0f;
-        command.target_right_speed = 0.0f;
-        if (input.blue_button) {
-            command.shovel = ShovelCommand::SHOVEL_EXTENDED;
+        commandt.target_left_speed = 0.0f;
+        commandt.target_right_speed = 0.0f;
+        if (!input.blue_button) {
+            commandt.shovel = ShovelCommand::SHOVEL_EXTENDED;
         } else {
-            command.shovel = ShovelCommand::SHOVEL_RETRACTED;
+            commandt.shovel = ShovelCommand::SHOVEL_RETRACTED;
         }
     }
     // END DEBUG
 
     // 5. Convert the command to actuator commands (output)
-    set_output(config, input, command, output, nicolas_state);
+    set_output(config, input, commandt, output, nicolas_state);
 	myprintf("T %f \n", timer_get_us());
     // 6. Debug: print output
     // print_complete_output(output);

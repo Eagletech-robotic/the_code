@@ -121,8 +121,12 @@ Status isJackRemoved(input_t *input, Command *command, State *state) {
     if (!state->hasGameStarted() && input->jack_removed) {
         state->startGame(input->clock_ms);
     }
-    myprintf("T %f\n", state->elapsedTime(*input));
-    return input->jack_removed ? Status::SUCCESS : Status::FAILURE;
+
+    if (input->jack_removed) {
+    	return Status::SUCCESS;
+    }
+    state->GameNotStarted();
+    return Status::FAILURE;
 }
 
 Status isGameActive(input_t *input, Command *command, State *state) {
@@ -174,19 +178,17 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 }
 
-float start = -1.0f;
+Status is2secondGone(const input_t *input, Command *command, State *state) {
+	if( state->elapsedTime(*input) > 2.0f) {
+		return Status::SUCCESS;
+	}
+	return Status::FAILURE;
+}
+
 Status forward_onesec(const input_t *input, Command *command, State *state) {
-	if (start < 0) {
-		start = state->elapsedTime(*input);
-	}
-
-	if( state->elapsedTime(*input) - start < 1.0f) {
-		command->target_left_speed = 0.5;
-		command->target_right_speed = 0.5;
-		return Status::RUNNING;
-	}
-
-	return Status::SUCCESS;
+	command->target_left_speed = 0.7f;
+	command->target_right_speed = 0.7f;
+	return Status::RUNNING;
 }
 
 // DEBUG - move around a rectangle
@@ -221,7 +223,8 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("wait-start"), wait),
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-		alternative(logAndFail("forward_onsec"), forward_onesec),
+		alternative(is2secondGone,logAndFail("forward_2sec"), forward_onesec),
+		alternative(logAndFail("STOP"),wait),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
