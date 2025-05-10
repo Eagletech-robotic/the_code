@@ -19,7 +19,7 @@ struct PQueueNode {
 enum class TargetType {
     None,
     BleacherWaypoint,
-    StagingWaypoint,
+    BackstageWaypoint,
     BuildingAreaWaypoint,
 };
 
@@ -34,10 +34,13 @@ class World {
     void update_from_eagle_packet(const EaglePacket &packet);
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
-    void potential_field_descent(float x, float y, float &out_speed, float &out_yaw_deg) const;
+    void potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const;
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
     bool do_some_calculations();
+
+    /** Return the closest bleacher to the given coordinates. */
+    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 

@@ -22,7 +22,7 @@ if (NOT EMSCRIPTEN)
             ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
-    target_compile_definitions(thibault_debug PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
+    target_compile_definitions(thibault_debug PRIVATE MYPRINTF_ALWAYS)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -march=native -flto -ffast-math -funsafe-math-optimizations")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O3 -march=native -ffast-math -funsafe-math-optimizations")
@@ -36,7 +36,7 @@ if (EMSCRIPTEN)
             ${SOURCES_NO_STM32_DEPENDENCY}
     )
 
-    target_compile_definitions(simulator_connector PRIVATE THIBAULT_GUIDANCE MYPRINTF_ALWAYS)
+    target_compile_definitions(simulator_connector PRIVATE MYPRINTF_ALWAYS)
 
     # Emscripten flags
     set_target_properties(simulator_connector PROPERTIES
