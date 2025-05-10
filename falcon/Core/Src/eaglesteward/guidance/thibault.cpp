@@ -86,7 +86,7 @@ void next_command(const input_t &input, Command &command) {
     constexpr float SLOPE_THRESHOLD = 0.05f;
     constexpr float MAX_SPEED = 1.0f; // m/s
 
-    const auto &potential_field = world.potential();
+    const auto &potential_field = world.potential_ready();
     float const dx = potential_field[i + LOOKAHEAD_DISTANCE][j] - potential_field[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential_field[i][j + LOOKAHEAD_DISTANCE] - potential_field[i][j - LOOKAHEAD_DISTANCE];
 
