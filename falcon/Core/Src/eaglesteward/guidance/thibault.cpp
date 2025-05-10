@@ -49,6 +49,7 @@ void next_command(const input_t &input, Command &command) {
     if (!input.jack_removed) {
         command.target_left_speed = 0.f;
         command.target_right_speed = 0.f;
+        command.led=true;
         myprintf("STOPPING because jack has not been removed !!!\n");
         return;
     }
