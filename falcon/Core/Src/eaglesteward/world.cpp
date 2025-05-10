@@ -31,7 +31,7 @@ void World::set_target(TargetType new_target) {
 }
 
 void World::reset_dijkstra() {
-    // myprintf("!!!! RESET DIJSKTRA !!!!\n");
+    myprintf("!!!! RESET DIJSKTRA !!!!\n");
 
     // Clear the potential field and the queue
     for (auto &row : potential_calculating()) {
@@ -44,9 +44,13 @@ void World::reset_dijkstra() {
         return;
     } else if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
-            auto x = static_cast<uint8_t>(std::round(bleacher.x / SQUARE_SIZE_M));
-            auto y = static_cast<uint8_t>(std::round(bleacher.y / SQUARE_SIZE_M));
-            pqueue_.emplace(0, x, y);
+            for (const auto &[tx, ty] : bleacher_waypoints(bleacher)) {
+                if (is_in_field(tx, ty)) {
+                    auto i = static_cast<uint8_t>(std::round(tx / SQUARE_SIZE_M));
+                    auto j = static_cast<uint8_t>(std::round(ty / SQUARE_SIZE_M));
+                    pqueue_.emplace(0, i, j);
+                }
+            }
         }
     } else if (target_ == TargetType::BackstageWaypoint) {
         if (colour_ == RobotColour::Yellow) {
@@ -117,7 +121,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
-            if (newX < 0 || newX >= FIELD_WIDTH_SQ || newY < 0 || newY >= FIELD_HEIGHT_SQ) [[unlikely]]
+            if (!is_in_field_square(newX, newY)) [[unlikely]]
                 continue;
 
             const float cost = step.cost + baseDist;
@@ -149,7 +153,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
         float const x = object.x_cm * 0.01f;
         float const y = object.y_cm * 0.01f;
-        float const orientation = object.orientation_deg;
+        float const orientation = object.orientation_deg * M_PI / 180.0f;
         myprintf("BL IN PKT: ox:%d, oy:%d, x:%.2f, y:%.2f, orientation:%.1f\n", object.x_cm, object.y_cm, x, y,
                  orientation);
         bleachers_.push_back({x, y, orientation});
@@ -162,7 +166,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 }
 
 void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
-    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
+    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
     constexpr float SLOPE_THRESHOLD = 1.0f;
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
@@ -183,6 +187,16 @@ void World::potential_field_descent(float x, float y, bool &is_moving, float &ou
     }
 }
 
+std::array<std::pair<float, float>, 2> World::bleacher_waypoints(const Bleacher &bleacher) const {
+    constexpr float OFFSET = 0.30f; // 30 cm orthogonal to the bleacher
+    const float nx = std::cos(bleacher.orientation + M_PI_2);
+    const float ny = std::sin(bleacher.orientation + M_PI_2);
+    return {{
+        {bleacher.x + OFFSET * nx, bleacher.y + OFFSET * ny},
+        {bleacher.x - OFFSET * nx, bleacher.y - OFFSET * ny},
+    }};
+}
+
 std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
     Bleacher best;
     float best_d = 1e9f;
@@ -196,3 +210,25 @@ std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
     }
     return {best, best_d};
 }
+
+std::pair<Bleacher, float> World::closest_bleacher_waypoint(float x, float y) const {
+    Bleacher best;
+    float best_d = 1e9f;
+
+    for (const auto &b : bleachers_) {
+        for (const auto &[wx, wy] : bleacher_waypoints(b)) {
+            const float dx = x - wx;
+            const float dy = y - wy;
+            const float d = std::sqrt(dx * dx + dy * dy);
+            if (d < best_d) {
+                best_d = d;
+                best = b;
+            }
+        }
+    }
+    return {best, best_d};
+}
+
+bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
+
+bool World::is_in_field_square(int i, int j) { return i >= 0 && i < FIELD_WIDTH_SQ && j >= 0 && j < FIELD_HEIGHT_SQ; }

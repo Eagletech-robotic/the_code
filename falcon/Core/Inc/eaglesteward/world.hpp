@@ -41,6 +41,7 @@ class World {
 
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher_waypoint(float x, float y) const;
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
@@ -59,7 +60,9 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
-  public:
     void reset_dijkstra();
     bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
+    [[nodiscard]] std::array<std::pair<float, float>, 2> bleacher_waypoints(const Bleacher &bleacher) const;
+    bool is_in_field(float x, float y);
+    bool is_in_field_square(int i, int j);
 };
