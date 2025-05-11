@@ -81,36 +81,74 @@ volatile int txBusy = 0; // Indique si une transmission est en cours
  * @retval None
  */
 extern "C" {
-int _write(int file, char *pData, int len) {
-    for (int i = 0; i < len; i++) {
-        // Calcul de l'index suivant dans le buffer circulaire
-        int nextHead = (txHead + 1) % TX_BUFFER_SIZE;
+int _write(int file, char *pData, int len)
+{
+    /* --- SECTION CRITIQUE : on bloque les IT TX le temps de manipuler le buffer --- */
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();                    /* protège head/tail contre l’ISR            */
 
-        // Vérification de la saturation du buffer (on pourrait gérer cette erreur différemment)
-        if (nextHead == txTail) {
-            // Le buffer est plein, ici vous pouvez soit retourner, attendre, ou traiter l'erreur
-            return 0; // ou gérer l'overflow
-        }
-
-        // Place l'octet dans le buffer et incrémente l'index "head"
-        txBuffer[txHead] = pData[i];
-        txHead = nextHead;
+    /* 1) As-t-on assez de place ?  (on veut éviter tout débordement) */
+    uint16_t space = (txTail - txHead - 1 + TX_BUFFER_SIZE) % TX_BUFFER_SIZE;
+    if (space < (uint16_t)len) {        /* Pas assez : on jette tout le printf.       */
+        __set_PRIMASK(primask);
+        return -1;                      /* Signale une erreur à printf                */
     }
 
-    // Si aucune transmission n'est en cours, la démarrer
+    /* 2) Copie des octets dans le buffer circulaire */
+    for (int i = 0; i < len; ++i) {
+        txBuffer[txHead] = (uint8_t)pData[i];
+        txHead = (txHead + 1) % TX_BUFFER_SIZE;
+    }
+
+    /* 3) Si aucune TX en cours, on lance la première trame */
     if (txBusy == 0) {
         txBusy = 1;
-        // Envoyer le premier octet depuis le buffer
         uint8_t byte = txBuffer[txTail];
-        // Incrémenter le pointeur de lecture
         txTail = (txTail + 1) % TX_BUFFER_SIZE;
-        // Lancer la transmission non bloquante en mode interruption
+
         if (HAL_UART_Transmit_IT(&huart3, &byte, 1) != HAL_OK) {
-            // Traitement d'erreur si besoin
+            /* Échec du lancement : on libère le flag et on signale l’erreur */
+            txBusy = 0;
+            __set_PRIMASK(primask);
+            return -1;
         }
     }
-    return len;
+
+    __set_PRIMASK(primask);             /* Fin section critique                       */
+    return len;                         /* Tout OK : printf pensera avoir tout écrit  */
 }
+
+
+//int _write(int file, char *pData, int len) {
+//    for (int i = 0; i < len; i++) {
+//        // Calcul de l'index suivant dans le buffer circulaire
+//        int nextHead = (txHead + 1) % TX_BUFFER_SIZE;
+//
+//        // Vérification de la saturation du buffer (on pourrait gérer cette erreur différemment)
+//        if (nextHead == txTail) {
+//            // Le buffer est plein, ici vous pouvez soit retourner, attendre, ou traiter l'erreur
+//            return 0; // ou gérer l'overflow
+//        }
+//
+//        // Place l'octet dans le buffer et incrémente l'index "head"
+//        txBuffer[txHead] = pData[i];
+//        txHead = nextHead;
+//    }
+//
+//    // Si aucune transmission n'est en cours, la démarrer
+//    if (txBusy == 0) {
+//        txBusy = 1;
+//        // Envoyer le premier octet depuis le buffer
+//        uint8_t byte = txBuffer[txTail];
+//        // Incrémenter le pointeur de lecture
+//        txTail = (txTail + 1) % TX_BUFFER_SIZE;
+//        // Lancer la transmission non bloquante en mode interruption
+//        if (HAL_UART_Transmit_IT(&huart3, &byte, 1) != HAL_OK) {
+//            // Traitement d'erreur si besoin
+//        }
+//    }
+//    return len;
+//}
 }
 /**
  * @brief  Callback appelée lors de la fin d'une transmission par interruption.

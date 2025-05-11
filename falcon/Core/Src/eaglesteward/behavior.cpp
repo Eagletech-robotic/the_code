@@ -326,7 +326,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
 		alternative(is2secondGone,logAndFail("forward_2sec"), forward),
-		alternative(logAndFail("STOP"),wait),
+	//	alternative(logAndFail("STOP"),wait),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
