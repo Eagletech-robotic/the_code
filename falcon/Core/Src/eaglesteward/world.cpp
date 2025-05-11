@@ -4,6 +4,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include "iot01A/top_driver.h"
 
 World::World(RobotColour colour) {
     colour_ = colour;
@@ -75,6 +76,11 @@ void World::reset_dijkstra() {
 
 bool World::do_some_calculations() {
     return partial_compute_dijkstra([]() { return true; });
+}
+
+// durée du cycle 4ms au 20250511
+static inline bool hasTimeLeft(const float time_budget) { // en s
+	return timer_get_us()  < time_budget * 1000000.0f;
 }
 
 bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {
