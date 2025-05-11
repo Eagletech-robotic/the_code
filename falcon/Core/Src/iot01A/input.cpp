@@ -83,10 +83,9 @@ void input_get(input_t &input) {
     input.imu_accel_z_mss = um7.accel_z;
     input.blue_button = HAL_GPIO_ReadPin(BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin);
     input.clock_ms = HAL_GetTick(); // gestion du temps
-    // printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input.delta_yaw_deg);
 }
 
 void print_input(const input_t &input) {
-    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input.delta_encoder_left, (int32_t)input.delta_encoder_right,
-             input.jack_removed, input.tof_m);
+    myprintf("IN %6ld %ld %ld [%d %d] %.3f\r\n", input.clock_ms , (int32_t)input.delta_encoder_left, (int32_t)input.delta_encoder_right,
+             input.jack_removed, input.blue_button, input.tof_m);
 }

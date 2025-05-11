@@ -28,7 +28,6 @@ void output_set(const output_t &output) {
     motorSet(output.motor_right_ratio, output.motor_left_ratio);
 
     PWMSet_16(output.shovel_ratio);
-    // PWMSet_17(output.servo_extra_ratio); // NOT USED
     led_1(output.led_ratio);
 }
 

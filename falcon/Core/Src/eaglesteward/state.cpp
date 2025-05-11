@@ -19,10 +19,16 @@ void State::init() {
 }
 
 void State::print() const {
+	const char * col;
+	if (colour == RobotColour::Blue) {
+		col = "BLUE";
+	} else {
+		col = "YELLOW";
+	}
     float x, y, theta_deg;
     getPositionAndOrientation(x, y, theta_deg);
-    myprintf("S %.2f %.2f %.1f TOF%.3f OPP%.2f %.2f %.1f\n", x, y, theta_deg, filtered_tof_m, opponent_x, opponent_y,
-             opponent_theta_deg);
+    myprintf("S %.2f %.2f %.1f TOF%.3f OPP%.2f %.2f %.1f %s\n", x, y, theta_deg, filtered_tof_m, opponent_x, opponent_y,
+             opponent_theta_deg, col);
 }
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }
