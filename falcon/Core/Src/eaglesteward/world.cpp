@@ -19,7 +19,7 @@ World::World(RobotColour colour) {
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    while (do_some_calculations())
+    while (do_some_calculations([]() { return true; }))
         ;
 }
 
@@ -32,8 +32,6 @@ void World::set_target(TargetType new_target) {
 }
 
 void World::reset_dijkstra() {
-    myprintf("!!!! RESET DIJSKTRA !!!!\n");
-
     // Clear the potential field and the queue
     for (auto &row : potential_calculating()) {
         std::fill(row.begin(), row.end(), FLT_MAX);
@@ -72,15 +70,12 @@ void World::reset_dijkstra() {
             pqueue_.emplace(0, 3 - 2.5, 0.875);
         }
     }
+
+    myprintf("!!!! RESET DIJSKTRA - queue size: %lu\n", pqueue_.size());
 }
 
-bool World::do_some_calculations() {
-    return partial_compute_dijkstra([]() { return true; });
-}
-
-// durée du cycle 4ms au 20250511
-static inline bool hasTimeLeft(const float time_budget) { // en s
-	return timer_get_us()  < time_budget * 1000000.0f;
+bool World::do_some_calculations(const std::function<bool()> &can_continue) {
+    return partial_compute_dijkstra(can_continue);
 }
 
 bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {

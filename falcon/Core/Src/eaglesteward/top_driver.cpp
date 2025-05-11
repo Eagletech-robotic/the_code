@@ -41,7 +41,10 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
     // END DEBUG
 
     // 5. Perform some computations that fit in a step
-    top_state.world.do_some_calculations();
+    constexpr float MARGIN_TIME_FOR_LAST_RUN_US = 500.0f;
+    float step_time_us = config.time_step_s * 1000.0f;
+    top_state.world.do_some_calculations(
+        [step_time_us]() { return timer_get_us() < step_time_us - MARGIN_TIME_FOR_LAST_RUN_US; });
 
     // 6. Convert the command to actuator commands (output)
     set_output(config, input, command, output, top_state);
