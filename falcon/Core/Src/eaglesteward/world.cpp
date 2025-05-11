@@ -2,9 +2,9 @@
 
 #include "utils/myprintf.hpp"
 
+#include "iot01A/top_driver.h"
 #include <cfloat>
 #include <cmath>
-#include "iot01A/top_driver.h"
 
 World::World(RobotColour colour) {
     colour_ = colour;

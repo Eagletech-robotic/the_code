@@ -19,13 +19,13 @@ void timer_reset() {
 
     uint32_t prescaler = htim1.Instance->PSC + 1;
     float freq = 120000000.0f;
-    scaler= (1.0f * prescaler / freq) * 1000000.0f;
+    scaler = (1.0f * prescaler / freq) * 1000000.0f;
 }
 
 float timer_get_us() {
-//    uint32_t prescaler = htim1.Instance->PSC + 1;
-//    float freq = 120000000.0f;
+    // uint32_t prescaler = htim1.Instance->PSC + 1;
+    // float freq = 120000000.0f;
     uint32_t ticks_ = __HAL_TIM_GET_COUNTER(&htim1);
-    //return (1.0f * prescaler / freq) * ticks_ * 1000000.0f;
-    return scaler * ticks_ ;
+    // return (1.0f * prescaler / freq) * ticks_ * 1000000.0f;
+    return scaler * ticks_;
 }

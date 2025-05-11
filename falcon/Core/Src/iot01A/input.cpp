@@ -86,6 +86,6 @@ void input_get(input_t &input) {
 }
 
 void print_input(const input_t &input) {
-    myprintf("IN %6ld %ld %ld [%d %d] %.3f\r\n", input.clock_ms , (int32_t)input.delta_encoder_left, (int32_t)input.delta_encoder_right,
-             input.jack_removed, input.blue_button, input.tof_m);
+    myprintf("IN %6ld %ld %ld [%d %d] %.3f\r\n", input.clock_ms, (int32_t)input.delta_encoder_left,
+             (int32_t)input.delta_encoder_right, input.jack_removed, input.blue_button, input.tof_m);
 }
