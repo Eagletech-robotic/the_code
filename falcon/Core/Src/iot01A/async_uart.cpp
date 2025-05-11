@@ -66,7 +66,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 // --- Envoie du printf vers le BT et le debug
 
-#define TX_BUFFER_SIZE 256
+#define TX_BUFFER_SIZE 1024
 
 // Déclaration du buffer circulaire et des variables d'index
 volatile uint8_t txBuffer[TX_BUFFER_SIZE];
