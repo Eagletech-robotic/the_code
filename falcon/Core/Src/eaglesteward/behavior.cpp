@@ -220,7 +220,7 @@ Status isJackRemoved(input_t *input, Command *command, State *state) {
     }
 
     if (input->jack_removed) {
-    	return Status::SUCCESS;
+        return Status::SUCCESS;
     }
     state->GameNotStarted();
     return Status::FAILURE;
@@ -278,19 +278,17 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 }
 
-
-Status is2secondGone(const input_t *input, Command *command, State *state) {
-	if( state->elapsedTime(*input) > 2.0f) {
-		return Status::SUCCESS;
-	}
-	return Status::FAILURE;
+Status isForwardPhaseCompleted(const input_t *input, Command *command, State *state) {
+    if (state->elapsedTime(*input) > 1.0f) {
+        return Status::SUCCESS;
+    }
+    return Status::FAILURE;
 }
 
 Status forward(const input_t *input, Command *command, State *state) {
-	command->target_left_speed = 0.7f;
-	command->target_right_speed = 0.7f;
-	return Status::RUNNING;
-
+    command->target_left_speed = 0.7f;
+    command->target_right_speed = 0.7f;
+    return Status::RUNNING;
 }
 
 // DEBUG - move around a rectangle
@@ -325,8 +323,8 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("wait-start"), wait),
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-		alternative(is2secondGone,logAndFail("forward_2sec"), forward),
-	//	alternative(logAndFail("STOP"),wait),
+        alternative(isForwardPhaseCompleted, logAndFail("initial_forward"), forward),
+        //	alternative(logAndFail("STOP"),wait),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));

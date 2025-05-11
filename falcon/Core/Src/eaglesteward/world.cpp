@@ -160,8 +160,6 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
         float const x = object.x_cm * 0.01f;
         float const y = object.y_cm * 0.01f;
         float const orientation = object.orientation_deg * M_PI / 180.0f;
-        myprintf("BL IN PKT: ox:%d, oy:%d, x:%.2f, y:%.2f, orientation:%.1f\n", object.x_cm, object.y_cm, x, y,
-                 orientation);
         bleachers_.push_back({x, y, orientation});
         if (bleachers_.full())
             break;

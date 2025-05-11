@@ -1,12 +1,9 @@
 #pragma once
-/*
- * input.h
- *
- *  Created on: Oct 26, 2024
- *      Author: nboulay
- */
+
 #include <stdint.h>
 
+// !!!!!! IMPORTANT !!!!!!
+// Changes to this structure must be reflected in the simulator.
 typedef struct input_t {
     bool jack_removed;
     float tof_m;

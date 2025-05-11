@@ -1,5 +1,7 @@
 #pragma once
 
+// !!!!!! IMPORTANT !!!!!!
+// Changes to this structure must be reflected in the simulator.
 typedef struct output_t {
     float motor_left_ratio;  // ratio15
     float motor_right_ratio; // ratio2
@@ -9,5 +11,4 @@ typedef struct output_t {
 
 void output_set(const output_t &output);
 void output_init(output_t &output);
-
 void print_output(const output_t &output);
