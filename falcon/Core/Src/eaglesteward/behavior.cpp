@@ -286,7 +286,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 }
 
 Status isFlagPhaseCompleted(const input_t *input, Command *command, State *state) {
-    if (state->elapsedTime(*input) > 0.0f) {
+    if (state->elapsedTime(*input) > 1.0f) {
         return Status::SUCCESS;
     }
     return Status::FAILURE;
