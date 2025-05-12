@@ -11,7 +11,7 @@ class State {
   public:
     State();
 
-    void init();
+    void reset();
 
     /* I/O ----------------------------------------------------- */
     void print() const;

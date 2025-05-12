@@ -161,8 +161,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float const bearing = std::atan2(-delta_y, -delta_x);
 
             // The angle between the axis of approach and the robot.
-            float const entry_angle = std::fmod(bearing - (closest_bleacher.first.orientation + M_PI_2), M_PI);
-            myprintf("entry_angle %f\n", to_degrees(entry_angle));
+            float const entry_angle = std::fmod(bearing - closest_bleacher.first.orientation, M_PI);
+            myprintf("bearing %f - entry_angle %f\n", to_degrees(bearing), to_degrees(entry_angle));
 
             if (closest_bleacher.second <= 0.5f && std::abs(entry_angle) <= to_radians(6)) {
                 return Status::SUCCESS;
@@ -181,7 +181,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             // The robot needs to approach the bleacher perpendicularly.
             // Calculate the angle between the robot and bleacher orientation.
             float const alignment_error =
-                std::fmod(to_radians(orientation_deg) - (closest_bleacher.first.orientation + M_PI_2), M_PI);
+                std::fmod(to_radians(orientation_deg) - closest_bleacher.first.orientation, M_PI);
 
             if (std::fabs(alignment_error) <= to_radians(5)) {
                 return Status::SUCCESS;
@@ -249,9 +249,20 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
+Status waitBeforeGame(input_t *input, Command *command, State *state) {
+    if (input->blue_button) {
+        myprintf("Blue button pressed\n");
+        state->reset();
+    }
+    command->target_left_speed = 0.f;
+    command->target_right_speed = 0.f;
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
+    return Status::RUNNING;
+}
+
 // Attente indéfinie
-Status wait(input_t *input, Command *command, State *state) {
-    myprintf("Waiting\n");
+Status holdAfterEnd(input_t *input, Command *command, State *state) {
+    myprintf("Holding after game ends\n");
     command->target_left_speed = 0.f;
     command->target_right_speed = 0.f;
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
@@ -327,11 +338,10 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
 
     auto root = sequence( //
-        alternative(isJackRemoved, logAndFail("wait-start"), wait),
-        alternative(isGameActive, logAndFail("hold-after-stop"), wait),
+        alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
+        alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
-        //	alternative(logAndFail("STOP"),wait),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));

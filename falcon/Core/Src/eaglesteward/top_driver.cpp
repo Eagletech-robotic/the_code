@@ -10,7 +10,7 @@ State top_state;
 
 void top_init(config_t &config) {
     config.time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
-    top_state.init();
+    top_state.reset();
     motor_init(config, top_state);
 }
 
@@ -27,18 +27,6 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
     // 4. Calculate the next command
     Command command{};
     top_behavior(&input, &command, &top_state);
-
-    // DEBUG -> to be moved to the behavior tree
-    if (!input.jack_removed) {
-        command.target_left_speed = 0.0f;
-        command.target_right_speed = 0.0f;
-        if (input.blue_button) {
-            command.shovel = ShovelCommand::SHOVEL_EXTENDED;
-        } else {
-            command.shovel = ShovelCommand::SHOVEL_RETRACTED;
-        }
-    }
-    // END DEBUG
 
     // 5. Perform some computations that fit in a step
     constexpr float MARGIN_TIME_FOR_LAST_RUN_US = 500.0f;

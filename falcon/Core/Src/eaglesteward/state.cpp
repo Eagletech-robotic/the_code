@@ -13,7 +13,7 @@
 
 State::State() {}
 
-void State::init() {
+void State::reset() {
     // Set the initial state for the IMU to field coordinate transformation.
     saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION_DEGREES);
 }
