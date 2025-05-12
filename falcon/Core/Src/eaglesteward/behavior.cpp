@@ -229,7 +229,7 @@ Status isJackRemoved(input_t *input, Command *command, State *state) {
     if (input->jack_removed) {
         return Status::SUCCESS;
     }
-    state->GameNotStarted();
+    state->gameNotStarted();
     return Status::FAILURE;
 }
 
