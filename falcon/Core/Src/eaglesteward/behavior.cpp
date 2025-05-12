@@ -6,6 +6,7 @@
 #include "math.h"
 #include "robotic/angle.hpp"
 #include "robotic/controller_stanley.hpp"
+#include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
 void descend(Command &command, State &state) {
@@ -127,7 +128,6 @@ Status isSafe(input_t *input, Command *command, State *state) {
 
 // Trop proche de l'adversaire, il faut se dérouter
 Status evadeOpponent(input_t *input, Command *command, State *state) {
-    myprintf("goto 90° de l'adversaire du coté target\n");
     command->target_left_speed = 0.5;
     command->target_right_speed = -0.5;
     return Status::RUNNING;
@@ -135,14 +135,11 @@ Status evadeOpponent(input_t *input, Command *command, State *state) {
 
 // Détection d'un gradin accrocher au aimant ?
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
-    myprintf("Est-ce que j'ai un gradin accroché ? Camera ou pelle out ou TOF");
-
     return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
                                                : Status::FAILURE;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-    myprintf("Aller vers une aire de construction et lâcher le gradin");
     state->world.set_target(TargetType::BuildingAreaWaypoint);
     descend(*command, *state);
 
@@ -156,13 +153,23 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float x, y, orientation_deg;
             state_->getPositionAndOrientation(x, y, orientation_deg);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.35f) {
-                myprintf("Go to the nearest bleacher\n");
+
+            // The bearing is the angle to the center of the bleacher.
+            float const delta_x = x - closest_bleacher.first.x;
+            float const delta_y = y - closest_bleacher.first.y;
+            float const bearing = std::atan2(-delta_y, -delta_x);
+
+            // The angle between the axis of approach and the robot.
+            float const entry_angle = std::fmod(bearing - (closest_bleacher.first.orientation + M_PI_2), M_PI);
+            myprintf("entry_angle %f\n", to_degrees(entry_angle));
+
+            if (closest_bleacher.second <= 0.5f && std::abs(entry_angle) <= to_radians(6)) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Searching bleacher\n");
                 state_->world.set_target(TargetType::BleacherWaypoint);
                 descend(*command_, *state_);
                 return Status::RUNNING;
-            } else {
-                return Status::SUCCESS;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
@@ -170,41 +177,40 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->getPositionAndOrientation(x, y, orientation_deg);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
-            float const delta_x = x - closest_bleacher.first.x;
-            float const delta_y = y - closest_bleacher.first.y;
-            float const target_angle_deg = std::atan2(-delta_y, -delta_x) / static_cast<float>(M_PI) * 180;
-            float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+            // The robot needs to approach the bleacher perpendicularly.
+            // Calculate the angle between the robot and bleacher orientation.
+            float const alignment_error =
+                std::fmod(to_radians(orientation_deg) - (closest_bleacher.first.orientation + M_PI_2), M_PI);
 
-            if (angle_diff >= 10) {
-                if (angle_diff >= 0) {
+            if (std::fabs(alignment_error) <= to_radians(5)) {
+                return Status::SUCCESS;
+            } else {
+                if (alignment_error >= 0) {
                     command_->target_left_speed = 0.5f;
                     command_->target_right_speed = -0.5f;
                 } else {
                     command_->target_left_speed = -0.5f;
                     command_->target_right_speed = 0.5f;
                 }
-
-                myprintf("Rotating towards the bleacher - target angle: %f - angle diff: %f\n", target_angle_deg,
-                         angle_diff);
+                myprintf("Rotating towards bleacher - alignment_error: %f\n", to_degrees(alignment_error));
                 return Status::RUNNING;
-            } else {
-                return Status::SUCCESS;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation_deg;
             state_->getPositionAndOrientation(x, y, orientation_deg);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.15f) {
+            if (closest_bleacher.second <= 0.15f) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Approaching bleacher\n");
                 command_->target_left_speed = 0.5f;
                 command_->target_right_speed = 0.5f;
                 return Status::RUNNING;
-            } else {
-                return Status::SUCCESS;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            myprintf("Bleacher is close enough, stop moving\n");
+            myprintf("Bleacher close enough, stopping\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
@@ -278,16 +284,16 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 }
 
-Status isForwardPhaseCompleted(const input_t *input, Command *command, State *state) {
-    if (state->elapsedTime(*input) > 1.0f) {
+Status isFlagPhaseCompleted(const input_t *input, Command *command, State *state) {
+    if (state->elapsedTime(*input) > 0.0f) {
         return Status::SUCCESS;
     }
     return Status::FAILURE;
 }
 
-Status forward(const input_t *input, Command *command, State *state) {
-    command->target_left_speed = 0.7f;
-    command->target_right_speed = 0.7f;
+Status deployFlag(const input_t *input, Command *command, State *state) {
+    command->target_left_speed = 0.5f;
+    command->target_right_speed = 0.5f;
     return Status::RUNNING;
 }
 
@@ -323,7 +329,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("wait-start"), wait),
         alternative(isGameActive, logAndFail("hold-after-stop"), wait),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-        alternative(isForwardPhaseCompleted, logAndFail("initial_forward"), forward),
+        alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         //	alternative(logAndFail("STOP"),wait),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),

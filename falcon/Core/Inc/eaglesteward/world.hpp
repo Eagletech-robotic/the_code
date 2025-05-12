@@ -37,7 +37,7 @@ class World {
     void potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const;
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
-    bool do_some_calculations();
+    bool do_some_calculations(const std::function<bool()> &can_continue);
 
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;

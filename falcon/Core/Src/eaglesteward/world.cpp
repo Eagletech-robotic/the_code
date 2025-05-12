@@ -166,7 +166,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
 void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
     constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
-    constexpr float SLOPE_THRESHOLD = 1.0f;
+    constexpr float SLOPE_THRESHOLD = 0.01f;
 
     int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
     int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
@@ -176,7 +176,7 @@ void World::potential_field_descent(float x, float y, bool &is_moving, float &ou
     float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f", dx, dy);
+        myprintf("STOPPING because slope is flat - dx: %f, dy: %f", dx, dy);
         is_moving = false;
         out_yaw_deg = 0.f;
     } else {
