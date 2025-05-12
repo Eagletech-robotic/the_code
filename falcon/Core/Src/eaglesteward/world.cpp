@@ -164,23 +164,23 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
+void World::potential_field_descent(float x, float y, bool &is_local_minimum, float &out_yaw_deg) const {
     constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
     constexpr float SLOPE_THRESHOLD = 0.01f;
 
-    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
-    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
+    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
 
     const auto &potential = potential_ready();
     float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        myprintf("STOPPING because slope is flat - dx: %f, dy: %f", dx, dy);
-        is_moving = false;
+        myprintf("Reached local minimum");
+        is_local_minimum = true;
         out_yaw_deg = 0.f;
     } else {
-        is_moving = true;
+        is_local_minimum = false;
         out_yaw_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
         myprintf("Target angle: %f\n", out_yaw_deg);
     }

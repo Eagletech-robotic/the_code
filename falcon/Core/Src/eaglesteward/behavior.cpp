@@ -17,11 +17,15 @@ void descend(Command &command, State &state) {
     state.getPositionAndOrientation(x, y, orientation_deg);
     myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
 
-    bool is_moving;
+    bool is_local_minimum;
     float target_angle_deg;
-    world.potential_field_descent(x, y, is_moving, target_angle_deg);
+    world.potential_field_descent(x, y, is_local_minimum, target_angle_deg);
 
-    if (is_moving) {
+    if (is_local_minimum) {
+        // Move forward slowly rather than remaining trapped
+        command.target_left_speed = 0.3f;
+        command.target_right_speed = 0.3f;
+    } else {
         float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
 
         if (std::abs(angle_diff) >= 90) {
@@ -39,9 +43,6 @@ void descend(Command &command, State &state) {
             command.target_left_speed = MAX_SPEED / max * speed_left;
             command.target_right_speed = MAX_SPEED / max * speed_right;
         }
-    } else {
-        command.target_left_speed = 0.f;
-        command.target_right_speed = 0.f;
     }
 }
 
