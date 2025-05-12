@@ -13,40 +13,39 @@
 /**
  * @brief Stanley Controller simplifié pour un robot différentiel.
  *
- * @param robot_x_m, robot_y_m, robot_theta : Position et orientation actuelles du robot (en mètres, radians).
- * @param x_start_m, y_start_m : Point de départ, définissant la trajectoire-ligne à suivre (jusqu'à x_target_m,
- * y_target_m).
- * @param x_target_m, y_target_m : Point cible final de la ligne.
- * @param x_next_m, y_next_m : Point suivant après la cible, pour gérer le virage à l'arrivée.
+ * @param robot_x, robot_y, robot_theta : Position et orientation actuelles du robot (en mètres, radians).
+ * @param x_start, y_start : Point de départ, définissant la trajectoire-ligne à suivre (jusqu'à x_target,
+ * y_target).
+ * @param x_target, y_target : Point cible final de la ligne.
+ * @param x_next, y_next : Point suivant après la cible, pour gérer le virage à l'arrivée.
  * @param Vmax : Vitesse linéaire maximale (m/s).
  * @param Wmax : Vitesse angulaire maximale (rad/s) du robot.
  * @param kStanley : Coefficient du contrôleur Stanley (plus grand => plus réactif sur l'erreur latérale).
- * @param wheelBase_m : Entraxe du robot (distance entre les deux roues).
+ * @param wheelBase : Entraxe du robot (distance entre les deux roues).
  * @param arrivalThreshold : Distance en-dessous de laquelle on considère être “arrivé”.
  * @param out_speed_right, out_speed_left : Résultats, vitesses des roues (m/s).
  * @return true si on est arrivé à target
  */
-bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, float x_start_m, float y_start_m,
-                        float x_target_m, float y_target_m, float x_next_m, float y_next_m, float Vmax, float Wmax,
-                        float kStanley, float wheelBase_m, float arrivalThreshold, float *out_speed_left,
-                        float *out_speed_right) {
+bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x_start, float y_start, float x_target,
+                        float y_target, float x_next, float y_next, float Vmax, float Wmax, float kStanley,
+                        float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     //------------------------------------------------------------------
     // 1) Calcul de la distance du robot à la cible
     //------------------------------------------------------------------
-    float dx_to_target = x_target_m - robot_x_m;
-    float dy_to_target = y_target_m - robot_y_m;
+    float dx_to_target = x_target - robot_x;
+    float dy_to_target = y_target - robot_y;
     float dist_to_target = sqrtf(dx_to_target * dx_to_target + dy_to_target * dy_to_target);
 
     //------------------------------------------------------------------
-    // 2) Si on est proche de la cible, on tourne vers x_next_m, y_next_m
+    // 2) Si on est proche de la cible, on tourne vers x_next, y_next
     //------------------------------------------------------------------
     //   => on diminue fortement la vitesse linéaire,
     //      et on oriente le robot vers la direction de la prochaine étape.
     //------------------------------------------------------------------
     if (dist_to_target < arrivalThreshold) {
-        // 2.1) Calcul de l'angle souhaité pour pointer vers (x_next_m, y_next_m)
-        float dx_next = x_next_m - robot_x_m;
-        float dy_next = y_next_m - robot_y_m;
+        // 2.1) Calcul de l'angle souhaité pour pointer vers (x_next, y_next)
+        float dx_next = x_next - robot_x;
+        float dy_next = y_next - robot_y;
         float desired_heading = atan2f(dy_next, dx_next);
 
         // 2.3) Erreur d'angle
@@ -55,7 +54,7 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
         // 2.4) On avance très lentement (ou pas du tout) et on tourne pour s'orienter
         float v = 0.0f; // on peut mettre un petit v = 100.0f si on veut continuer d'avancer
         // Contrôle proportionnel sur l'erreur d'angle
-        float w = heading_error * 2000.0 * wheelBase_m * 0.5f;
+        float w = heading_error * 2000.0 * wheelBase * 0.5f;
         // (on pourrait mettre un gain, ex. w = 1.5f * heading_error)
 
         // Saturation en vitesse angulaire
@@ -74,12 +73,12 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
     }
 
     //------------------------------------------------------------------
-    // 3) Contrôleur Stanley sur la ligne (x_start_m, y_start_m) -> (x_target_m, y_target_m)
+    // 3) Contrôleur Stanley sur la ligne (x_start, y_start) -> (x_target, y_target)
     //------------------------------------------------------------------
     // 3.1) Calcul de l'angle de la ligne ("chemin")
     //------------------------------------------------------------------
-    float path_dx = x_target_m - x_start_m;
-    float path_dy = y_target_m - y_start_m;
+    float path_dx = x_target - x_start;
+    float path_dy = y_target - y_start;
     float path_heading = atan2f(path_dy, path_dx); // orientation de la ligne
 
     // 3.3) Erreur de cap (heading) : angle de la ligne - angle robot
@@ -98,7 +97,7 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
     float path_len = sqrtf(path_dx * path_dx + path_dy * path_dy);
     float crossTrack = 0.0f;
     if (path_len > 1e-6f) {
-        crossTrack = (path_dx * (y_start_m - robot_y_m) - path_dy * (x_start_m - robot_x_m)) / path_len;
+        crossTrack = (path_dx * (y_start - robot_y) - path_dy * (x_start - robot_x)) / path_len;
     }
 
     // 3.5) Vitesse linéaire : on avance à Vmax
@@ -115,7 +114,7 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
     float steering_angle = heading_error + crosstrack_correction;
 
     // 3.7) Conversion Steering -> w
-    float w = (v / wheelBase_m) * steering_angle; // rad/s
+    float w = (v / wheelBase) * steering_angle; // rad/s
 
     // 3.8) Saturation en vitesse angulaire
     if (w > Wmax)
@@ -128,8 +127,8 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
     //------------------------------------------------------------------
     // v_left  = v - (w * wheelBase/2)
     // v_right = v + (w * wheelBase/2)
-    float v_left = v - (w * wheelBase_m / 2.0f);
-    float v_right = v + (w * wheelBase_m / 2.0f);
+    float v_left = v - (w * wheelBase / 2.0f);
+    float v_right = v + (w * wheelBase / 2.0f);
 
     // On peut éventuellement resaturer si on dépasse la vitesse max
     // (ex. si w est énorme, on veut éviter des vitesses négatives trop grandes)
@@ -147,33 +146,33 @@ bool stanley_controller(float robot_x_m, float robot_y_m, float robot_theta, flo
 
 /**
  * @brief Contrôleur différentiel simple pour conduire le robot (x, y, theta)
- *        vers la cible (x_target_m, y_target_m).
+ *        vers la cible (x_target, y_target).
  *
  *        Hypothèses :
  *         - On fait un simple contrôle proportionnel pour la distance et l'angle.
  *         - En différentiel, (v, w) -> (vG, vD).
  *         - Si la distance à la cible < arrivalThreshold, on s'arrête (v=0).
  *
- * @param robot_x_m       Position X actuelle du robot (m)
- * @param robot_y_m       Position Y actuelle du robot (m)
+ * @param robot_x       Position X actuelle du robot (m)
+ * @param robot_y       Position Y actuelle du robot (m)
  * @param robot_theta     Orientation actuelle du robot (en radians)
- * @param x_target_m      Cible X (m)
- * @param y_target_m      Cible Y (m)
+ * @param x_target      Cible X (m)
+ * @param y_target      Cible Y (m)
  * @param Vmax            Vitesse linéaire max (m/s)
- * @param wheelBase_m     Entraxe du robot (distance entre roues) (m)
+ * @param wheelBase     Entraxe du robot (distance entre roues) (m)
  * @param arrivalThreshold Distance en dessous de laquelle on considère le robot "arrivé"
  * @param out_speed_left [out] Vitesse roue gauche (m/s)
  * @param out_speed_right  [out] Vitesse roue droite (m/s)
  *
  * @return true si le robot est dans le rayon d'arrivée, sinon false
  */
-bool controller_pid(float robot_x_m, float robot_y_m, float robot_theta, float x_target_m, float y_target_m, float Vmax,
-                    float wheelBase_m, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
+bool controller_pid(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
+                    float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     //----------------------------------------------------------------------
     // 1) Calcul de la distance à la cible
     //----------------------------------------------------------------------
-    float dx = x_target_m - robot_x_m;
-    float dy = y_target_m - robot_y_m;
+    float dx = x_target - robot_x;
+    float dy = y_target - robot_y;
     float distance = sqrtf(dx * dx + dy * dy);
 
     // Si on est dans la zone d'arrivée, on s'arrête
@@ -211,8 +210,8 @@ bool controller_pid(float robot_x_m, float robot_y_m, float robot_theta, float x
     //----------------------------------------------------------------------
     //  vG = v - (w * (wheelBase/2))
     //  vD = v + (w * (wheelBase/2))
-    float v_left = v - (w * (wheelBase_m * 0.5f));
-    float v_right = v + (w * (wheelBase_m * 0.5f));
+    float v_left = v - (w * (wheelBase * 0.5f));
+    float v_right = v + (w * (wheelBase * 0.5f));
 
     //----------------------------------------------------------------------
     // 5) Éventuellement saturer si l'une des roues dépasse ±Vmax
