@@ -11,10 +11,10 @@ World::World(RobotColour colour) {
 
     // Some default values before we receive the first packet.
     bleachers_ = {
-        {0.075f, 0.400f, M_PI_2},       {0.075f, 1.325f, M_PI_2},    {0.775f, 0.250f, 0.f},
-        {0.825f, 1.725f, 0.f},          {1.100f, 0.950f, 0.f},       {3.f - 0.075f, 0.400f, M_PI_2},
-        {3.f - 0.075f, 1.325f, M_PI_2}, {3.f - 0.775f, 0.250f, 0.f}, {3.f - 0.825f, 1.725f, 0.f},
-        {3.f - 1.100f, 0.950f, 0.f},
+        {0.075f, 0.400f, 0.0f},         {0.075f, 1.325f, 0.0f},         {0.775f, 0.250f, M_PI_2},
+        {0.825f, 1.725f, M_PI_2},       {1.100f, 0.950f, M_PI_2},       {3.f - 0.075f, 0.400f, 0.0f},
+        {3.f - 0.075f, 1.325f, 0.0f},   {3.f - 0.775f, 0.250f, M_PI_2}, {3.f - 0.825f, 1.725f, M_PI_2},
+        {3.f - 1.100f, 0.950f, M_PI_2},
     };
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
@@ -188,8 +188,8 @@ void World::potential_field_descent(float x, float y, bool &is_local_minimum, fl
 
 std::array<std::pair<float, float>, 2> World::bleacher_waypoints(const Bleacher &bleacher) const {
     constexpr float OFFSET = 0.30f; // 30 cm orthogonal to the bleacher
-    const float nx = std::cos(bleacher.orientation + M_PI_2);
-    const float ny = std::sin(bleacher.orientation + M_PI_2);
+    const float nx = std::cos(bleacher.orientation);
+    const float ny = std::sin(bleacher.orientation);
     return {{
         {bleacher.x + OFFSET * nx, bleacher.y + OFFSET * ny},
         {bleacher.x - OFFSET * nx, bleacher.y - OFFSET * ny},
