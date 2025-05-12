@@ -1,4 +1,5 @@
 #pragma once
+#include <math.h>
 
 static constexpr int SQUARE_SIZE_CM = 4;
 static constexpr float SQUARE_SIZE_M = SQUARE_SIZE_CM / 100.0f;
@@ -10,6 +11,6 @@ static constexpr float FIELD_HEIGHT_M = FIELD_HEIGHT_SQ * SQUARE_SIZE_M;
 
 // Robot default position and orientation on the field. This is used in top_init, and overwritten on first
 // Bluetooth packet reception.
-static constexpr float INITIAL_ORIENTATION_DEGREES = 90.0f;
+static constexpr float INITIAL_ORIENTATION = M_PI_2;
 static constexpr float INITIAL_X = 1.225f;
 static constexpr float INITIAL_Y = 0.225f;

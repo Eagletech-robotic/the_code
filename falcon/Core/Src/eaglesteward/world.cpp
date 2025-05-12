@@ -6,6 +6,8 @@
 #include <cfloat>
 #include <cmath>
 
+#include "utils/angles.hpp"
+
 World::World(RobotColour colour) {
     colour_ = colour;
 
@@ -164,7 +166,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-void World::potential_field_descent(float x, float y, bool &is_local_minimum, float &out_yaw_deg) const {
+void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
     constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
     constexpr float SLOPE_THRESHOLD = 0.01f;
 
@@ -177,12 +179,12 @@ void World::potential_field_descent(float x, float y, bool &is_local_minimum, fl
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
         myprintf("Reached local minimum");
-        is_local_minimum = true;
-        out_yaw_deg = 0.f;
+        out_is_local_minimum = true;
+        out_yaw = 0.f;
     } else {
-        is_local_minimum = false;
-        out_yaw_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
-        myprintf("Target angle: %f\n", out_yaw_deg);
+        out_is_local_minimum = false;
+        out_yaw = std::atan2(-dy, -dx);
+        myprintf("Target angle: %f\n", to_degrees(out_yaw));
     }
 }
 

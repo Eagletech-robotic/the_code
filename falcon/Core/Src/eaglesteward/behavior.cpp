@@ -4,7 +4,6 @@
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
-#include "robotic/angle.hpp"
 #include "robotic/controller_stanley.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
@@ -13,22 +12,22 @@ void descend(Command &command, State &state) {
     constexpr float MAX_SPEED = 1.0f; // m/s
     auto &world = state.world;
 
-    float x, y, orientation_deg;
-    state.getPositionAndOrientation(x, y, orientation_deg);
-    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
+    float x, y, orientation;
+    state.getPositionAndOrientation(x, y, orientation);
+    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, to_degrees(orientation));
 
     bool is_local_minimum;
-    float target_angle_deg;
-    world.potential_field_descent(x, y, is_local_minimum, target_angle_deg);
+    float target_angle;
+    world.potential_field_descent(x, y, is_local_minimum, target_angle);
 
     if (is_local_minimum) {
         // Move forward slowly rather than remaining trapped
         command.target_left_speed = 0.3f;
         command.target_right_speed = 0.3f;
     } else {
-        float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+        float const angle_diff = angle_normalize(target_angle - orientation);
 
-        if (std::abs(angle_diff) >= 90) {
+        if (std::abs(angle_diff) >= M_PI_2) {
             if (angle_diff >= 0) {
                 command.target_left_speed = 0.0f;
                 command.target_right_speed = 0.5f;
@@ -37,8 +36,8 @@ void descend(Command &command, State &state) {
                 command.target_right_speed = 0.0f;
             }
         } else {
-            float const speed_left = 0.5f - angle_diff / 180.0f;
-            float const speed_right = 0.5f + angle_diff / 180.0f;
+            float const speed_left = 0.5f - angle_diff / M_PI;
+            float const speed_right = 0.5f + angle_diff / M_PI;
             float const max = std::max(speed_left, speed_right);
             command.target_left_speed = MAX_SPEED / max * speed_left;
             command.target_right_speed = MAX_SPEED / max * speed_right;
@@ -57,12 +56,14 @@ void descend(Command &command, State &state) {
  *   w, h : dimensions de la carte
  *   s    : côté du robot
  *   x, y : position du centre du robot
- *   theta_deg : orientation **en degrés**
+ *   theta : orientation du robot
  *   tol  : marge sur les comparaisons de distances
  *
  * La tolérance angulaire d’alignement est fixée à ±30° (modifiable).
  */
-bool isLookingOutwards(float w, float h, float s, float x, float y, float theta_deg, float tol) {
+bool isLookingOutwards(float w, float h, float s, float x, float y, float theta, float tol) {
+    const float theta_deg = to_degrees(theta);
+
     /* Directions cardinales en degrés                     +X  +Y  –X   –Y */
     const float dirs_deg[4] = {0.0f, 90.0f, 180.0f, 270.0f};
     const float ALIGN_TOL = 30.0f; /* ±30° d’ouverture                 */
@@ -110,8 +111,8 @@ bool isLookingOutwards(float w, float h, float s, float x, float y, float theta_
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
 Status isSafe(input_t *input, Command *command, State *state) {
-    float x, y, theta_deg;
-    state->getPositionAndOrientation(x, y, theta_deg);
+    float x, y, theta;
+    state->getPositionAndOrientation(x, y, theta);
 
     if (state->filtered_tof_m < 0.2) {
         // failsafe si tout à merder avant
@@ -119,7 +120,7 @@ Status isSafe(input_t *input, Command *command, State *state) {
         return Status::FAILURE;
     }
 
-    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
+    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta, 0.01f)) {
         myprintf("BigThing\n");
         return Status::FAILURE;
     }
@@ -151,8 +152,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
+            float x, y, _orientation;
+            state_->getPositionAndOrientation(x, y, _orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
             // The bearing is the angle to the center of the bleacher.
@@ -174,14 +175,13 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
             // The robot needs to approach the bleacher perpendicularly.
             // Calculate the angle between the robot and bleacher orientation.
-            float const alignment_error =
-                std::fmod(to_radians(orientation_deg) - closest_bleacher.first.orientation, M_PI);
+            float const alignment_error = std::fmod(orientation - closest_bleacher.first.orientation, M_PI);
 
             if (std::fabs(alignment_error) <= to_radians(5)) {
                 return Status::SUCCESS;
@@ -198,8 +198,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
+            float x, y, _orientation;
+            state_->getPositionAndOrientation(x, y, _orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
             if (closest_bleacher.second <= 0.15f) {
                 return Status::SUCCESS;
@@ -286,7 +286,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 
     myprintf("B%d\r\n", state->target_nb);
     const bool hasArrived =
-        controller_pid(state->imu_x, state->imu_y, state->imu_theta_deg, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
+        controller_pid(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
                        0.08, &command->target_left_speed, &command->target_right_speed);
     if (hasArrived) {
         state->target_nb++;
