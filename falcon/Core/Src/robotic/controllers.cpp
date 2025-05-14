@@ -1,11 +1,6 @@
-/*
- * controller_stanley.c
- *
- *  Created on: Apr 8, 2025
- *      Author: nboulay
- */
+#include "robotic/controllers.hpp"
+
 #include <math.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 #include "utils/angles.hpp"
@@ -166,7 +161,7 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
  *
  * @return true si le robot est dans le rayon d'arrivée, sinon false
  */
-bool controller_pid(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
+bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
                     float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     //----------------------------------------------------------------------
     // 1) Calcul de la distance à la cible

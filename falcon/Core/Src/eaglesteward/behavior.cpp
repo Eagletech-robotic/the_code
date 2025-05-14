@@ -4,7 +4,7 @@
 #include "eaglesteward/tof.hpp"
 #include "math.h"
 #include "robotic/constants.hpp"
-#include "robotic/controller_stanley.hpp"
+#include "robotic/controllers.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
@@ -183,13 +183,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
             const bool hasArrived =
-                controller_pid(x, y, orientation, closest_bleacher.first.x, closest_bleacher.first.y, 0.8f, WHEELBASE_M,
+                pid_controller(x, y, orientation, closest_bleacher.first.x, closest_bleacher.first.y, 0.8f, WHEELBASE_M,
                                0.15, &command_->target_left_speed, &command_->target_right_speed);
 
             if (hasArrived) {
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching bleacher\n");
+                myprintf("Approaching bleacher centre x=%.3f y=%.3f\n", closest_bleacher.first.x,
+                         closest_bleacher.first.y);
                 return Status::RUNNING;
             }
         },
@@ -269,7 +270,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 
     myprintf("B%d\r\n", state->target_nb);
     const bool hasArrived =
-        controller_pid(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
+        pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
                        0.08, &command->target_left_speed, &command->target_right_speed);
     if (hasArrived) {
         state->target_nb++;
