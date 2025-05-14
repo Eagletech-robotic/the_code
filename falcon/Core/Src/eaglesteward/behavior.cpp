@@ -154,13 +154,13 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
-            auto closest_bleacher = state_->world.closest_bleacher(x, y);
+            const auto [closest_bleacher, _distance] = state_->world.closest_bleacher(x, y);
 
             // Transform to bleacher‑local frame
-            float const dx = x - closest_bleacher.first.x;
-            float const dy = y - closest_bleacher.first.y;
-            float const cos_o = std::cos(closest_bleacher.first.orientation);
-            float const sin_o = std::sin(closest_bleacher.first.orientation);
+            float const dx = x - closest_bleacher.x;
+            float const dy = y - closest_bleacher.y;
+            float const cos_o = std::cos(closest_bleacher.orientation);
+            float const sin_o = std::sin(closest_bleacher.orientation);
             float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
             float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
 

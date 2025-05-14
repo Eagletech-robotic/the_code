@@ -1,8 +1,8 @@
 #pragma once
 
+#include "eaglesteward/game_entities.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/bounded_pqueue.hpp"
-#include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
 
 #include <array>
@@ -62,7 +62,6 @@ class World {
 
     void reset_dijkstra();
     bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
-    [[nodiscard]] std::array<std::pair<float, float>, 2> bleacher_waypoints(const Bleacher &bleacher) const;
 
     static bool is_in_field(float x, float y);
     static bool is_in_field_square(int i, int j);

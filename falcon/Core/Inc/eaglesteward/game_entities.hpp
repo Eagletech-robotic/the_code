@@ -29,6 +29,8 @@ class Bleacher : public GameEntity {
                      BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM> &
     potential_field();
 
+    [[nodiscard]] std::array<std::pair<float, float>, 2> waypoints() const;
+
   private:
     float potential_function(float dx, float dy);
 };

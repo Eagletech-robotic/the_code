@@ -45,7 +45,7 @@ void World::reset_dijkstra() {
         return;
     } else if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
-            for (const auto &[tx, ty] : bleacher_waypoints(bleacher)) {
+            for (const auto &[tx, ty] : bleacher.waypoints()) {
                 if (is_in_field(tx, ty)) {
                     auto i = static_cast<uint8_t>(std::round(tx / SQUARE_SIZE_M));
                     auto j = static_cast<uint8_t>(std::round(ty / SQUARE_SIZE_M));
@@ -188,15 +188,6 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     }
 }
 
-std::array<std::pair<float, float>, 2> World::bleacher_waypoints(const Bleacher &bleacher) const {
-    const float nx = std::cos(bleacher.orientation);
-    const float ny = std::sin(bleacher.orientation);
-    return {{
-        {bleacher.x + BLEACHER_WAYPOINT_DISTANCE * nx, bleacher.y + BLEACHER_WAYPOINT_DISTANCE * ny},
-        {bleacher.x - BLEACHER_WAYPOINT_DISTANCE * nx, bleacher.y - BLEACHER_WAYPOINT_DISTANCE * ny},
-    }};
-}
-
 std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
     Bleacher best;
     float best_d = 1e9f;
@@ -212,21 +203,21 @@ std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
 }
 
 std::pair<Bleacher, float> World::closest_bleacher_waypoint(float x, float y) const {
-    Bleacher best;
-    float best_d = 1e9f;
+    Bleacher best_bleacher;
+    float best_distance = 1e9f;
 
-    for (const auto &b : bleachers_) {
-        for (const auto &[wx, wy] : bleacher_waypoints(b)) {
+    for (const auto &bleacher : bleachers_) {
+        for (const auto &[wx, wy] : bleacher.waypoints()) {
             const float dx = x - wx;
             const float dy = y - wy;
-            const float d = std::sqrt(dx * dx + dy * dy);
-            if (d < best_d) {
-                best_d = d;
-                best = b;
+            const float distance = std::sqrt(dx * dx + dy * dy);
+            if (distance < best_distance) {
+                best_distance = distance;
+                best_bleacher = bleacher;
             }
         }
     }
-    return {best, best_d};
+    return {best_bleacher, best_distance};
 }
 
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
