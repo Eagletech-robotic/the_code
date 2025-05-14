@@ -63,6 +63,7 @@ class World {
     void reset_dijkstra();
     bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
     [[nodiscard]] std::array<std::pair<float, float>, 2> bleacher_waypoints(const Bleacher &bleacher) const;
-    bool is_in_field(float x, float y);
-    bool is_in_field_square(int i, int j);
+
+    static bool is_in_field(float x, float y);
+    static bool is_in_field_square(int i, int j);
 };
