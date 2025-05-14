@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "utils/angles.hpp"
+#include "utils/myprintf.hpp"
 
 /**
  * @brief Stanley Controller simplifié pour un robot différentiel.
@@ -15,6 +16,7 @@
  * @param x_next, y_next : Point suivant après la cible, pour gérer le virage à l'arrivée.
  * @param Vmax : Vitesse linéaire maximale (m/s).
  * @param Wmax : Vitesse angulaire maximale (rad/s) du robot.
+ * @param Varrival : Vitesse à partir du franchissement de arrivalThreshold (m/s).
  * @param kStanley : Coefficient du contrôleur Stanley (plus grand => plus réactif sur l'erreur latérale).
  * @param wheelBase : Entraxe du robot (distance entre les deux roues).
  * @param arrivalThreshold : Distance en-dessous de laquelle on considère être “arrivé”.
@@ -22,7 +24,7 @@
  * @return true si on est arrivé à target
  */
 bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x_start, float y_start, float x_target,
-                        float y_target, float x_next, float y_next, float Vmax, float Wmax, float kStanley,
+                        float y_target, float x_next, float y_next, float Vmax, float Wmax, float Varrival, float kStanley,
                         float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     //------------------------------------------------------------------
     // 1) Calcul de la distance du robot à la cible
@@ -47,7 +49,6 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
         float heading_error = angle_normalize(desired_heading - robot_theta);
 
         // 2.4) On avance très lentement (ou pas du tout) et on tourne pour s'orienter
-        float v = 0.0f; // on peut mettre un petit v = 100.0f si on veut continuer d'avancer
         // Contrôle proportionnel sur l'erreur d'angle
         float w = heading_error * 2000.0 * wheelBase * 0.5f;
         // (on pourrait mettre un gain, ex. w = 1.5f * heading_error)
@@ -59,11 +60,13 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
             w = -Wmax;
 
         // Calcul des vitesses roues
-        float v_left = v - w;
-        float v_right = v + w;
+        float v_left = Varrival - w;
+        float v_right = Varrival + w;
 
         *out_speed_left = v_left;
         *out_speed_right = v_right;
+
+        myprintf("arrival phase v_left:%f v_right:%f\n", v_left, v_right);
         return heading_error < 0.1;
     }
 
@@ -77,12 +80,7 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
     float path_heading = atan2f(path_dy, path_dx); // orientation de la ligne
 
     // 3.3) Erreur de cap (heading) : angle de la ligne - angle robot
-    float heading_error = path_heading - robot_theta;
-    // Normalisation dans [-pi..+pi]
-    while (heading_error > M_PI)
-        heading_error -= 2.0f * (float)M_PI;
-    while (heading_error < -M_PI)
-        heading_error += 2.0f * (float)M_PI;
+    float heading_error = angle_normalize(path_heading - robot_theta);
 
     // 3.4) Calcul du cross-track (distance latérale à la ligne)
     //     Formule pour distance point-ligne :
@@ -107,6 +105,7 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
         crosstrack_correction = atanf(kStanley * crossTrack / v);
     }
     float steering_angle = heading_error + crosstrack_correction;
+    myprintf("crossTrack: %f heading_error: %f crosstrack_correction: %f\n", crossTrack, to_degrees(heading_error), to_degrees(crosstrack_correction));
 
     // 3.7) Conversion Steering -> w
     float w = (v / wheelBase) * steering_angle; // rad/s

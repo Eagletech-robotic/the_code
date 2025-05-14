@@ -22,6 +22,6 @@ static constexpr float INITIAL_X = 1.225f;
 static constexpr float INITIAL_Y = 0.225f;
 
 // Bleacher grabbing
-static constexpr float BLEACHER_WAYPOINT_DISTANCE = 0.3f;      // Distance to bleacher's centre on an orthogonal axis
-static constexpr float BLEACHER_ATTRACTION_HALF_LENGTH = 0.4f; // Length of the attraction area along orthogonal axis
+static constexpr float BLEACHER_WAYPOINT_DISTANCE = 0.4f;      // Distance to bleacher's centre on an orthogonal axis
+static constexpr float BLEACHER_ATTRACTION_HALF_LENGTH = 0.5f; // Length of the attraction area along orthogonal axis
 static constexpr float BLEACHER_ATTRACTION_HALF_WIDTH = 0.15f; // Width of the attraction area along bleacher axis

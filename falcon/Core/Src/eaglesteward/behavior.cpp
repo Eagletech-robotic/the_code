@@ -180,6 +180,42 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
+            auto [bleacher, distance_to_bleacher] = state_->world.closest_bleacher(x, y);
+
+            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
+            constexpr float STOP_DISTANCE = 0.15f;
+
+            if (distance_to_bleacher < STOP_DISTANCE) {
+                return Status::SUCCESS;
+            }
+
+            auto const waypoints = bleacher.waypoints();
+            constexpr float MAX = std::numeric_limits<float>::max();
+            std::array<float, 3> closest_waypoint = {0, 0, MAX}; // [x, y, squared distance]
+            std::array<float, 3> farthest_waypoint = {0, 0, 0};  // [x, y, squared distance]
+            for (const auto [wp_x, wp_y] : waypoints) {
+                const auto squared_distance = static_cast<float>(std::pow(wp_x - x, 2) + std::pow(wp_y - y, 2));
+                if (squared_distance < closest_waypoint[2])
+                    closest_waypoint = {wp_x, wp_y, squared_distance};
+                if (squared_distance > farthest_waypoint[2])
+                    farthest_waypoint = {wp_x, wp_y, squared_distance};
+            }
+
+            const bool hasArrived =
+                stanley_controller(x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher.x, bleacher.y,
+                                   farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
+                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
+
+            if (hasArrived) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
+                return Status::RUNNING;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
             const bool hasArrived =

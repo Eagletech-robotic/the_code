@@ -4,6 +4,7 @@
 #include "eaglesteward/command.hpp"
 #include "eaglesteward/motor.hpp"
 #include "eaglesteward/state.hpp"
+#include "utils/debug.hpp"
 #include "utils/myprintf.hpp"
 
 State top_state;
@@ -39,7 +40,7 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
     myprintf("T %f \n", timer_get_us());
 
     // 7. Debug: print output
-    // print_complete_output(output);
+    print_complete_output(output);
     // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,
     //          output.shovel_ratio);
 }
