@@ -29,11 +29,11 @@ void descend(Command &command, State &state) {
 
         if (std::abs(angle_diff) >= M_PI_2) {
             if (angle_diff >= 0) {
-                command.target_left_speed = 0.0f;
+                command.target_left_speed = -0.5f;
                 command.target_right_speed = 0.5f;
             } else {
                 command.target_left_speed = 0.5f;
-                command.target_right_speed = 0.0f;
+                command.target_right_speed = -0.5f;
             }
         } else {
             float const speed_left = 0.5f - angle_diff / M_PI;
