@@ -24,8 +24,9 @@
  * @return true si on est arrivé à target
  */
 bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x_start, float y_start, float x_target,
-                        float y_target, float x_next, float y_next, float Vmax, float Wmax, float Varrival, float kStanley,
-                        float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
+                        float y_target, float x_next, float y_next, float Vmax, float Wmax, float Varrival,
+                        float kStanley, float wheelBase, float arrivalThreshold, float *out_speed_left,
+                        float *out_speed_right) {
     //------------------------------------------------------------------
     // 1) Calcul de la distance du robot à la cible
     //------------------------------------------------------------------
@@ -105,7 +106,8 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
         crosstrack_correction = atanf(kStanley * crossTrack / v);
     }
     float steering_angle = heading_error + crosstrack_correction;
-    myprintf("crossTrack: %f heading_error: %f crosstrack_correction: %f\n", crossTrack, to_degrees(heading_error), to_degrees(crosstrack_correction));
+    myprintf("crossTrack: %f heading_error: %f crosstrack_correction: %f\n", crossTrack, to_degrees(heading_error),
+             to_degrees(crosstrack_correction));
 
     // 3.7) Conversion Steering -> w
     float w = (v / wheelBase) * steering_angle; // rad/s
