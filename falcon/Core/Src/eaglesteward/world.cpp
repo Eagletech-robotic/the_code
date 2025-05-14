@@ -189,12 +189,11 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
 }
 
 std::array<std::pair<float, float>, 2> World::bleacher_waypoints(const Bleacher &bleacher) const {
-    constexpr float OFFSET = 0.30f; // 30 cm orthogonal to the bleacher
     const float nx = std::cos(bleacher.orientation);
     const float ny = std::sin(bleacher.orientation);
     return {{
-        {bleacher.x + OFFSET * nx, bleacher.y + OFFSET * ny},
-        {bleacher.x - OFFSET * nx, bleacher.y - OFFSET * ny},
+        {bleacher.x + BLEACHER_WAYPOINT_DISTANCE * nx, bleacher.y + BLEACHER_WAYPOINT_DISTANCE * ny},
+        {bleacher.x - BLEACHER_WAYPOINT_DISTANCE * nx, bleacher.y - BLEACHER_WAYPOINT_DISTANCE * ny},
     }};
 }
 

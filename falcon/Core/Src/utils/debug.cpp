@@ -4,8 +4,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "robotic/constants.hpp"
 #include "utils/angles.hpp"
-#include "utils/constants.hpp"
 #include "utils/myprintf.hpp"
 
 void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field,

@@ -1,9 +1,9 @@
 #include "eaglesteward/behavior.hpp"
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
+#include "robotic/constants.hpp"
 #include "robotic/controller_stanley.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
@@ -156,16 +156,19 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->getPositionAndOrientation(x, y, _orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
-            // The bearing is the angle to the center of the bleacher.
-            float const delta_x = x - closest_bleacher.first.x;
-            float const delta_y = y - closest_bleacher.first.y;
-            float const bearing = std::atan2(-delta_y, -delta_x);
+            // Transform to bleacher‑local frame
+            float const dx = x - closest_bleacher.first.x;
+            float const dy = y - closest_bleacher.first.y;
+            float const cos_o = std::cos(closest_bleacher.first.orientation);
+            float const sin_o = std::sin(closest_bleacher.first.orientation);
+            float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
+            float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
 
-            // The angle between the axis of approach and the robot.
-            float const entry_angle = std::fmod(bearing - closest_bleacher.first.orientation, M_PI);
-            myprintf("bearing %f - entry_angle %f\n", to_degrees(bearing), to_degrees(entry_angle));
+            myprintf("local_x %.3f  local_y %.3f\n", local_x, local_y);
 
-            if (closest_bleacher.second <= 0.5f && std::abs(entry_angle) <= to_radians(6)) {
+            // Inside a rectangle centered around the bleacher's orthogonal axis.
+            if (std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
+                std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
             } else {
                 myprintf("Searching bleacher\n");
@@ -179,34 +182,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->getPositionAndOrientation(x, y, orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
-            // The robot needs to approach the bleacher perpendicularly.
-            // Calculate the angle between the robot and bleacher orientation.
-            float const alignment_error = std::fmod(orientation - closest_bleacher.first.orientation, M_PI);
+            const bool hasArrived =
+                controller_pid(x, y, orientation, closest_bleacher.first.x, closest_bleacher.first.y, 0.8f, WHEELBASE_M,
+                               0.15, &command_->target_left_speed, &command_->target_right_speed);
 
-            if (std::fabs(alignment_error) <= to_radians(5)) {
-                return Status::SUCCESS;
-            } else {
-                if (alignment_error >= 0) {
-                    command_->target_left_speed = 0.5f;
-                    command_->target_right_speed = -0.5f;
-                } else {
-                    command_->target_left_speed = -0.5f;
-                    command_->target_right_speed = 0.5f;
-                }
-                myprintf("Rotating towards bleacher - alignment_error: %f\n", to_degrees(alignment_error));
-                return Status::RUNNING;
-            }
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            float x, y, _orientation;
-            state_->getPositionAndOrientation(x, y, _orientation);
-            auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second <= 0.15f) {
+            if (hasArrived) {
                 return Status::SUCCESS;
             } else {
                 myprintf("Approaching bleacher\n");
-                command_->target_left_speed = 0.5f;
-                command_->target_right_speed = 0.5f;
                 return Status::RUNNING;
             }
         },
