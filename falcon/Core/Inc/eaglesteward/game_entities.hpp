@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "utils/constants.hpp"
+#include "robotic/constants.hpp"
 
 constexpr int BLEACHER_INFLUENCE_SIZE = 400;
 
@@ -28,6 +28,8 @@ class Bleacher : public GameEntity {
     const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
                      BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM> &
     potential_field();
+
+    [[nodiscard]] std::array<std::pair<float, float>, 2> waypoints() const;
 
   private:
     float potential_function(float dx, float dy);

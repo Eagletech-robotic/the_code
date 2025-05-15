@@ -1,8 +1,8 @@
 #pragma once
 
+#include "eaglesteward/game_entities.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/bounded_pqueue.hpp"
-#include "utils/game_entities.hpp"
 #include "utils/sized_array.hpp"
 
 #include <array>
@@ -34,13 +34,17 @@ class World {
     void update_from_eagle_packet(const EaglePacket &packet);
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
-    void potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const;
+    void potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const;
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
-    bool do_some_calculations();
+    bool do_some_calculations(const std::function<bool()> &can_continue);
+
+    /** Do all calculations. Used to pre-compute the potential field. */
+    void do_all_calculations_LONG();
 
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher_waypoint(float x, float y) const;
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
@@ -59,7 +63,9 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
-  public:
     void reset_dijkstra();
     bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
+
+    static bool is_in_field(float x, float y);
+    static bool is_in_field_square(int i, int j);
 };

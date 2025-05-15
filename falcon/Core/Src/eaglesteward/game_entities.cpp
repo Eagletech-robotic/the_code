@@ -1,4 +1,4 @@
-#include "utils/game_entities.hpp"
+#include "eaglesteward/game_entities.hpp"
 
 #include <cmath>
 #include <stdexcept>
@@ -29,4 +29,13 @@ float Bleacher::potential_function(const float dx, const float dy) {
     float const clamped_dy = dy / static_cast<float>(scale) * static_cast<float>(M_PI);
     float const value = -std::exp(-clamped_dx - clamped_dy) / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy);
     return value * static_cast<float>(scale) / static_cast<float>(M_PI);
+}
+
+std::array<std::pair<float, float>, 2> Bleacher::waypoints() const {
+    const float nx = std::cos(orientation);
+    const float ny = std::sin(orientation);
+    return {{
+        {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny},
+        {x - BLEACHER_WAYPOINT_DISTANCE * nx, y - BLEACHER_WAYPOINT_DISTANCE * ny},
+    }};
 }

@@ -1,46 +1,47 @@
 #include "eaglesteward/behavior.hpp"
 #include "eaglesteward/behaviortree.hpp"
-#include "eaglesteward/robot_constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
-#include "robotic/angle.hpp"
-#include "robotic/controller_stanley.hpp"
+#include "robotic/constants.hpp"
+#include "robotic/controllers.hpp"
+#include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
 void descend(Command &command, State &state) {
     constexpr float MAX_SPEED = 1.0f; // m/s
     auto &world = state.world;
 
-    float x, y, orientation_deg;
-    state.getPositionAndOrientation(x, y, orientation_deg);
-    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, orientation_deg);
+    float x, y, orientation;
+    state.getPositionAndOrientation(x, y, orientation);
+    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, to_degrees(orientation));
 
-    bool is_moving;
-    float target_angle_deg;
-    world.potential_field_descent(x, y, is_moving, target_angle_deg);
+    bool is_local_minimum;
+    float target_angle;
+    world.potential_field_descent(x, y, is_local_minimum, target_angle);
 
-    if (is_moving) {
-        float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+    if (is_local_minimum) {
+        // Move forward slowly rather than remaining trapped
+        command.target_left_speed = 0.3f;
+        command.target_right_speed = 0.3f;
+    } else {
+        float const angle_diff = angle_normalize(target_angle - orientation);
 
-        if (std::abs(angle_diff) >= 90) {
+        if (std::abs(angle_diff) >= M_PI_2) {
             if (angle_diff >= 0) {
-                command.target_left_speed = 0.0f;
+                command.target_left_speed = -0.5f;
                 command.target_right_speed = 0.5f;
             } else {
                 command.target_left_speed = 0.5f;
-                command.target_right_speed = 0.0f;
+                command.target_right_speed = -0.5f;
             }
         } else {
-            float const speed_left = 0.5f - angle_diff / 180.0f;
-            float const speed_right = 0.5f + angle_diff / 180.0f;
+            float const speed_left = 0.5f - angle_diff / M_PI;
+            float const speed_right = 0.5f + angle_diff / M_PI;
             float const max = std::max(speed_left, speed_right);
             command.target_left_speed = MAX_SPEED / max * speed_left;
             command.target_right_speed = MAX_SPEED / max * speed_right;
         }
-    } else {
-        command.target_left_speed = 0.f;
-        command.target_right_speed = 0.f;
     }
 }
 
@@ -55,12 +56,14 @@ void descend(Command &command, State &state) {
  *   w, h : dimensions de la carte
  *   s    : côté du robot
  *   x, y : position du centre du robot
- *   theta_deg : orientation **en degrés**
+ *   theta : orientation du robot
  *   tol  : marge sur les comparaisons de distances
  *
  * La tolérance angulaire d’alignement est fixée à ±30° (modifiable).
  */
-bool isLookingOutwards(float w, float h, float s, float x, float y, float theta_deg, float tol) {
+bool isLookingOutwards(float w, float h, float s, float x, float y, float theta, float tol) {
+    const float theta_deg = to_degrees(theta);
+
     /* Directions cardinales en degrés                     +X  +Y  –X   –Y */
     const float dirs_deg[4] = {0.0f, 90.0f, 180.0f, 270.0f};
     const float ALIGN_TOL = 30.0f; /* ±30° d’ouverture                 */
@@ -108,8 +111,8 @@ bool isLookingOutwards(float w, float h, float s, float x, float y, float theta_
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
 Status isSafe(input_t *input, Command *command, State *state) {
-    float x, y, theta_deg;
-    state->getPositionAndOrientation(x, y, theta_deg);
+    float x, y, theta;
+    state->getPositionAndOrientation(x, y, theta);
 
     if (state->filtered_tof_m < 0.2) {
         // failsafe si tout à merder avant
@@ -117,7 +120,7 @@ Status isSafe(input_t *input, Command *command, State *state) {
         return Status::FAILURE;
     }
 
-    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta_deg, 0.01f)) {
+    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta, 0.01f)) {
         myprintf("BigThing\n");
         return Status::FAILURE;
     }
@@ -127,22 +130,16 @@ Status isSafe(input_t *input, Command *command, State *state) {
 
 // Trop proche de l'adversaire, il faut se dérouter
 Status evadeOpponent(input_t *input, Command *command, State *state) {
-    myprintf("goto 90° de l'adversaire du coté target\n");
     command->target_left_speed = 0.5;
     command->target_right_speed = -0.5;
     return Status::RUNNING;
 }
 
-// Détection d'un gradin accrocher au aimant ?
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
-    myprintf("Est-ce que j'ai un gradin accroché ? Camera ou pelle out ou TOF");
-
-    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
-                                               : Status::FAILURE;
+    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS : Status::FAILURE;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-    myprintf("Aller vers une aire de construction et lâcher le gradin");
     state->world.set_target(TargetType::BuildingAreaWaypoint);
     descend(*command, *state);
 
@@ -153,61 +150,90 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
-            auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.4f) {
-                myprintf("Go to the nearest bleacher\n");
+            float x, y, _orientation;
+            state_->getPositionAndOrientation(x, y, _orientation);
+            const auto [closest_bleacher, _distance] = state_->world.closest_bleacher(x, y);
+
+            // Transform to bleacher‑local frame
+            float const dx = x - closest_bleacher.x;
+            float const dy = y - closest_bleacher.y;
+            float const cos_o = std::cos(closest_bleacher.orientation);
+            float const sin_o = std::sin(closest_bleacher.orientation);
+            float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
+            float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
+
+            myprintf("local_x %.3f  local_y %.3f\n", local_x, local_y);
+
+            // Inside a rectangle centered around the bleacher's orthogonal axis.
+            if (std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
+                std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Searching bleacher\n");
                 state_->world.set_target(TargetType::BleacherWaypoint);
                 descend(*command_, *state_);
                 return Status::RUNNING;
-            } else {
-                return Status::SUCCESS;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
+            auto [bleacher, distance_to_bleacher] = state_->world.closest_bleacher(x, y);
+
+            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
+            constexpr float STOP_DISTANCE = 0.15f;
+
+            if (distance_to_bleacher < STOP_DISTANCE) {
+                return Status::SUCCESS;
+            }
+
+            auto const waypoints = bleacher.waypoints();
+            constexpr float MAX = std::numeric_limits<float>::max();
+            std::array<float, 3> closest_waypoint = {0, 0, MAX}; // [x, y, squared distance]
+            std::array<float, 3> farthest_waypoint = {0, 0, 0};  // [x, y, squared distance]
+            for (const auto [wp_x, wp_y] : waypoints) {
+                const auto squared_distance = static_cast<float>(std::pow(wp_x - x, 2) + std::pow(wp_y - y, 2));
+                if (squared_distance < closest_waypoint[2])
+                    closest_waypoint = {wp_x, wp_y, squared_distance};
+                if (squared_distance > farthest_waypoint[2])
+                    farthest_waypoint = {wp_x, wp_y, squared_distance};
+            }
+
+            const bool hasArrived =
+                stanley_controller(x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher.x, bleacher.y,
+                                   farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
+                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
+
+            if (hasArrived) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
+                return Status::RUNNING;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
             auto closest_bleacher = state_->world.closest_bleacher(x, y);
 
-            float const delta_x = x - closest_bleacher.first.x;
-            float const delta_y = y - closest_bleacher.first.y;
-            float const target_angle_deg = std::atan2(-delta_y, -delta_x) / static_cast<float>(M_PI) * 180;
-            float const angle_diff = angle_normalize_deg(target_angle_deg - orientation_deg);
+            const bool hasArrived =
+                pid_controller(x, y, orientation, closest_bleacher.first.x, closest_bleacher.first.y, 0.8f, WHEELBASE_M,
+                               0.15, &command_->target_left_speed, &command_->target_right_speed);
 
-            if (angle_diff >= 10) {
-                if (angle_diff >= 0) {
-                    command_->target_left_speed = 0.5f;
-                    command_->target_right_speed = -0.5f;
-                } else {
-                    command_->target_left_speed = -0.5f;
-                    command_->target_right_speed = 0.5f;
-                }
-
-                myprintf("Rotating towards the bleacher - target angle: %f - angle diff: %f\n", target_angle_deg,
-                         angle_diff);
-                return Status::RUNNING;
-            } else {
+            if (hasArrived) {
                 return Status::SUCCESS;
+            } else {
+                myprintf("Approaching bleacher centre x=%.3f y=%.3f\n", closest_bleacher.first.x,
+                         closest_bleacher.first.y);
+                return Status::RUNNING;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            float x, y, orientation_deg;
-            state_->getPositionAndOrientation(x, y, orientation_deg);
-            auto closest_bleacher = state_->world.closest_bleacher(x, y);
-            if (closest_bleacher.second > 0.05f) {
-                myprintf("Slowly approaching bleacher\n");
-                command_->target_left_speed = 0.5f;
-                command_->target_right_speed = 0.5f;
-                return Status::RUNNING;
-            } else {
-                return Status::SUCCESS;
-            }
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            myprintf("Bleacher is close enough, stop moving\n");
+            myprintf("Bleacher close enough, stopping\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            return Status::SUCCESS;
+            command_->target_left_speed = 0.f;
+            command_->target_right_speed = 0.f;
+            return Status::RUNNING;
         });
 
     return seq(const_cast<input_t *>(input), command, state);
@@ -217,8 +243,12 @@ Status isJackRemoved(input_t *input, Command *command, State *state) {
     if (!state->hasGameStarted() && input->jack_removed) {
         state->startGame(input->clock_ms);
     }
-    myprintf("T %f\n", state->elapsedTime(*input));
-    return input->jack_removed ? Status::SUCCESS : Status::FAILURE;
+
+    if (input->jack_removed) {
+        return Status::SUCCESS;
+    }
+    state->gameNotStarted();
+    return Status::FAILURE;
 }
 
 Status isGameActive(input_t *input, Command *command, State *state) {
@@ -237,9 +267,20 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
+Status waitBeforeGame(input_t *input, Command *command, State *state) {
+    if (input->blue_button) {
+        myprintf("Blue button pressed\n");
+        state->reset();
+    }
+    command->target_left_speed = 0.f;
+    command->target_right_speed = 0.f;
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
+    return Status::RUNNING;
+}
+
 // Attente indéfinie
-Status wait(input_t *input, Command *command, State *state) {
-    myprintf("Waiting\n");
+Status holdAfterEnd(input_t *input, Command *command, State *state) {
+    myprintf("Holding after game ends\n");
     command->target_left_speed = 0.f;
     command->target_right_speed = 0.f;
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
@@ -263,7 +304,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 
     myprintf("B%d\r\n", state->target_nb);
     const bool hasArrived =
-        controller_pid(state->imu_x, state->imu_y, state->imu_theta_deg, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
+        pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
                        0.08, &command->target_left_speed, &command->target_right_speed);
     if (hasArrived) {
         state->target_nb++;
@@ -273,20 +314,17 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 }
 
-float start = -1.0f;
-
-Status forward_onesec(const input_t *input, Command *command, State *state) {
-    if (start < 0) {
-        start = state->elapsedTime(*input);
+Status isFlagPhaseCompleted(const input_t *input, Command *command, State *state) {
+    if (state->elapsedTime(*input) > 1.0f) {
+        return Status::SUCCESS;
     }
+    return Status::FAILURE;
+}
 
-    if (state->elapsedTime(*input) - start < 1.0f) {
-        command->target_left_speed = 0.5;
-        command->target_right_speed = 0.5;
-        return Status::RUNNING;
-    }
-
-    return Status::SUCCESS;
+Status deployFlag(const input_t *input, Command *command, State *state) {
+    command->target_left_speed = 0.5f;
+    command->target_right_speed = 0.5f;
+    return Status::RUNNING;
 }
 
 // DEBUG - move around a rectangle
@@ -318,12 +356,12 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
 
     auto root = sequence( //
-        alternative(isJackRemoved, logAndFail("wait-start"), wait),
-        alternative(isGameActive, logAndFail("hold-after-stop"), wait),
+        alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
+        alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-        // alternative(logAndFail("forward_onesec"), forward_onesec),
+        alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
-        alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
+        alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
 }

@@ -14,7 +14,7 @@
 #include "iot01A/encoder.h"
 #include "iot01A/sensors.h"
 #include "iot01A/um7.hpp"
-#include "robotic/angle.hpp"
+#include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
 extern TIM_HandleTypeDef htim1;  //
@@ -70,23 +70,21 @@ void input_get(input_t &input) {
     input.jack_removed = jack_removed();
     um7_t um7;
     um7_get_pos(&um7);
-    yaw_raw = -um7.yaw; // sign du yaw inversé
-    if (first_cycle) {  // sinon il y a toujours le décalage avec old à zero
+    yaw_raw = to_radians(-um7.yaw); // sign du yaw inversé
+    if (first_cycle) {              // sinon il y a toujours le décalage avec old à zero
         yaw_old = yaw_raw;
         first_cycle--; // plusieurs cycle pour attendre les données
     }
-    input.delta_yaw_deg = angle_normalize_deg(yaw_raw - yaw_old);
-
-    input.imu_yaw_deg = yaw_raw;
+    input.delta_yaw = angle_normalize(yaw_raw - yaw_old);
+    input.imu_yaw = yaw_raw;
     input.imu_accel_x_mss = um7.accel_x;
     input.imu_accel_y_mss = um7.accel_y;
     input.imu_accel_z_mss = um7.accel_z;
     input.blue_button = HAL_GPIO_ReadPin(BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin);
     input.clock_ms = HAL_GetTick(); // gestion du temps
-    // printf("%.1f %.1f %.1f \r\n", yaw_raw, yaw_old, input.delta_yaw_deg);
 }
 
 void print_input(const input_t &input) {
-    myprintf("IN %ld %ld [%d] %.3f\r\n", (int32_t)input.delta_encoder_left, (int32_t)input.delta_encoder_right,
-             input.jack_removed, input.tof_m);
+    myprintf("IN %6ld %ld %ld [%d %d] %.3f\r\n", input.clock_ms, (int32_t)input.delta_encoder_left,
+             (int32_t)input.delta_encoder_right, input.jack_removed, input.blue_button, input.tof_m);
 }

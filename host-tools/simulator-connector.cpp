@@ -41,6 +41,8 @@ EMSCRIPTEN_KEEPALIVE uint8_t *create_bluetooth() {
 
 EMSCRIPTEN_KEEPALIVE void exported_top_step(input_t *input, output_t *output, uint8_t *bluetooth_block,
                                             size_t bluetooth_block_size) {
+    timer_reset();
+
     if (!input || !output) {
         printf("Error: NULL input or output in exported_top_step\n");
         return;

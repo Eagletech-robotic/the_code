@@ -4,7 +4,8 @@
 #include <cmath>
 #include <cstdio>
 
-#include "utils/constants.hpp"
+#include "robotic/constants.hpp"
+#include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
 void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field,
@@ -43,14 +44,14 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 }
 
 void print_complete_input(const input_t &input) {
-    myprintf(
-        "Input: jack_removed:%d tof_m:%.3f delta_yaw_deg:%.3f delta_encoder_left:%d delta_encoder_right:%d "
-        "imu_yaw_deg:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
-        input.jack_removed, input.tof_m, input.delta_yaw_deg,
-        static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
-        static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
-        input.imu_yaw_deg, input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss, input.blue_button,
-        static_cast<unsigned int>(input.clock_ms)); // STM32 passes uint32_t as long unsigned int
+    myprintf("Input: jack_removed:%d tof_m:%.3f delta_yaw:%.3f delta_encoder_left:%d delta_encoder_right:%d "
+             "imu_yaw:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
+             input.jack_removed, input.tof_m, to_degrees(input.delta_yaw),
+             static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
+             static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
+             to_degrees(input.imu_yaw), input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss,
+             input.blue_button,
+             static_cast<unsigned int>(input.clock_ms)); // STM32 passes uint32_t as long unsigned int
 }
 
 void print_complete_output(const output_t &output) {

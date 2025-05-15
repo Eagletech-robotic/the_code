@@ -3,14 +3,17 @@
 
 #ifdef __EMSCRIPTEN__
 // WASM Implementation
+#include <emscripten/emscripten.h>
+
+static double timer_start_ms = 0.0;
 
 extern "C" {
-    void timer_reset() {
-        // TO BE DONE
+    EMSCRIPTEN_KEEPALIVE void timer_reset() {
+        timer_start_ms = emscripten_get_now();
     }
 
-    float timer_get_us() {
-        return 0.0f; // TO BE DONE
+    EMSCRIPTEN_KEEPALIVE float timer_get_us() {
+        return float((emscripten_get_now() - timer_start_ms) * 1000.0);
     }
 }
 

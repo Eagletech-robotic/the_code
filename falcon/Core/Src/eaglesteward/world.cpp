@@ -2,23 +2,40 @@
 
 #include "utils/myprintf.hpp"
 
+#include "iot01A/top_driver.h"
 #include <cfloat>
 #include <cmath>
+
+#include "utils/angles.hpp"
+
+struct Waypoint {
+    float x; // metres
+    float y; // metres
+};
+
+static constexpr Waypoint backstageWaypoint = {0.35f, 1.40f};
+
+static constexpr Waypoint buildingAreaWaypoints[] = {
+    {0.775f, 0.35f},
+    {1.225f, 0.50f},
+    {2.775f, 0.35f},
+    {2.500f, 0.875f},
+};
 
 World::World(RobotColour colour) {
     colour_ = colour;
 
     // Some default values before we receive the first packet.
     bleachers_ = {
-        {0.075f, 0.400f, M_PI_2},       {0.075f, 1.325f, M_PI_2},    {0.775f, 0.250f, 0.f},
-        {0.825f, 1.725f, 0.f},          {1.100f, 0.950f, 0.f},       {3.f - 0.075f, 0.400f, M_PI_2},
-        {3.f - 0.075f, 1.325f, M_PI_2}, {3.f - 0.775f, 0.250f, 0.f}, {3.f - 0.825f, 1.725f, 0.f},
-        {3.f - 1.100f, 0.950f, 0.f},
+        {0.075f, 0.400f, 0.0f},         {0.075f, 1.325f, 0.0f},         {0.775f, 0.250f, M_PI_2},
+        {0.825f, 1.725f, M_PI_2},       {1.100f, 0.950f, M_PI_2},       {3.f - 0.075f, 0.400f, 0.0f},
+        {3.f - 0.075f, 1.325f, 0.0f},   {3.f - 0.775f, 0.250f, M_PI_2}, {3.f - 0.825f, 1.725f, M_PI_2},
+        {3.f - 1.100f, 0.950f, M_PI_2},
     };
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    while (do_some_calculations())
+    while (do_some_calculations([]() { return true; }))
         ;
 }
 
@@ -31,46 +48,50 @@ void World::set_target(TargetType new_target) {
 }
 
 void World::reset_dijkstra() {
-    // myprintf("!!!! RESET DIJSKTRA !!!!\n");
-
     // Clear the potential field and the queue
     for (auto &row : potential_calculating()) {
         std::fill(row.begin(), row.end(), FLT_MAX);
     }
     pqueue_.clear();
 
-    // Add the target to the queue
-    if (target_ == TargetType::None) {
-        return;
-    } else if (target_ == TargetType::BleacherWaypoint) {
+    auto enqueue_grid_cell = [this](float x, float y) {
+        if (is_in_field(x, y)) {
+            auto i = static_cast<uint8_t>(std::round(x / SQUARE_SIZE_M));
+            auto j = static_cast<uint8_t>(std::round(y / SQUARE_SIZE_M));
+            pqueue_.emplace(0, i, j);
+        }
+    };
+
+    // Add targets to the queue
+    if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
-            auto x = static_cast<uint8_t>(std::round(bleacher.x / SQUARE_SIZE_M));
-            auto y = static_cast<uint8_t>(std::round(bleacher.y / SQUARE_SIZE_M));
-            pqueue_.emplace(0, x, y);
-        }
-    } else if (target_ == TargetType::BackstageWaypoint) {
-        if (colour_ == RobotColour::Yellow) {
-            pqueue_.emplace(0, 0.35, 1.4);
-        } else if (colour_ == RobotColour::Blue) {
-            pqueue_.emplace(0, 2.65, 1.4);
-        }
-    } else if (target_ == TargetType::BuildingAreaWaypoint) {
-        if (colour_ == RobotColour::Yellow) {
-            pqueue_.emplace(0, 0.775, 0.35);
-            pqueue_.emplace(0, 1.225, 0.5);
-            pqueue_.emplace(0, 2.775, 0.35);
-            pqueue_.emplace(0, 2.5, 0.875);
-        } else if (colour_ == RobotColour::Blue) {
-            pqueue_.emplace(0, 3 - 0.775, 0.35);
-            pqueue_.emplace(0, 3 - 1.225, 0.5);
-            pqueue_.emplace(0, 3 - 2.775, 0.35);
-            pqueue_.emplace(0, 3 - 2.5, 0.875);
+            for (auto [x, y] : bleacher.waypoints()) {
+                enqueue_grid_cell(x, y);
+            }
         }
     }
+
+    if (target_ == TargetType::BackstageWaypoint) {
+        enqueue_grid_cell(colour_ == RobotColour::Yellow ? backstageWaypoint.x : FIELD_WIDTH_M - backstageWaypoint.x,
+                          backstageWaypoint.y);
+    }
+
+    if (target_ == TargetType::BuildingAreaWaypoint) {
+        for (auto [x, y] : buildingAreaWaypoints) {
+            enqueue_grid_cell(colour_ == RobotColour::Yellow ? x : FIELD_WIDTH_M - x, y);
+        }
+    }
+
+    myprintf("!!!! RESET DIJSKTRA - queue size: %lu\n", pqueue_.size());
 }
 
-bool World::do_some_calculations() {
-    return partial_compute_dijkstra([]() { return true; });
+bool World::do_some_calculations(const std::function<bool()> &can_continue) {
+    return partial_compute_dijkstra(can_continue);
+}
+
+void World::do_all_calculations_LONG() {
+    while (do_some_calculations([]() { return true; }))
+        ;
 }
 
 bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {
@@ -80,7 +101,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
     constexpr int CHECK_INTERVAL = 200;
 
     constexpr float COST_STRAIGHT = 10.0f;
-    constexpr float COST_DIAG = 14.0f;
+    constexpr float COST_DIAG = 14.1f;
     // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
 
     struct Step {
@@ -117,7 +138,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
-            if (newX < 0 || newX >= FIELD_WIDTH_SQ || newY < 0 || newY >= FIELD_HEIGHT_SQ) [[unlikely]]
+            if (!is_in_field_square(newX, newY)) [[unlikely]]
                 continue;
 
             const float cost = step.cost + baseDist;
@@ -149,9 +170,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
         float const x = object.x_cm * 0.01f;
         float const y = object.y_cm * 0.01f;
-        float const orientation = object.orientation_deg;
-        myprintf("BL IN PKT: ox:%d, oy:%d, x:%.2f, y:%.2f, orientation:%.1f\n", object.x_cm, object.y_cm, x, y,
-                 orientation);
+        float const orientation = object.orientation_deg * M_PI / 180.0f;
         bleachers_.push_back({x, y, orientation});
         if (bleachers_.full())
             break;
@@ -161,25 +180,25 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-void World::potential_field_descent(float x, float y, bool &is_moving, float &out_yaw_deg) const {
-    constexpr int LOOKAHEAD_DISTANCE = 5; // In squares
-    constexpr float SLOPE_THRESHOLD = 1.0f;
+void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
+    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
+    constexpr float SLOPE_THRESHOLD = 0.01f;
 
-    int const i = static_cast<int>(std::floor(x / SQUARE_SIZE_M));
-    int const j = static_cast<int>(std::floor(y / SQUARE_SIZE_M));
+    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
+    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
 
     const auto &potential = potential_ready();
     float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
 
     if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        myprintf("STOPPING because slope is too flat - dx: %f, dy: %f", dx, dy);
-        is_moving = false;
-        out_yaw_deg = 0.f;
+        myprintf("Reached local minimum");
+        out_is_local_minimum = true;
+        out_yaw = 0.f;
     } else {
-        is_moving = true;
-        out_yaw_deg = std::atan2(-dy, -dx) / static_cast<float>(M_PI) * 180.0f;
-        myprintf("Target angle: %f\n", out_yaw_deg);
+        out_is_local_minimum = false;
+        out_yaw = std::atan2(-dy, -dx);
+        myprintf("Target angle: %f\n", to_degrees(out_yaw));
     }
 }
 
@@ -196,3 +215,25 @@ std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
     }
     return {best, best_d};
 }
+
+std::pair<Bleacher, float> World::closest_bleacher_waypoint(float x, float y) const {
+    Bleacher best_bleacher;
+    float best_distance = 1e9f;
+
+    for (const auto &bleacher : bleachers_) {
+        for (const auto &[wx, wy] : bleacher.waypoints()) {
+            const float dx = x - wx;
+            const float dy = y - wy;
+            const float distance = std::sqrt(dx * dx + dy * dy);
+            if (distance < best_distance) {
+                best_distance = distance;
+                best_bleacher = bleacher;
+            }
+        }
+    }
+    return {best_bleacher, best_distance};
+}
+
+bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
+
+bool World::is_in_field_square(int i, int j) { return i >= 0 && i < FIELD_WIDTH_SQ && j >= 0 && j < FIELD_HEIGHT_SQ; }

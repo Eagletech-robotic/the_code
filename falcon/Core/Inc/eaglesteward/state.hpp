@@ -11,11 +11,12 @@ class State {
   public:
     State();
 
-    void init();
+    void reset();
 
     /* I/O ----------------------------------------------------- */
     void print() const;
     [[nodiscard]] bool hasGameStarted() const;
+    void gameNotStarted();
     void startGame(uint32_t clock_ms);
     [[nodiscard]] float elapsedTime(const input_t &input) const;
     void getPositionAndOrientation(float &x, float &y, float &theta) const;
@@ -34,12 +35,12 @@ class State {
     // Our robot, in IMU coordinates. Use getPositionAndOrientation for field coordinates.
     float imu_x{0.f}; // meters
     float imu_y{0.f};
-    float imu_theta_deg{0.f};
+    float imu_theta{0.f};
 
     // Opponent robot
     float opponent_x{0.f}; // meters
     float opponent_y{0.f};
-    float opponent_theta_deg{0.f};
+    float opponent_theta{0.f};
 
     // World
     World world{colour};
@@ -74,9 +75,9 @@ class State {
   private:
     /* PRIVATE DATA ---------------------------------- */
     // IMU-to-field transformation
-    float transformation_x{0.f};         // X translation offset after rotation (meters)
-    float transformation_y{0.f};         // Y translation offset after rotation
-    float transformation_theta_deg{0.f}; // Rotation offset between IMU and field
+    float transformation_x{0.f};     // X translation offset after rotation (meters)
+    float transformation_y{0.f};     // Y translation offset after rotation
+    float transformation_theta{0.f}; // Rotation offset between IMU and field
 
     // Time management
     int32_t start_time_ms{-1}; // The input's clock_ms at the start of the game. -1 means game has not started.
