@@ -135,10 +135,8 @@ Status evadeOpponent(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
-// Détection d'un gradin accrocher au aimant ?
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
-    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS //-> la pelle doit avoir été sorti avant
-                                               : Status::FAILURE;
+    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS : Status::FAILURE;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
@@ -363,7 +361,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
-        alternative(hasBleacherAttached, logAndFail("grab-bleacher"), gotoClosestBleacher),
+        alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
 }
