@@ -26,6 +26,7 @@ if (NOT EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -march=native -flto -ffast-math -funsafe-math-optimizations")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O3 -march=native -ffast-math -funsafe-math-optimizations")
+    set(COMMON_FLAGS "${COMMON_FLAGS} -g -fsanitize=address,undefined -fno-omit-frame-pointer")
 endif ()
 
 # Simulator connector (WASM binary)
