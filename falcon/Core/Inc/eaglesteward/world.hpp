@@ -39,6 +39,9 @@ class World {
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
     bool do_some_calculations(const std::function<bool()> &can_continue);
 
+    /** Do all calculations. Used to pre-compute the potential field. */
+    void do_all_calculations_LONG();
+
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher_waypoint(float x, float y) const;

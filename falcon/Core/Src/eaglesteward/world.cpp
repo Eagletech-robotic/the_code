@@ -8,6 +8,20 @@
 
 #include "utils/angles.hpp"
 
+struct Waypoint {
+    float x; // metres
+    float y; // metres
+};
+
+static constexpr Waypoint backstageWaypoint = {0.35f, 1.40f};
+
+static constexpr Waypoint buildingAreaWaypoints[] = {
+    {0.775f, 0.35f},
+    {1.225f, 0.50f},
+    {2.775f, 0.35f},
+    {2.500f, 0.875f},
+};
+
 World::World(RobotColour colour) {
     colour_ = colour;
 
@@ -40,36 +54,31 @@ void World::reset_dijkstra() {
     }
     pqueue_.clear();
 
-    // Add the target to the queue
-    if (target_ == TargetType::None) {
-        return;
-    } else if (target_ == TargetType::BleacherWaypoint) {
+    auto enqueue_grid_cell = [this](float x, float y) {
+        if (is_in_field(x, y)) {
+            auto i = static_cast<uint8_t>(std::round(x / SQUARE_SIZE_M));
+            auto j = static_cast<uint8_t>(std::round(y / SQUARE_SIZE_M));
+            pqueue_.emplace(0, i, j);
+        }
+    };
+
+    // Add targets to the queue
+    if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
-            for (const auto &[tx, ty] : bleacher.waypoints()) {
-                if (is_in_field(tx, ty)) {
-                    auto i = static_cast<uint8_t>(std::round(tx / SQUARE_SIZE_M));
-                    auto j = static_cast<uint8_t>(std::round(ty / SQUARE_SIZE_M));
-                    pqueue_.emplace(0, i, j);
-                }
+            for (auto [x, y] : bleacher.waypoints()) {
+                enqueue_grid_cell(x, y);
             }
         }
-    } else if (target_ == TargetType::BackstageWaypoint) {
-        if (colour_ == RobotColour::Yellow) {
-            pqueue_.emplace(0, 0.35, 1.4);
-        } else if (colour_ == RobotColour::Blue) {
-            pqueue_.emplace(0, 2.65, 1.4);
-        }
-    } else if (target_ == TargetType::BuildingAreaWaypoint) {
-        if (colour_ == RobotColour::Yellow) {
-            pqueue_.emplace(0, 0.775, 0.35);
-            pqueue_.emplace(0, 1.225, 0.5);
-            pqueue_.emplace(0, 2.775, 0.35);
-            pqueue_.emplace(0, 2.5, 0.875);
-        } else if (colour_ == RobotColour::Blue) {
-            pqueue_.emplace(0, 3 - 0.775, 0.35);
-            pqueue_.emplace(0, 3 - 1.225, 0.5);
-            pqueue_.emplace(0, 3 - 2.775, 0.35);
-            pqueue_.emplace(0, 3 - 2.5, 0.875);
+    }
+
+    if (target_ == TargetType::BackstageWaypoint) {
+        enqueue_grid_cell(colour_ == RobotColour::Yellow ? backstageWaypoint.x : FIELD_WIDTH_M - backstageWaypoint.x,
+                          backstageWaypoint.y);
+    }
+
+    if (target_ == TargetType::BuildingAreaWaypoint) {
+        for (auto [x, y] : buildingAreaWaypoints) {
+            enqueue_grid_cell(colour_ == RobotColour::Yellow ? x : FIELD_WIDTH_M - x, y);
         }
     }
 
@@ -80,6 +89,11 @@ bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     return partial_compute_dijkstra(can_continue);
 }
 
+void World::do_all_calculations_LONG() {
+    while (do_some_calculations([]() { return true; }))
+        ;
+}
+
 bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {
     if (pqueue_.empty())
         return false;
@@ -87,7 +101,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
     constexpr int CHECK_INTERVAL = 200;
 
     constexpr float COST_STRAIGHT = 10.0f;
-    constexpr float COST_DIAG = 14.0f;
+    constexpr float COST_DIAG = 14.1f;
     // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
 
     struct Step {
