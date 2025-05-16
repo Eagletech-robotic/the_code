@@ -10,10 +10,6 @@
 
 #include <math.h>
 
-#include "utils/angles.hpp"
-
-State::State() {}
-
 void State::reset() {
     // Set the initial state for the IMU to field coordinate transformation.
     saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION);
@@ -22,14 +18,14 @@ void State::reset() {
 void State::print() const {
     const char *col;
     if (colour == RobotColour::Blue) {
-        col = "BLUE";
+        col = "BLU";
     } else {
-        col = "YELLOW";
+        col = "YLW";
     }
     float x, y, theta_deg;
     getPositionAndOrientation(x, y, theta_deg);
-    myprintf("S %.2f %.2f %.1f TOF%.3f OPP%.2f %.2f %.1f %s\n", x, y, theta_deg, filtered_tof_m, opponent_x, opponent_y,
-             to_degrees(opponent_theta), col);
+    myprintf("ROB %s %.3f,%.3f,%.0f TOF %.3f OPP %.3f,%.3f,%.0f\n", col, x, y, to_degrees(theta_deg), filtered_tof_m,
+             opponent_x, opponent_y, to_degrees(opponent_theta));
 }
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }

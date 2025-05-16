@@ -37,7 +37,7 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
 
     // 6. Convert the command to actuator commands (output)
     set_output(config, input, command, output, top_state);
-    myprintf("T %f \n", timer_get_us());
+    myprintf("T %.2f \n", timer_get_us() / 1000.0f);
 
     // 7. Debug: print output
     print_complete_output(output);

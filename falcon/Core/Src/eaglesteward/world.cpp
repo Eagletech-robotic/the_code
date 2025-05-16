@@ -100,8 +100,8 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
 
     constexpr int CHECK_INTERVAL = 200;
 
-    constexpr float COST_STRAIGHT = 10.0f;
-    constexpr float COST_DIAG = 14.1f;
+    constexpr float COST_STRAIGHT = SQUARE_SIZE_M;
+    constexpr float COST_DIAG = SQUARE_SIZE_M * 1.414f;
     // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
 
     struct Step {
@@ -152,6 +152,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
         }
     }
 
+    myprintf("!! COMPLETED DIJKSTRA\n");
     ready_field_ ^= 1;
     return false;
 }
@@ -198,7 +199,7 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
-        myprintf("Target angle: %f\n", to_degrees(out_yaw));
+        myprintf("Target angle: %f - distance: %f\n", to_degrees(out_yaw), potential[i][j]);
     }
 }
 

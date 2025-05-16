@@ -14,7 +14,6 @@ void descend(Command &command, State &state) {
 
     float x, y, orientation;
     state.getPositionAndOrientation(x, y, orientation);
-    myprintf("Position: x=%.3f y=%.3f angle=%.3f\n", x, y, to_degrees(orientation));
 
     bool is_local_minimum;
     float target_angle;
