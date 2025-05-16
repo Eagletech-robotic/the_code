@@ -135,14 +135,91 @@ Status evadeOpponent(input_t *input, Command *command, State *state) {
 }
 
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
-    return isBleacherPossiblyAtContact(*state) ? Status::SUCCESS : Status::FAILURE;
+    return state->tof_state == TofState::BLEACHER_CONTACT ? Status::SUCCESS : Status::FAILURE;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BuildingAreaWaypoint);
-    descend(*command, *state);
+    auto seq = sequence(
+        //
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, _orientation;
+            state_->getPositionAndOrientation(x, y, _orientation);
+            const auto [building_area, distance] = state_->world.closest_building_area(x, y);
 
-    return Status::RUNNING;
+            // Fail if no building areas available
+            if (distance == std::numeric_limits<float>::max()) {
+                myprintf("No available building area\n");
+                return Status::FAILURE;
+            }
+
+            // Inside a rectangle centered around the building area's orthogonal axis?
+            if (auto [local_x, local_y] = building_area.position_in_local_frame(x, y);
+                std::abs(local_x) <= BUILDING_AREA_ATTRACTION_HALF_LENGTH &&
+                std::abs(local_y) <= BUILDING_AREA_ATTRACTION_HALF_WIDTH) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Searching building area\n");
+                state_->world.set_target(TargetType::BuildingAreaWaypoint);
+                descend(*command_, *state_);
+                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+                return Status::RUNNING;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
+            auto [building_area, distance] = state_->world.closest_building_area(x, y);
+
+            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
+            constexpr float STOP_DISTANCE = 0.15f;
+
+            if (distance < STOP_DISTANCE) {
+                return Status::SUCCESS;
+            }
+
+            auto const [wp_x, wp_y] = building_area.waypoint();
+            auto const [target_x, target_y] = building_area.available_slot();
+            const bool has_arrived =
+                stanley_controller(x, y, orientation, wp_x, wp_y, target_x, target_y, target_x - (wp_x - target_x),
+                                   target_y - (wp_y - target_y), 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
+                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
+
+            if (has_arrived) {
+                return Status::SUCCESS;
+            } else {
+                myprintf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
+                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+                return Status::RUNNING;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
+            auto [building_area, distance] = state_->world.closest_building_area(x, y);
+            auto const [target_x, target_y] = building_area.available_slot();
+
+            const bool has_arrived = pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.15,
+                                                    &command_->target_left_speed, &command_->target_right_speed);
+
+            if (has_arrived) {
+                // Mark the slot as occupied
+                building_area.first_available_slot++;
+                return Status::SUCCESS;
+            } else {
+                myprintf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
+                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+                return Status::RUNNING;
+            }
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            myprintf("Building area close enough, dropping the bleacher\n");
+            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
+            command_->target_left_speed = 0.f;
+            command_->target_right_speed = 0.f;
+            return Status::RUNNING;
+        });
+
+    return seq(const_cast<input_t *>(input), command, state);
 }
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
@@ -151,20 +228,17 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
-            const auto [closest_bleacher, _distance] = state_->world.closest_bleacher(x, y);
+            const auto [bleacher, distance] = state_->world.closest_bleacher(x, y);
 
-            // Transform to bleacher‑local frame
-            float const dx = x - closest_bleacher.x;
-            float const dy = y - closest_bleacher.y;
-            float const cos_o = std::cos(closest_bleacher.orientation);
-            float const sin_o = std::sin(closest_bleacher.orientation);
-            float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
-            float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
+            // Fail if no bleachers available
+            if (distance == std::numeric_limits<float>::max()) {
+                myprintf("No bleacher found\n");
+                return Status::FAILURE;
+            }
 
-            myprintf("local_x %.3f  local_y %.3f\n", local_x, local_y);
-
-            // Inside a rectangle centered around the bleacher's orthogonal axis.
-            if (std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
+            // Inside a rectangle centered around the bleacher's orthogonal axis?
+            if (auto [local_x, local_y] = bleacher.position_in_local_frame(x, y);
+                std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
                 std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
             } else {
@@ -177,14 +251,13 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto [bleacher, distance_to_bleacher] = state_->world.closest_bleacher(x, y);
+            auto [bleacher, distance] = state_->world.closest_bleacher(x, y);
 
             constexpr float SLOW_DOWN_DISTANCE = 0.3f;
             constexpr float STOP_DISTANCE = 0.15f;
 
-            if (distance_to_bleacher < STOP_DISTANCE) {
+            if (distance < STOP_DISTANCE)
                 return Status::SUCCESS;
-            }
 
             auto const waypoints = bleacher.waypoints();
             constexpr float MAX = std::numeric_limits<float>::max();
@@ -198,12 +271,12 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                     farthest_waypoint = {wp_x, wp_y, squared_distance};
             }
 
-            const bool hasArrived =
+            const bool has_arrived =
                 stanley_controller(x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher.x, bleacher.y,
                                    farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
                                    SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
 
-            if (hasArrived) {
+            if (has_arrived) {
                 return Status::SUCCESS;
             } else {
                 myprintf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
@@ -213,17 +286,17 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto closest_bleacher = state_->world.closest_bleacher(x, y);
+            const auto bleacher = state_->world.closest_bleacher(x, y).first;
 
-            const bool hasArrived =
-                pid_controller(x, y, orientation, closest_bleacher.first.x, closest_bleacher.first.y, 0.8f, WHEELBASE_M,
-                               0.15, &command_->target_left_speed, &command_->target_right_speed);
+            const bool has_arrived = pid_controller(x, y, orientation, bleacher.x, bleacher.y, 0.8f, WHEELBASE_M, 0.15,
+                                                    &command_->target_left_speed, &command_->target_right_speed);
 
-            if (hasArrived) {
+            if (has_arrived) {
+                // Remove from the list of available bleachers.
+                state_->world.remove_bleacher(bleacher);
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching bleacher centre x=%.3f y=%.3f\n", closest_bleacher.first.x,
-                         closest_bleacher.first.y);
+                myprintf("Approaching bleacher centre x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
                 return Status::RUNNING;
             }
         },
@@ -302,10 +375,10 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 
     myprintf("B%d\r\n", state->target_nb);
-    const bool hasArrived =
+    const bool has_arrived =
         pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
                        0.08, &command->target_left_speed, &command->target_right_speed);
-    if (hasArrived) {
+    if (has_arrived) {
         state->target_nb++;
         return Status::SUCCESS;
     } else {

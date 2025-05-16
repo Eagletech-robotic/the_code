@@ -8,29 +8,22 @@
 
 #include "utils/angles.hpp"
 
-struct Waypoint {
-    float x; // metres
-    float y; // metres
-};
-
-static constexpr Waypoint backstageWaypoint = {0.35f, 1.40f};
-
-static constexpr Waypoint buildingAreaWaypoints[] = {
-    {0.775f, 0.35f},
-    {1.225f, 0.50f},
-    {2.775f, 0.35f},
-    {2.500f, 0.875f},
-};
-
 World::World(RobotColour colour) {
     colour_ = colour;
+    set_colour(colour);
 
-    // Some default values before we receive the first packet.
+    // Default bleachers
     bleachers_ = {
-        {0.075f, 0.400f, 0.0f},         {0.075f, 1.325f, 0.0f},         {0.775f, 0.250f, M_PI_2},
-        {0.825f, 1.725f, M_PI_2},       {1.100f, 0.950f, M_PI_2},       {3.f - 0.075f, 0.400f, 0.0f},
-        {3.f - 0.075f, 1.325f, 0.0f},   {3.f - 0.775f, 0.250f, M_PI_2}, {3.f - 0.825f, 1.725f, M_PI_2},
-        {3.f - 1.100f, 0.950f, M_PI_2},
+        {0.075f, 0.400f, 0.0f},
+        {0.075f, 1.325f, 0.0f},
+        {0.775f, 0.250f, M_PI_2},
+        {0.825f, 1.725f, M_PI_2},
+        {1.100f, 0.950f, M_PI_2},
+        {FIELD_WIDTH_M - 0.075f, 0.400f, 0.0f},
+        {FIELD_WIDTH_M - 0.075f, 1.325f, 0.0f},
+        {FIELD_WIDTH_M - 0.775f, 0.250f, M_PI_2},
+        {FIELD_WIDTH_M - 0.825f, 1.725f, M_PI_2},
+        {FIELD_WIDTH_M - 1.100f, 0.950f, M_PI_2},
     };
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
@@ -45,6 +38,34 @@ void World::set_target(TargetType new_target) {
 
     target_ = new_target;
     reset_dijkstra();
+}
+
+bool World::remove_bleacher(const Bleacher &bleacher) {
+    bool const has_removed = bleachers_.remove(bleacher);
+    if (has_removed) {
+        reset_dijkstra();
+    }
+    return has_removed;
+}
+
+void World::set_colour(RobotColour colour) {
+    colour_ = colour;
+
+    if (colour_ == RobotColour::Yellow) {
+        building_areas_ = {
+            {0.775f, 0.075f, M_PI_2, BuildingArea::Type::Small},
+            {1.225f, 0.225f, M_PI_2, BuildingArea::Type::Large},
+            {2.775f, 0.075f, M_PI_2, BuildingArea::Type::Small},
+            {2.775f, 0.875f, -M_PI, BuildingArea::Type::Large},
+        };
+    } else {
+        building_areas_ = {
+            {FIELD_WIDTH_M - 0.775f, 0.075f, M_PI_2, BuildingArea::Type::Small},
+            {FIELD_WIDTH_M - 1.225f, 0.225f, M_PI_2, BuildingArea::Type::Large},
+            {FIELD_WIDTH_M - 2.775f, 0.075f, M_PI_2, BuildingArea::Type::Small},
+            {FIELD_WIDTH_M - 2.775f, 0.875f, 0, BuildingArea::Type::Large},
+        };
+    }
 }
 
 void World::reset_dijkstra() {
@@ -72,13 +93,19 @@ void World::reset_dijkstra() {
     }
 
     if (target_ == TargetType::BackstageWaypoint) {
-        enqueue_grid_cell(colour_ == RobotColour::Yellow ? backstageWaypoint.x : FIELD_WIDTH_M - backstageWaypoint.x,
-                          backstageWaypoint.y);
+        if (colour_ == RobotColour::Yellow) {
+            enqueue_grid_cell(0.35f, 1.40f);
+        } else {
+            enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.40f);
+        }
     }
 
     if (target_ == TargetType::BuildingAreaWaypoint) {
-        for (auto [x, y] : buildingAreaWaypoints) {
-            enqueue_grid_cell(colour_ == RobotColour::Yellow ? x : FIELD_WIDTH_M - x, y);
+        for (auto &building_area : building_areas_) {
+            if (building_area.is_full())
+                continue;
+            auto [x, y] = building_area.waypoint();
+            enqueue_grid_cell(x, y);
         }
     }
 
@@ -158,7 +185,9 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
 }
 
 void World::update_from_eagle_packet(const EaglePacket &packet) {
-    colour_ = packet.robot_colour;
+    if (colour_ != packet.robot_colour) {
+        set_colour(packet.robot_colour);
+    }
 
     // Reset objects
     bleachers_.clear();
@@ -205,34 +234,38 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
 
 std::pair<Bleacher, float> World::closest_bleacher(float x, float y) const {
     Bleacher best;
-    float best_d = 1e9f;
-
-    for (const auto &b : bleachers_) {
-        float dx = x - b.x;
-        float dy = y - b.y;
-        float d = std::sqrt(dx * dx + dy * dy);
-        if (d < best_d)
-            best_d = d, best = b;
-    }
-    return {best, best_d};
-}
-
-std::pair<Bleacher, float> World::closest_bleacher_waypoint(float x, float y) const {
-    Bleacher best_bleacher;
-    float best_distance = 1e9f;
+    float best_distance = std::numeric_limits<float>::max();
 
     for (const auto &bleacher : bleachers_) {
-        for (const auto &[wx, wy] : bleacher.waypoints()) {
-            const float dx = x - wx;
-            const float dy = y - wy;
-            const float distance = std::sqrt(dx * dx + dy * dy);
-            if (distance < best_distance) {
-                best_distance = distance;
-                best_bleacher = bleacher;
-            }
+        auto const dx = x - bleacher.x;
+        auto const dy = y - bleacher.y;
+        auto const distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < best_distance) {
+            best_distance = distance, best = bleacher;
         }
     }
-    return {best_bleacher, best_distance};
+
+    return {best, best_distance};
+}
+
+std::pair<BuildingArea, float> World::closest_building_area(float x, float y) const {
+    BuildingArea best;
+    float best_distance = std::numeric_limits<float>::max();
+
+    for (const auto &building_area : building_areas_) {
+        if (building_area.is_full())
+            continue;
+        auto const [slot_x, slot_y] = building_area.available_slot();
+        float const dx = x - slot_x;
+        float const dy = y - slot_y;
+        float const distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < best_distance) {
+            best_distance = distance;
+            best = building_area;
+        }
+    }
+
+    return {best, best_distance};
 }
 
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }

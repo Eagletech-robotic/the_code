@@ -30,6 +30,9 @@ class World {
     /** Set the next target for the robot. */
     void set_target(TargetType target);
 
+    /** The bleacher has been picked up by our robot. */
+    bool remove_bleacher(const Bleacher &bleacher);
+
     /** Replace objects with those found in EaglePacket. */
     void update_from_eagle_packet(const EaglePacket &packet);
 
@@ -44,7 +47,8 @@ class World {
 
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
-    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher_waypoint(float x, float y) const;
+
+    [[nodiscard]] std::pair<BuildingArea, float> closest_building_area(float x, float y) const;
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
@@ -53,19 +57,24 @@ class World {
 
     // State of the world
     SizedArray<Bleacher, 10> bleachers_;
+    SizedArray<BuildingArea, 4> building_areas_;
 
     // Potential field
-    TargetType target_ = TargetType::None;
+    TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
     BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
 
+    void set_colour(RobotColour colour);
+
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
     void reset_dijkstra();
+
     bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
 
     static bool is_in_field(float x, float y);
+
     static bool is_in_field_square(int i, int j);
 };

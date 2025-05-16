@@ -1,34 +1,18 @@
 #include "eaglesteward/game_entities.hpp"
 
 #include <cmath>
-#include <stdexcept>
 
-const std::array<std::array<float, BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM>,
-                 BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM> &
-Bleacher::potential_field() {
-    constexpr int size = BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM;
-    static std::array<std::array<float, size>, size> field;
-
-    constexpr float center_x = size / 2.0f;
-    constexpr float center_y = size / 2.0f;
-
-    for (int loop_x = 0; loop_x < size; loop_x++) {
-        for (int loop_y = 0; loop_y < size; loop_y++) {
-            float dx = std::abs(static_cast<float>(loop_x) - center_x);
-            float dy = std::abs(static_cast<float>(loop_y) - center_y);
-            field[loop_x][loop_y] = potential_function(dx, dy);
-        }
-    }
-
-    return field;
-}
-
-float Bleacher::potential_function(const float dx, const float dy) {
-    constexpr int scale = BLEACHER_INFLUENCE_SIZE / SQUARE_SIZE_CM;
-    float const clamped_dx = dx / static_cast<float>(scale) * static_cast<float>(M_PI);
-    float const clamped_dy = dy / static_cast<float>(scale) * static_cast<float>(M_PI);
-    float const value = -std::exp(-clamped_dx - clamped_dy) / (1 + clamped_dx * clamped_dx + clamped_dy * clamped_dy);
-    return value * static_cast<float>(scale) / static_cast<float>(M_PI);
+/**
+ * Return the coordinates of the robot in the frame of the given entity.
+ */
+std::pair<float, float> GameEntity::position_in_local_frame(float robot_x, float robot_y) const {
+    float const dx = robot_x - x;
+    float const dy = robot_y - y;
+    float const cos_o = std::cos(orientation);
+    float const sin_o = std::sin(orientation);
+    float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
+    float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
+    return {local_x, local_y};
 }
 
 std::array<std::pair<float, float>, 2> Bleacher::waypoints() const {
@@ -38,4 +22,19 @@ std::array<std::pair<float, float>, 2> Bleacher::waypoints() const {
         {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny},
         {x - BLEACHER_WAYPOINT_DISTANCE * nx, y - BLEACHER_WAYPOINT_DISTANCE * ny},
     }};
+}
+
+std::pair<float, float> BuildingArea::available_slot() const {
+    if (type == Type::Small) {
+        return {x, y};
+    } else {
+        const float from_center = static_cast<float>(first_available_slot - 1) * 0.15f;
+        return {x + std::cos(orientation) * from_center, y + std::sin(orientation) * from_center};
+    }
+}
+
+std::pair<float, float> BuildingArea::waypoint() const {
+    auto [slot_x, slot_y] = available_slot();
+    return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
+            slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE};
 }
