@@ -10,8 +10,8 @@
 State top_state;
 
 void top_init(config_t &config) {
-    config.time_step_s = 0.004f; // il faudrait 250hz, les get par I2C sont trop lent
-    top_state.reset();
+    config.time_step_s = 0.004f;
+    top_state = State(); // Call the constructor explicitly, as the simulator does not construct global variables.
     motor_init(config, top_state);
 }
 

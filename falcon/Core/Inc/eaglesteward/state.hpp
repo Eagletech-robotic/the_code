@@ -9,7 +9,7 @@ enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTA
 
 class State {
   public:
-    State();
+    State() { reset(); }
 
     void reset();
 
