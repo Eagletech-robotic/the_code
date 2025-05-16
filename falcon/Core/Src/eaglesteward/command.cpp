@@ -1,5 +1,9 @@
 #include "eaglesteward/command.hpp"
 
+#ifdef SIMULATOR
+#include <cstring> // memcpy
+#endif
+
 #include "eaglesteward/motor.hpp"
 
 void set_output(const config_t &config, const input_t &input, const Command &command, output_t &output, State &state) {
@@ -23,4 +27,9 @@ void set_output(const config_t &config, const input_t &input, const Command &com
     } else {
         output.led_ratio = 0.f;
     }
+
+#ifdef SIMULATOR
+    std::memcpy(output.potential_field.front().data(), state.world.potential_ready().front().data(),
+                sizeof(output.potential_field));
+#endif
 }

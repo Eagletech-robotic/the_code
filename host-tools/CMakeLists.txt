@@ -50,7 +50,7 @@ if (EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 
     # Comiler flags
-    target_compile_options(simulator_connector PRIVATE "-O2" "-g")
+    target_compile_options(simulator_connector PRIVATE "-O2" "-g" "-DSIMULATOR")
 
     # Linker flags
     target_link_options(simulator_connector PRIVATE
