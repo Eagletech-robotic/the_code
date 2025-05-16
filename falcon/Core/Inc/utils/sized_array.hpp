@@ -98,6 +98,17 @@ template <typename T, size_t Capacity> class SizedArray {
     }
 
     /**
+     * @brief Removes the first occurrence of a value from the array.
+     */
+    bool remove(const T &value) {
+        auto new_end_iterator = std::remove(begin(), end(), value);
+        if (new_end_iterator == end())
+            return false;
+        size_--;
+        return true;
+    }
+
+    /**
      * @brief Clears the array.
      */
     void clear() { size_ = 0; }
