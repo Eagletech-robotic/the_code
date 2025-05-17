@@ -24,8 +24,8 @@ if (NOT EMSCRIPTEN)
 
     target_compile_definitions(thibault_debug PRIVATE MYPRINTF_ALWAYS)
 
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra")
-    set(CMAKE_C_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -Wall -Wextra -Wshadow -Wpedantic")
+    set(CMAKE_C_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -Wall -Wextra -Wshadow -Wpedantic")
 
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -ffast-math -funsafe-math-optimizations -Wall -Wextra")
     set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -flto -ffast-math -funsafe-math-optimizations -Wall -Wextra")
