@@ -38,7 +38,8 @@ World::World(RobotColour colour) {
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    while (do_some_calculations([]() { return true; }));
+    while (do_some_calculations([]() { return true; }))
+        ;
 }
 
 void World::set_target(TargetType new_target) {
@@ -59,7 +60,7 @@ bool World::remove_bleacher(const Bleacher &bleacher) {
 
 void World::reset_dijkstra() {
     // Clear the potential field and the queue
-    for (auto &row: potential_calculating()) {
+    for (auto &row : potential_calculating()) {
         std::fill(row.begin(), row.end(), FLT_MAX);
     }
     pqueue_.clear();
@@ -74,8 +75,8 @@ void World::reset_dijkstra() {
 
     // Add targets to the queue
     if (target_ == TargetType::BleacherWaypoint) {
-        for (const auto &bleacher: bleachers_) {
-            for (auto [x, y]: bleacher.waypoints()) {
+        for (const auto &bleacher : bleachers_) {
+            for (auto [x, y] : bleacher.waypoints()) {
                 enqueue_grid_cell(x, y);
             }
         }
@@ -90,7 +91,7 @@ void World::reset_dijkstra() {
     }
 
     if (target_ == TargetType::BuildingAreaWaypoint) {
-        for (auto &building_area: building_areas_) {
+        for (auto &building_area : building_areas_) {
             if (building_area.is_full() || building_area.colour != colour_)
                 continue;
             auto [x, y] = building_area.waypoint();
@@ -106,7 +107,8 @@ bool World::do_some_calculations(const std::function<bool()> &can_continue) {
 }
 
 void World::do_all_calculations_LONG() {
-    while (do_some_calculations([]() { return true; }));
+    while (do_some_calculations([]() { return true; }))
+        ;
 }
 
 bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) {
@@ -123,11 +125,9 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
         int dx, dy;
         float cost;
     };
-    static constexpr Step steps[8] = {
-        {-1, -1, COST_DIAG}, {0, -1, COST_STRAIGHT}, {1, -1, COST_DIAG},
-        {-1, 0, COST_STRAIGHT}, {1, 0, COST_STRAIGHT}, {-1, 1, COST_DIAG},
-        {0, 1, COST_STRAIGHT}, {1, 1, COST_DIAG}
-    };
+    static constexpr Step steps[8] = {{-1, -1, COST_DIAG},    {0, -1, COST_STRAIGHT}, {1, -1, COST_DIAG},
+                                      {-1, 0, COST_STRAIGHT}, {1, 0, COST_STRAIGHT},  {-1, 1, COST_DIAG},
+                                      {0, 1, COST_STRAIGHT},  {1, 1, COST_DIAG}};
 
     /*const int MAX_DISTANCE = std::ceil(std::max(FIELD_WIDTH_SQ, FIELD_HEIGHT_SQ) *
                                            std::max({COST_STRAIGHT, COST_DIAG, COST_MOVABLE_OBSTACLE}));*/
@@ -151,12 +151,12 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
 
         pqueue_.pop();
 
-        for (const Step &step: steps) {
+        for (const Step &step : steps) {
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
             if (!is_in_field_square(newX, newY)) [[unlikely]]
-                    continue;
+                continue;
 
             const float cost = step.cost + baseDist;
 
@@ -225,6 +225,7 @@ std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) c
     float best_distance = std::numeric_limits<float>::max();
 
     for (const auto &bleacher: bleachers_) {
+    for (const auto &bleacher : bleachers_) {
         if (bleacher.in_building_area(building_areas_))
             continue;
         auto const dx = x - bleacher.x;
@@ -260,7 +261,7 @@ std::pair<BuildingArea, float> World::closest_available_building_area(float x, f
     BuildingArea best;
     float best_distance = std::numeric_limits<float>::max();
 
-    for (const auto &building_area: building_areas_) {
+    for (const auto &building_area : building_areas_) {
         if (building_area.is_full() || building_area.colour != colour_)
             continue;
         auto const [slot_x, slot_y] = building_area.available_slot();
