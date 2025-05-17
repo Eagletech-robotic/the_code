@@ -19,7 +19,8 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 
     for (int x = 0; x < width; ++x) {
         for (int y = 0; y < height; ++y) {
-            if (potential_field[x][y] == FLT_MAX) continue;
+            if (potential_field[x][y] == FLT_MAX)
+                continue;
             if (potential_field[x][y] < minValue)
                 minValue = potential_field[x][y];
             if (potential_field[x][y] > maxValue)
@@ -49,18 +50,18 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 }
 
 void print_complete_input(const input_t &input) {
-    myprintf("Input: jack_removed:%d tof_m:%.3f delta_yaw:%.3f delta_encoder_left:%d delta_encoder_right:%d "
-             "imu_yaw:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
-             input.jack_removed, input.tof_m, to_degrees(input.delta_yaw),
-             static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
-             static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
-             to_degrees(input.imu_yaw), input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss,
-             input.blue_button,
-             static_cast<unsigned int>(input.clock_ms)); // STM32 passes uint32_t as long unsigned int
+    host_printf(
+        "Input: jack_removed:%d tof_m:%.3f delta_yaw:%.3f delta_encoder_left:%d delta_encoder_right:%d "
+        "imu_yaw:%.3f imu_accel_x_mss:%.3f imu_accel_y_mss:%.3f imu_accel_z_mss:%.3f blue_button:%d clock_ms:%u",
+        input.jack_removed, input.tof_m, to_degrees(input.delta_yaw),
+        static_cast<int>(input.delta_encoder_left),  // STM32 passes int32_t as long int
+        static_cast<int>(input.delta_encoder_right), // STM32 passes int32_t as long int
+        to_degrees(input.imu_yaw), input.imu_accel_x_mss, input.imu_accel_y_mss, input.imu_accel_z_mss,
+        input.blue_button,
+        static_cast<unsigned int>(input.clock_ms)); // STM32 passes uint32_t as long unsigned int
 }
 
 void print_complete_output(const output_t &output) {
-    myprintf("Output: motor_left_ratio:%.3f motor_right_ratio:%.3f shovel_ratio:%.3f "
-             "led_ratio:%.3f",
-             output.motor_left_ratio, output.motor_right_ratio, output.shovel_ratio, output.led_ratio);
+    host_printf("Output left:%.3f right:%.3f shovel:%.3f led:%.3f", output.motor_left_ratio, output.motor_right_ratio,
+                output.shovel_ratio, output.led_ratio);
 }

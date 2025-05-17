@@ -99,7 +99,7 @@ void World::reset_dijkstra() {
         }
     }
 
-    myprintf("!!!! RESET DIJSKTRA - queue size: %lu\n", pqueue_.size());
+    printf("RES_DIJSKTRA(%lu)\n", pqueue_.size());
 }
 
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
@@ -157,7 +157,8 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
-            if (static_cast<uint>(newX) >= FIELD_WIDTH_SQ || static_cast<uint>(newY) >= FIELD_HEIGHT_SQ) [[unlikely]]
+            if (static_cast<uint32_t>(newX) >= FIELD_WIDTH_SQ || static_cast<uint32_t>(newY) >= FIELD_HEIGHT_SQ)
+                [[unlikely]]
                 continue;
 
             const int newIdx = newX * FIELD_HEIGHT_SQ + newY;
@@ -182,7 +183,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
         }
     }
 
-    myprintf("!! COMPLETED DIJKSTRA\n");
+    printf("COMP_DIJSKTRA\n");
     ready_field_ ^= 1;
     return false;
 }

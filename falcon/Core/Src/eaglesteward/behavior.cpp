@@ -161,7 +161,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             // Fail if no building areas available
             if (distance == std::numeric_limits<float>::max()) {
-                myprintf("No available building area\n");
+                host_printf("No building area\n");
                 return Status::FAILURE;
             }
 
@@ -171,7 +171,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 std::abs(local_y) <= BUILDING_AREA_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
             } else {
-                myprintf("Searching building area\n");
+                host_printf("Searching\n");
+                mcu_printf("BA-SRCH\n");
                 state_->world.set_target(TargetType::BuildingAreaWaypoint);
                 descend(*command_, *state_);
                 command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
@@ -200,7 +201,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             if (has_arrived) {
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
+                host_printf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
+                mcu_printf("BA-APP\n");
                 command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
                 return Status::RUNNING;
             }
@@ -219,13 +221,15 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 building_area.first_available_slot++;
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
+                host_printf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
+                mcu_printf("BA-APPCNT\n");
                 command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
                 return Status::RUNNING;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            myprintf("Building area close enough, dropping the bleacher\n");
+            host_printf("Building area close enough, dropping the bleacher\n");
+            mcu_printf("BA-ARR\n");
             command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
@@ -246,7 +250,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             // Fail if no bleachers available
             if (distance == std::numeric_limits<float>::max()) {
-                myprintf("No bleacher found\n");
+                host_printf("No bleacher\n");
                 return Status::FAILURE;
             }
 
@@ -256,7 +260,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
             } else {
-                myprintf("Searching bleacher\n");
+                host_printf("Searching\n");
+                mcu_printf("BL-SRCH\n");
                 state_->world.set_target(TargetType::BleacherWaypoint);
                 descend(*command_, *state_);
                 return Status::RUNNING;
@@ -293,7 +298,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (has_arrived) {
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
+                host_printf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
+                mcu_printf("BL-APP\n");
                 return Status::RUNNING;
             }
         },
@@ -310,12 +316,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 state_->world.remove_bleacher(bleacher);
                 return Status::SUCCESS;
             } else {
-                myprintf("Approaching bleacher centre x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
+                host_printf("Approaching bleacher centre x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
+                mcu_printf("BL-APPCNT\n");
                 return Status::RUNNING;
             }
         },
         [](input_t *input_, Command *command_, State *state_) {
-            myprintf("Bleacher close enough, stopping\n");
+            host_printf("Bleacher close enough, stopping\n");
+            mcu_printf("BL-ARR\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
@@ -347,7 +355,8 @@ Status isBackstagePhaseNotActive(input_t *input, Command *command, State *state)
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
-    myprintf("Aller en backstage\n");
+    host_printf("Aller en backstage\n");
+    mcu_printf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
     descend(*command, *state);
 
@@ -356,7 +365,8 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
 
 Status waitBeforeGame(input_t *input, Command *command, State *state) {
     if (input->blue_button) {
-        myprintf("Blue button pressed\n");
+        host_printf("Blue button pressed\n");
+        mcu_printf("BUTTON\n");
         state->reset();
     }
     command->target_left_speed = 0.f;
@@ -367,7 +377,7 @@ Status waitBeforeGame(input_t *input, Command *command, State *state) {
 
 // Attente indéfinie
 Status holdAfterEnd(input_t *input, Command *command, State *state) {
-    myprintf("Holding after game ends\n");
+    host_printf("Holding after game ends\n");
     command->target_left_speed = 0.f;
     command->target_right_speed = 0.f;
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;

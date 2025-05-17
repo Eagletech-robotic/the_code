@@ -41,6 +41,4 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
 
     // 7. Debug: print output
     print_complete_output(output);
-    // myprintf("Ratios: left=%.3f, right=%.3f, pelle=%.3f\n", output.motor_left_ratio, output.motor_right_ratio,
-    //          output.shovel_ratio);
 }
