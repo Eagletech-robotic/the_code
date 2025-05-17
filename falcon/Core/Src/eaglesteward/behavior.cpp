@@ -448,18 +448,30 @@ Status infiniteRectangle(const input_t *input, Command *command, State *state) {
     return seq(const_cast<input_t *>(input), command, state);
 }
 
+Status goForward(const input_t *input, Command *command, State *state) {
+    command->target_left_speed = 0.3f;
+    command->target_right_speed = 0.3f;
+    float x, y, orientation;
+    state->getPositionAndOrientation(x, y, orientation);
+    myprintf("left %d right %d imu_x:%.3f imu_y:%3.f x:%.3f y:%.3f\n", input->delta_encoder_left,
+             input->delta_encoder_right, state->imu_x, state->imu_y, x, y);
+
+    return Status::RUNNING;
+}
+
 // Top level node
 Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
 
     auto root = sequence( //
-        alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
-        alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
-        alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
-        alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
-        alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
-        alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher),
-        alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
-        alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
+        alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame), goForward
+        // alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
+        // alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
+        // alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
+        // alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
+        // alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher),
+        // alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
+        // alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea)
+    );
     return root(const_cast<input_t *>(input), command, state);
 }
