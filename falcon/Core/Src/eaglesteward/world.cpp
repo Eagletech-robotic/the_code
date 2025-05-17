@@ -220,23 +220,44 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     }
 }
 
+/**
+ * Confident bleachers are returned first. If there are no confident bleachers, the closest uncertain bleacher is
+ * returned.
+ */
 std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) const {
-    Bleacher best;
-    float best_distance = std::numeric_limits<float>::max();
+    Bleacher best_confident;
+    float best_confident_dist = std::numeric_limits<float>::max();
+    Bleacher best_uncertain;
+    float best_uncertain_dist = std::numeric_limits<float>::max();
 
-    for (const auto &bleacher: bleachers_) {
-    for (const auto &bleacher : bleachers_) {
+    for (auto const &bleacher : bleachers_) {
         if (bleacher.in_building_area(building_areas_))
             continue;
         auto const dx = x - bleacher.x;
         auto const dy = y - bleacher.y;
         auto const distance = std::sqrt(dx * dx + dy * dy);
-        if (distance < best_distance) {
-            best_distance = distance, best = bleacher;
+
+        if (!bleacher.uncertain) {
+            if (distance < best_confident_dist) {
+                best_confident_dist = distance;
+                best_confident = bleacher;
+            }
+        } else {
+            if (distance < best_uncertain_dist) {
+                best_uncertain_dist = distance;
+                best_uncertain = bleacher;
+            }
         }
     }
 
-    return {best, best_distance};
+    if (best_confident_dist < std::numeric_limits<float>::max())
+        return {best_confident, best_confident_dist};
+
+    if (best_uncertain_dist < std::numeric_limits<float>::max())
+        return {best_uncertain, best_uncertain_dist};
+
+    // no bleacher found
+    return {Bleacher{}, std::numeric_limits<float>::max()};
 }
 
 std::pair<Bleacher, float> World::closest_dropped_bleacher(float x, float y) const {
