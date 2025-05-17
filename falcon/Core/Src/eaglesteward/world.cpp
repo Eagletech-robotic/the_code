@@ -119,7 +119,8 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
 
     constexpr float COST_STRAIGHT = SQUARE_SIZE_M;
     constexpr float COST_DIAG = SQUARE_SIZE_M * 1.414f;
-    // constexpr float COST_MOVABLE_OBSTACLE = 50.0f;
+
+    constexpr float MOVABLE_OBSTACLE_COST_MULTIPLIER = 2.5f;
 
     struct Step {
         int dx, dy;
@@ -132,6 +133,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
     /*const int MAX_DISTANCE = std::ceil(std::max(FIELD_WIDTH_SQ, FIELD_HEIGHT_SQ) *
                                            std::max({COST_STRAIGHT, COST_DIAG, COST_MOVABLE_OBSTACLE}));*/
 
+    const ObstacleType *obstaclesField = obstacles_field_[ready_field_].data();
     float *potential = potential_calculating().data()->data();
 
     for (int it = 0; !pqueue_.empty(); ++it) {
@@ -155,13 +157,24 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
             const int newX = x + step.dx;
             const int newY = y + step.dy;
 
-            if (!is_in_field_square(newX, newY)) [[unlikely]]
+            if (static_cast<uint>(newX) >= FIELD_WIDTH_SQ || static_cast<uint>(newY) >= FIELD_HEIGHT_SQ) [[unlikely]]
                 continue;
 
-            const float cost = step.cost + baseDist;
-
             const int newIdx = newX * FIELD_HEIGHT_SQ + newY;
-            float &distSquare = potential[newIdx];
+
+            if (obstaclesField[newIdx] == ObstacleType::Fixed) [[unlikely]] {
+                continue;
+            }
+
+            float stepCost = step.cost;
+
+            if (obstaclesField[newIdx] == ObstacleType::Movable) [[unlikely]] {
+                stepCost *= MOVABLE_OBSTACLE_COST_MULTIPLIER;
+            }
+
+            float cost = stepCost + baseDist;
+
+            float &distSquare = potential[newIdx]; // Take a reference to the element in the potential field
             if (distSquare > cost) {
                 distSquare = cost;
                 pqueue_.emplace(distSquare, newX, newY);

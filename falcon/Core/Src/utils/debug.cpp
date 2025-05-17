@@ -19,6 +19,7 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 
     for (int x = 0; x < width; ++x) {
         for (int y = 0; y < height; ++y) {
+            if (potential_field[x][y] == FLT_MAX) continue;
             if (potential_field[x][y] < minValue)
                 minValue = potential_field[x][y];
             if (potential_field[x][y] > maxValue)
@@ -28,6 +29,10 @@ void visualize_potential_field(std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
 
     for (int y = height - 1; y >= 0; --y) {
         for (int x = 0; x < width; ++x) {
+            if (potential_field[x][y] == FLT_MAX) {
+                printf("\033[48;5;0m  \033[0m"); // Print black for obstacles
+                continue;
+            }
             float range = maxValue - minValue;
             if (range == 0)
                 range = FLT_MIN;

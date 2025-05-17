@@ -16,6 +16,8 @@ struct PQueueNode {
     bool operator<(const PQueueNode &other) const { return distance > other.distance; }
 };
 
+enum class ObstacleType { None, Fixed, Movable };
+
 enum class TargetType {
     None,
     BleacherWaypoint,
@@ -54,7 +56,6 @@ class World {
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
-  private:
     RobotColour colour_;
 
     // State of the world
@@ -65,6 +66,8 @@ class World {
     TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
+
+    std::array<std::array<ObstacleType, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> obstacles_field_{};
 
     BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
 
