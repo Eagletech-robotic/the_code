@@ -238,6 +238,24 @@ std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) c
     return {best, best_distance};
 }
 
+std::pair<Bleacher, float> World::closest_dropped_bleacher(float x, float y) const {
+    Bleacher best;
+    float best_distance = std::numeric_limits<float>::max();
+
+    for (const auto &bleacher : bleachers_) {
+        if (!bleacher.in_building_area(building_areas_))
+            continue;
+        auto const dx = x - bleacher.x;
+        auto const dy = y - bleacher.y;
+        auto const distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < best_distance) {
+            best_distance = distance, best = bleacher;
+        }
+    }
+
+    return {best, best_distance};
+}
+
 std::pair<BuildingArea, float> World::closest_available_building_area(float x, float y) const {
     BuildingArea best;
     float best_distance = std::numeric_limits<float>::max();

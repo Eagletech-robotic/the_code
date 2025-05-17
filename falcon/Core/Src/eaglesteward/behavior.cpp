@@ -135,7 +135,20 @@ Status evadeOpponent(input_t *input, Command *command, State *state) {
 }
 
 Status hasBleacherAttached(input_t *input, Command *command, State *state) {
-    return state->tof_state == TofState::BLEACHER_CONTACT ? Status::SUCCESS : Status::FAILURE;
+    return state->bleacher_lifted ? Status::SUCCESS : Status::FAILURE;
+}
+
+Status isClearOfDroppedBleacher(input_t *input, Command *command, State *state) {
+    float x, y, _orientation;
+    state->getPositionAndOrientation(x, y, _orientation);
+    const auto [bleacher, distance] = state->world.closest_dropped_bleacher(x, y);
+    return (distance >= 0.3f ? Status::SUCCESS : Status::FAILURE);
+}
+
+Status escapeBleacher(input_t *input, Command *command, State *state) {
+    command->target_left_speed = -0.3f;
+    command->target_right_speed = -0.3f;
+    return Status::RUNNING;
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
@@ -216,6 +229,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
+            state_->bleacher_lifted = false;
             return Status::RUNNING;
         });
 
@@ -305,6 +319,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
+            state_->bleacher_lifted = true;
             return Status::RUNNING;
         });
 
@@ -433,6 +448,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
+        alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher),
         alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);

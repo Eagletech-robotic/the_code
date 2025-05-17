@@ -18,8 +18,7 @@ struct GameEntity {
 
     GameEntity() = default;
 
-    GameEntity(float x_val, float y_val, float orientation_val) : x(x_val), y(y_val), orientation(orientation_val) {
-    }
+    GameEntity(float x_val, float y_val, float orientation_val) : x(x_val), y(y_val), orientation(orientation_val) {}
 
     bool operator==(const GameEntity &game_entity) const = default;
 
@@ -28,11 +27,12 @@ struct GameEntity {
 
 // Bleacher class
 class Bleacher : public GameEntity {
-public:
+  public:
+    bool uncertain = false; // True if the bleacher was not detected by the TOF
+
     Bleacher() = default;
 
-    Bleacher(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {
-    }
+    Bleacher(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
 
     [[nodiscard]] std::array<std::pair<float, float>, 2> waypoints() const;
 
@@ -41,7 +41,7 @@ public:
 
 // BuildingArea class
 class BuildingArea : public GameEntity {
-public:
+  public:
     // x, y: position of the center of the building area
 
     enum class Type { Small, Large };
@@ -66,17 +66,15 @@ public:
     [[nodiscard]] bool is_full() const { return first_available_slot == nb_available_slots(); }
 
     [[nodiscard]] float span_x() const {
-        return is_horizontal()
-                   ? (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE)
-                   : BUILDING_AREA_WIDTH;
+        return is_horizontal() ? (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE)
+                               : BUILDING_AREA_WIDTH;
     }
 
     [[nodiscard]] float span_y() const {
-        return is_horizontal()
-                   ? BUILDING_AREA_WIDTH
-                   : (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE);
+        return is_horizontal() ? BUILDING_AREA_WIDTH
+                               : (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE);
     }
 
-private:
+  private:
     [[nodiscard]] bool is_horizontal() const { return std::abs(fmodf(orientation, M_PI)) < 0.1f; }
 };

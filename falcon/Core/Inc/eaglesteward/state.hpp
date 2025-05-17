@@ -48,6 +48,7 @@ class State {
     // TOF
     float filtered_tof_m{1.f};
     TofState tof_state{TofState::CLEAR_PATH};
+    bool bleacher_lifted{false};
 
     // Motors
     PID_t pid_diff{};
