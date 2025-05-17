@@ -24,9 +24,11 @@ if (NOT EMSCRIPTEN)
 
     target_compile_definitions(thibault_debug PRIVATE MYPRINTF_ALWAYS)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -march=native -flto -ffast-math -funsafe-math-optimizations")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O3 -march=native -ffast-math -funsafe-math-optimizations")
-    set(COMMON_FLAGS "${COMMON_FLAGS} -g -fsanitize=address,undefined -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra")
+    set(CMAKE_C_FLAGS_DEBUG "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra")
+
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -ffast-math -funsafe-math-optimizations -Wall -Wextra")
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -flto -ffast-math -funsafe-math-optimizations -Wall -Wextra")
 endif ()
 
 # Simulator connector (WASM binary)
