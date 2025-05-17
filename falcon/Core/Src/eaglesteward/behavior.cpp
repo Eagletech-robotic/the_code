@@ -144,7 +144,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
-            const auto [building_area, distance] = state_->world.closest_building_area(x, y);
+            const auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
 
             // Fail if no building areas available
             if (distance == std::numeric_limits<float>::max()) {
@@ -168,7 +168,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto [building_area, distance] = state_->world.closest_building_area(x, y);
+            auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
 
             constexpr float SLOW_DOWN_DISTANCE = 0.3f;
             constexpr float STOP_DISTANCE = 0.15f;
@@ -195,7 +195,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto [building_area, distance] = state_->world.closest_building_area(x, y);
+            auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
             auto const [target_x, target_y] = building_area.available_slot();
 
             const bool has_arrived = pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.15,
@@ -228,7 +228,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
-            const auto [bleacher, distance] = state_->world.closest_bleacher(x, y);
+            const auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
 
             // Fail if no bleachers available
             if (distance == std::numeric_limits<float>::max()) {
@@ -251,7 +251,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto [bleacher, distance] = state_->world.closest_bleacher(x, y);
+            auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
 
             constexpr float SLOW_DOWN_DISTANCE = 0.3f;
             constexpr float STOP_DISTANCE = 0.15f;
@@ -286,7 +286,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *input_, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            const auto bleacher = state_->world.closest_bleacher(x, y).first;
+            const auto bleacher = state_->world.closest_available_bleacher(x, y).first;
 
             const bool has_arrived = pid_controller(x, y, orientation, bleacher.x, bleacher.y, 0.8f, WHEELBASE_M, 0.15,
                                                     &command_->target_left_speed, &command_->target_right_speed);

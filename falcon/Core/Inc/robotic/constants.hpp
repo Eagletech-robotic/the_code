@@ -28,8 +28,9 @@ static constexpr float BLEACHER_ATTRACTION_HALF_WIDTH = 0.15f; // Width of the a
 
 // Building area
 static constexpr float BUILDING_AREA_WAYPOINT_DISTANCE = 0.4f; // Distance to the edge oriented toward the field
-static constexpr float BUILDING_AREA_WIDTH_SMALL = 0.15f;
-static constexpr float BUILDING_AREA_WIDTH_LARGE = 0.45f;
+static constexpr float BUILDING_AREA_LENGTH_SMALL = 0.15f;
+static constexpr float BUILDING_AREA_LENGTH_LARGE = 0.45f;
+static constexpr float BUILDING_AREA_WIDTH = 0.45f;
 static constexpr float BUILDING_AREA_ATTRACTION_HALF_LENGTH =
     0.5f; // Length of the attraction area along orthogonal axis
 static constexpr float BUILDING_AREA_ATTRACTION_HALF_WIDTH = 0.15f; // Width of the attraction area along bleacher axis

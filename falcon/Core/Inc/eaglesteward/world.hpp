@@ -46,9 +46,9 @@ class World {
     void do_all_calculations_LONG();
 
     /** Return the closest bleacher to the given coordinates. */
-    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher, float> closest_available_bleacher(float x, float y) const;
 
-    [[nodiscard]] std::pair<BuildingArea, float> closest_building_area(float x, float y) const;
+    [[nodiscard]] std::pair<BuildingArea, float> closest_available_building_area(float x, float y) const;
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
@@ -57,7 +57,7 @@ class World {
 
     // State of the world
     SizedArray<Bleacher, 10> bleachers_;
-    SizedArray<BuildingArea, 4> building_areas_;
+    SizedArray<BuildingArea, 8> building_areas_;
 
     // Potential field
     TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
@@ -65,8 +65,6 @@ class World {
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
     BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
-
-    void set_colour(RobotColour colour);
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
