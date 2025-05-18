@@ -146,6 +146,7 @@ Status carryBleacher(input_t *input, Command *command, State *state) {
             // ... and mark the bleacher as uncertain.
             if (carried_bleacher) {
                 carried_bleacher->uncertain = true;
+                state->world.reset_dijkstra();
             }
         } else {
             // Keep the shovel extended
@@ -398,7 +399,7 @@ Status goToBackstage(input_t *, Command *command, State *state) {
     mcu_printf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
     descend(*command, *state);
-
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
     return Status::RUNNING;
 }
 

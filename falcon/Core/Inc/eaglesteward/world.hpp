@@ -53,8 +53,7 @@ class World {
     /** Do all calculations. Used to pre-compute the potential field. */
     void do_all_calculations_LONG();
 
-    /** Return the closest bleacher to the given coordinates.
-     * Confident bleachers are returned in priority. */
+    /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher *, float> closest_available_bleacher(float x, float y);
 
     [[nodiscard]] std::pair<Bleacher *, float> closest_bleacher_in_building_area(float x, float y);
