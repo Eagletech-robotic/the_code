@@ -45,7 +45,7 @@ void Initialize(PID_t *pid) {
 }
 
 void pid_init(PID_t *pid) {
-    PID_t pid_ = {0};
+    PID_t pid_ = {};
     *pid = pid_;
     pid->SampleTime_hz = 1000;
     pid->isModeAuto = 1;

@@ -33,7 +33,13 @@ class World {
     void set_target(TargetType target);
 
     /** The bleacher has been picked up by our robot. */
-    bool remove_bleacher(const Bleacher &bleacher);
+    void carry_bleacher(Bleacher &bleacher);
+
+    /** Mark the carried bleacher as dropped. */
+    void drop_carried_bleacher();
+
+    /** Return the carried bleacher if any. */
+    Bleacher *carried_bleacher();
 
     /** Replace objects with those found in EaglePacket. */
     void update_from_eagle_packet(const EaglePacket &packet);
@@ -48,11 +54,11 @@ class World {
     void do_all_calculations_LONG();
 
     /** Return the closest bleacher to the given coordinates. */
-    [[nodiscard]] std::pair<Bleacher, float> closest_available_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher *, float> closest_available_bleacher(float x, float y);
 
-    [[nodiscard]] std::pair<Bleacher, float> closest_dropped_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher *, float> closest_bleacher_in_building_area(float x, float y);
 
-    [[nodiscard]] std::pair<BuildingArea, float> closest_available_building_area(float x, float y) const;
+    [[nodiscard]] std::pair<BuildingArea *, float> closest_available_building_area(float x, float y);
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 

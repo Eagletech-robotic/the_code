@@ -3,8 +3,8 @@
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
-#include "robotic/constants.hpp"
 #include "robotic/controllers.hpp"
+#include "robotic/robot_constants.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
@@ -109,7 +109,7 @@ bool isLookingOutwards(float w, float h, float s, float x, float y, float theta,
 }
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
-Status isSafe(input_t *input, Command *command, State *state) {
+Status isSafe(input_t *, Command *, State *state) {
     float x, y, theta;
     state->getPositionAndOrientation(x, y, theta);
 
@@ -128,24 +128,62 @@ Status isSafe(input_t *input, Command *command, State *state) {
 }
 
 // Trop proche de l'adversaire, il faut se dérouter
-Status evadeOpponent(input_t *input, Command *command, State *state) {
+Status evadeOpponent(input_t *, Command *command, State *) {
     command->target_left_speed = 0.5;
     command->target_right_speed = -0.5;
     return Status::RUNNING;
 }
 
-Status hasBleacherAttached(input_t *input, Command *command, State *state) {
+Status carryBleacher(input_t *input, Command *command, State *state) {
+    if (state->bleacher_lifted) {
+        if (input->tof_m > 0.50f) {
+            auto carried_bleacher = state->world.carried_bleacher();
+
+            // The bleacher was dropped: update the state...
+            state->bleacher_lifted = false;
+            state->world.drop_carried_bleacher();
+
+            // ... and mark the bleacher as uncertain.
+            if (carried_bleacher) {
+                carried_bleacher->uncertain = true;
+                state->world.reset_dijkstra();
+            }
+        } else {
+            // Keep the shovel extended
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+            // Move the bleacher along with the robot
+            if (auto carried_bleacher = state->world.carried_bleacher()) {
+                float x, y, orientation;
+                state->getPositionAndOrientation(x, y, orientation);
+                float const shovel_x = x + cosf(orientation) * (SHOVEL_TO_CENTER + BLEACHER_WIDTH / 2);
+                float const shovel_y = y + sinf(orientation) * (SHOVEL_TO_CENTER + BLEACHER_WIDTH / 2);
+                carried_bleacher->x = shovel_x;
+                carried_bleacher->y = shovel_y;
+                carried_bleacher->orientation = orientation;
+            }
+        }
+    }
+
+    return Status::SUCCESS;
+}
+
+Status hasBleacherAttached(input_t *, Command *, State *state) {
     return state->bleacher_lifted ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isClearOfDroppedBleacher(input_t *input, Command *command, State *state) {
+Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
     float x, y, _orientation;
     state->getPositionAndOrientation(x, y, _orientation);
-    const auto [bleacher, distance] = state->world.closest_dropped_bleacher(x, y);
-    return (distance >= 0.3f ? Status::SUCCESS : Status::FAILURE);
+    const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
+    return (state->bleacher_lifted || // Do not escape the bleacher we are carrying
+            !bleacher || distance >= 0.4f ||
+            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) > to_radians(20))
+               ? Status::SUCCESS
+               : Status::FAILURE;
 }
 
-Status escapeBleacher(input_t *input, Command *command, State *state) {
+Status escapeBleacher(input_t *, Command *command, State *) {
     command->target_left_speed = -0.3f;
     command->target_right_speed = -0.3f;
     return Status::RUNNING;
@@ -154,19 +192,18 @@ Status escapeBleacher(input_t *input, Command *command, State *state) {
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
             const auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
 
-            // Fail if no building areas available
-            if (distance == std::numeric_limits<float>::max()) {
+            if (!building_area) {
                 host_printf("No building area\n");
                 return Status::FAILURE;
             }
 
             // Inside a rectangle centered around the building area's orthogonal axis?
-            if (auto [local_x, local_y] = building_area.position_in_local_frame(x, y);
+            if (auto [local_x, local_y] = building_area->position_in_local_frame(x, y);
                 std::abs(local_x) <= BUILDING_AREA_ATTRACTION_HALF_LENGTH &&
                 std::abs(local_y) <= BUILDING_AREA_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
@@ -175,11 +212,10 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 mcu_printf("BA-SRCH\n");
                 state_->world.set_target(TargetType::BuildingAreaWaypoint);
                 descend(*command_, *state_);
-                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
@@ -191,8 +227,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 return Status::SUCCESS;
             }
 
-            auto const [wp_x, wp_y] = building_area.waypoint();
-            auto const [target_x, target_y] = building_area.available_slot();
+            auto const [wp_x, wp_y] = building_area->waypoint();
+            auto const [target_x, target_y] = building_area->available_slot();
             const bool has_arrived =
                 stanley_controller(x, y, orientation, wp_x, wp_y, target_x, target_y, target_x - (wp_x - target_x),
                                    target_y - (wp_y - target_y), 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
@@ -203,37 +239,36 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             } else {
                 host_printf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
                 mcu_printf("BA-APP\n");
-                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
-            auto const [target_x, target_y] = building_area.available_slot();
+            auto const [target_x, target_y] = building_area->available_slot();
 
             const bool has_arrived = pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.15,
                                                     &command_->target_left_speed, &command_->target_right_speed);
 
             if (has_arrived) {
                 // Mark the slot as occupied
-                building_area.first_available_slot++;
+                building_area->first_available_slot++;
                 return Status::SUCCESS;
             } else {
                 host_printf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
                 mcu_printf("BA-APPCNT\n");
-                command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
-            host_printf("Building area close enough, dropping the bleacher\n");
-            mcu_printf("BA-ARR\n");
+        [](input_t *, Command *command_, State *state_) {
+            host_printf("Drop the bleacher\n");
+            mcu_printf("BA-DROP\n");
             command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
             state_->bleacher_lifted = false;
+            state_->world.drop_carried_bleacher();
             return Status::RUNNING;
         });
 
@@ -243,19 +278,18 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
             const auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
 
-            // Fail if no bleachers available
-            if (distance == std::numeric_limits<float>::max()) {
+            if (!bleacher) {
                 host_printf("No bleacher\n");
                 return Status::FAILURE;
             }
 
             // Inside a rectangle centered around the bleacher's orthogonal axis?
-            if (auto [local_x, local_y] = bleacher.position_in_local_frame(x, y);
+            if (auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
                 std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
                 std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
                 return Status::SUCCESS;
@@ -267,7 +301,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
@@ -278,11 +312,11 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (distance < STOP_DISTANCE)
                 return Status::SUCCESS;
 
-            auto const waypoints = bleacher.waypoints();
+            auto const waypoints = bleacher->waypoints();
             constexpr float MAX = std::numeric_limits<float>::max();
             std::array<float, 3> closest_waypoint = {0, 0, MAX}; // [x, y, squared distance]
             std::array<float, 3> farthest_waypoint = {0, 0, 0};  // [x, y, squared distance]
-            for (const auto [wp_x, wp_y] : waypoints) {
+            for (const auto &[wp_x, wp_y] : waypoints) {
                 const auto squared_distance = static_cast<float>(std::pow(wp_x - x, 2) + std::pow(wp_y - y, 2));
                 if (squared_distance < closest_waypoint[2])
                     closest_waypoint = {wp_x, wp_y, squared_distance};
@@ -290,10 +324,10 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                     farthest_waypoint = {wp_x, wp_y, squared_distance};
             }
 
-            const bool has_arrived =
-                stanley_controller(x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher.x, bleacher.y,
-                                   farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
-                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
+            const bool has_arrived = stanley_controller(
+                x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher->x, bleacher->y,
+                farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M, SLOW_DOWN_DISTANCE,
+                &command_->target_left_speed, &command_->target_right_speed);
 
             if (has_arrived) {
                 return Status::SUCCESS;
@@ -303,38 +337,44 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *state_) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             const auto bleacher = state_->world.closest_available_bleacher(x, y).first;
 
-            const bool has_arrived = pid_controller(x, y, orientation, bleacher.x, bleacher.y, 0.8f, WHEELBASE_M, 0.15,
-                                                    &command_->target_left_speed, &command_->target_right_speed);
+            const bool has_arrived = pid_controller(x, y, orientation, bleacher->x, bleacher->y, 0.8f, WHEELBASE_M,
+                                                    0.15, &command_->target_left_speed, &command_->target_right_speed);
 
             if (has_arrived) {
-                // Remove from the list of available bleachers.
-                state_->world.remove_bleacher(bleacher);
                 return Status::SUCCESS;
             } else {
-                host_printf("Approaching bleacher centre x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
+                host_printf("Approaching bleacher centre x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
                 mcu_printf("BL-APPCNT\n");
                 return Status::RUNNING;
             }
         },
-        [](input_t *input_, Command *command_, State *state_) {
-            host_printf("Bleacher close enough, stopping\n");
-            mcu_printf("BL-ARR\n");
+        [](input_t *, Command *command_, State *state_) {
+            host_printf("Pick up bleacher\n");
+            mcu_printf("BL-PKP\n");
+
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
+
+            auto bleacher = state_->world.closest_available_bleacher(x, y).first;
+            state_->bleacher_lifted = true;
+            state_->world.carry_bleacher(*bleacher);
+
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
-            state_->bleacher_lifted = true;
+
             return Status::RUNNING;
         });
 
     return seq(const_cast<input_t *>(input), command, state);
 }
 
-Status isJackRemoved(input_t *input, Command *command, State *state) {
+Status isJackRemoved(input_t *input, Command *, State *state) {
     if (!state->hasGameStarted() && input->jack_removed) {
         state->startGame(input->clock_ms);
     }
@@ -346,20 +386,20 @@ Status isJackRemoved(input_t *input, Command *command, State *state) {
     return Status::FAILURE;
 }
 
-Status isGameActive(input_t *input, Command *command, State *state) {
+Status isGameActive(input_t *input, Command *, State *state) {
     return state->elapsedTime(*input) < 90.0f ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isBackstagePhaseNotActive(input_t *input, Command *command, State *state) {
+Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     return state->elapsedTime(*input) > 80.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
-Status goToBackstage(input_t *input, Command *command, State *state) {
+Status goToBackstage(input_t *, Command *command, State *state) {
     host_printf("Aller en backstage\n");
     mcu_printf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
     descend(*command, *state);
-
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
     return Status::RUNNING;
 }
 
@@ -376,7 +416,7 @@ Status waitBeforeGame(input_t *input, Command *command, State *state) {
 }
 
 // Attente indéfinie
-Status holdAfterEnd(input_t *input, Command *command, State *state) {
+Status holdAfterEnd(input_t *, Command *command, State *) {
     host_printf("Holding after game ends\n");
     command->target_left_speed = 0.f;
     command->target_right_speed = 0.f;
@@ -386,15 +426,14 @@ Status holdAfterEnd(input_t *input, Command *command, State *state) {
 
 // For use in an alternative node, thus returning Status::FAILURE
 auto logAndFail(char const *s) {
-    return [s](input_t *input, Command *command, State *state) -> Status {
+    return [s](input_t *, Command *, State *) -> Status {
         myprintf("%s\n", s);
         return Status::FAILURE;
     };
 }
 
 // DEBUG - used by infiniteRectangle
-Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *input, Command *command,
-                  State *state) {
+Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *, Command *command, State *state) {
     if (state->target_nb != target_nb) {
         return Status::SUCCESS;
     }
@@ -420,14 +459,14 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 }
 
-Status isFlagPhaseCompleted(const input_t *input, Command *command, State *state) {
+Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
     if (state->elapsedTime(*input) > 1.0f) {
         return Status::SUCCESS;
     }
     return Status::FAILURE;
 }
 
-Status deployFlag(const input_t *input, Command *command, State *state) {
+Status deployFlag(const input_t *, Command *command, State *) {
     command->target_left_speed = 0.5f;
     command->target_right_speed = 0.5f;
     return Status::RUNNING;
@@ -465,6 +504,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
 		//alternative(infiniteRectangle, logAndFail("rectangle")),
         alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
+        carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),

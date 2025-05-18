@@ -1,8 +1,8 @@
+#include "eaglesteward/constants.hpp"
 #include "eaglesteward/state.hpp"
-#include "robotic/constants.hpp"
 #include "utils/debug.hpp"
 
-int main(int argc, char **argv) {
+int main(int /*argc*/, char **/*argv*/) {
     State state;
     state.world.set_target(TargetType::BuildingAreaWaypoint);
     state.world.do_all_calculations_LONG();

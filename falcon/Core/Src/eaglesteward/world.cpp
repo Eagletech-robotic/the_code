@@ -50,12 +50,23 @@ void World::set_target(TargetType new_target) {
     reset_dijkstra();
 }
 
-bool World::remove_bleacher(const Bleacher &bleacher) {
-    bool const has_removed = bleachers_.remove(bleacher);
-    if (has_removed) {
-        reset_dijkstra();
+void World::carry_bleacher(Bleacher &bleacher) {
+    drop_carried_bleacher();
+    bleacher.is_carried = true;
+}
+
+void World::drop_carried_bleacher() {
+    for (auto &bleacher : bleachers_) {
+        bleacher.is_carried = false;
     }
-    return has_removed;
+}
+
+Bleacher *World::carried_bleacher() {
+    for (auto &bleacher : bleachers_) {
+        if (bleacher.is_carried)
+            return &bleacher;
+    }
+    return nullptr;
 }
 
 void World::reset_dijkstra() {
@@ -76,6 +87,8 @@ void World::reset_dijkstra() {
     // Add targets to the queue
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
+            if (bleacher.in_building_area(building_areas_) || bleacher.uncertain)
+                continue;
             for (auto [x, y] : bleacher.waypoints()) {
                 enqueue_grid_cell(x, y);
             }
@@ -99,7 +112,7 @@ void World::reset_dijkstra() {
         }
     }
 
-    printf("RES_DIJSKTRA(%lu)\n", pqueue_.size());
+    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
 }
 
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
@@ -234,69 +247,51 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     }
 }
 
-/**
- * Confident bleachers are returned first. If there are no confident bleachers, the closest uncertain bleacher is
- * returned.
- */
-std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) const {
-    Bleacher best_confident;
-    float best_confident_dist = std::numeric_limits<float>::max();
-    Bleacher best_uncertain;
-    float best_uncertain_dist = std::numeric_limits<float>::max();
+std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
+    Bleacher *best = nullptr;
+    float best_distance = std::numeric_limits<float>::max();
 
-    for (auto const &bleacher : bleachers_) {
-        if (bleacher.in_building_area(building_areas_))
+    for (auto &bleacher : bleachers_) {
+        if (bleacher.in_building_area(building_areas_) || bleacher.uncertain)
             continue;
         auto const dx = x - bleacher.x;
         auto const dy = y - bleacher.y;
         auto const distance = std::sqrt(dx * dx + dy * dy);
-
-        if (!bleacher.uncertain) {
-            if (distance < best_confident_dist) {
-                best_confident_dist = distance;
-                best_confident = bleacher;
-            }
-        } else {
-            if (distance < best_uncertain_dist) {
-                best_uncertain_dist = distance;
-                best_uncertain = bleacher;
-            }
+        if (distance < best_distance) {
+            best_distance = distance;
+            best = &bleacher;
         }
     }
 
-    if (best_confident_dist < std::numeric_limits<float>::max())
-        return {best_confident, best_confident_dist};
-
-    if (best_uncertain_dist < std::numeric_limits<float>::max())
-        return {best_uncertain, best_uncertain_dist};
-
-    // no bleacher found
-    return {Bleacher{}, std::numeric_limits<float>::max()};
+    if (best)
+        return {best, best_distance};
+    return {nullptr, std::numeric_limits<float>::max()};
 }
 
-std::pair<Bleacher, float> World::closest_dropped_bleacher(float x, float y) const {
-    Bleacher best;
+std::pair<Bleacher *, float> World::closest_bleacher_in_building_area(float x, float y) {
+    Bleacher *best = nullptr;
     float best_distance = std::numeric_limits<float>::max();
 
-    for (const auto &bleacher : bleachers_) {
+    for (auto &bleacher : bleachers_) {
         if (!bleacher.in_building_area(building_areas_))
             continue;
         auto const dx = x - bleacher.x;
         auto const dy = y - bleacher.y;
         auto const distance = std::sqrt(dx * dx + dy * dy);
         if (distance < best_distance) {
-            best_distance = distance, best = bleacher;
+            best_distance = distance;
+            best = &bleacher;
         }
     }
 
     return {best, best_distance};
 }
 
-std::pair<BuildingArea, float> World::closest_available_building_area(float x, float y) const {
-    BuildingArea best;
+std::pair<BuildingArea *, float> World::closest_available_building_area(float x, float y) {
+    BuildingArea *best = nullptr;
     float best_distance = std::numeric_limits<float>::max();
 
-    for (const auto &building_area : building_areas_) {
+    for (auto &building_area : building_areas_) {
         if (building_area.is_full() || building_area.colour != colour_)
             continue;
         auto const [slot_x, slot_y] = building_area.available_slot();
@@ -305,7 +300,7 @@ std::pair<BuildingArea, float> World::closest_available_building_area(float x, f
         float const distance = std::sqrt(dx * dx + dy * dy);
         if (distance < best_distance) {
             best_distance = distance;
-            best = building_area;
+            best = &building_area;
         }
     }
 

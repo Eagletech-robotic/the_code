@@ -24,8 +24,8 @@ std::array<std::pair<float, float>, 2> Bleacher::waypoints() const {
 
 bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const {
     for (const auto &building_area : building_areas) {
-        if (std::abs(x - building_area.x) < building_area.span_x() &&
-            std::abs(y - building_area.y) < building_area.span_y()) {
+        if (std::abs(x - building_area.x) < (building_area.span_x() + BLEACHER_WIDTH) / 2 &&
+            std::abs(y - building_area.y) < (building_area.span_y() + BLEACHER_WIDTH) / 2) {
             return true;
         }
     }

@@ -32,5 +32,5 @@ void output_set(const output_t &output) {
 }
 
 void print_output(const output_t &output) {
-    myprintf("O %.4f\t%.4f\t%.4f\n", output.motor_left_ratio, output.motor_right_ratio, output.shovel_ratio);
+    myprintf("O %.4f %.4f %.4f\n", output.motor_left_ratio, output.motor_right_ratio, output.shovel_ratio);
 }
