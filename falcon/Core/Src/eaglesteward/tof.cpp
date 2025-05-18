@@ -17,25 +17,40 @@ float tof_filter(const State &state, const float value) {
 //   [0.47; 0.36], il y a un gradin collé
 //   [0.48; 0.26 mini ; 0.36/0.47] en approche de gradin
 //   < 0.26 -> un robot approche
+// avec la position physique du 20250518
+//  > 0.50 il n'y a rien
+//  mono gradin à 40 cm : 0.505
+//  mono gradin à 30 cm : 0.4
+//  mono gradin à 20 cm : 0.3
+//  mono gradin à 10 cm : 0.22 (minimum)
+//  mono gradin à  0 cm : 0.25
+//  mono gradin à 0 cm  + Bigthing : 0.21 (!)
+//  bigthing    à 20 cm : 0.19
+//  bigthing    à 0 cm : 0.11
+//  ---
+// 0.11 -> 0.21 Big thing
+// 0.22 -> 0.25 bleacher entre 0 et 20 cm ou big thing > 20 cm
+// 0.25 -> Bleacher contact
+//
 
 bool isInRange(float min_, float val, float max_) { return min_ < val && val < max_; }
 
-// A autour de 0.5 je détecte le sol à ~ 40 cm
+// A autour de 0.5 je détecte le sol à vide sur 40 cm
 bool isNearSpaceFree(const State &state) { return state.filtered_tof_m > 0.5f; }
 
 // Le robot ou une bordure ou un grand gradin sont proches (<15cm)
-// La chose est détecté aussi avec un gradin au contact
-bool isBigThingClose(const State &state) { return state.filtered_tof_m < 0.26f; }
+// La chose est détecté aussi avec un gradin au contact mais avec peu de marge
+bool isBigThingClose(const State &state) { return state.filtered_tof_m < 0.21f; }
 
 // On a ces chiffres si le gradin est là mais aussi si on approche
-bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.36f, state.filtered_tof_m, 0.49); }
+bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.24f, state.filtered_tof_m, 0.26); }
 
-// On passe par le mini vers 0.3 puis cela remonte.
-bool isPossiblyBleacherApproch(const State &state) { return isInRange(0.28f, state.filtered_tof_m, 0.5); }
+// Bleacher si présent à moins de 30 cm dans l'axe
+bool isPossiblyBleacherApproch(const State &state) { return isInRange(0.22f, state.filtered_tof_m, 0.4); }
 
 bool isPossiblyBleacherApprochMinimum(const State &state) {
-    return state.filtered_tof_m < 0.32f;
-} // ~15cm, ceux minimum peut descendre à 0.27 mais pas toujours
+    return state.filtered_tof_m < 0.23f;
+} // ~10cm
 
 // Machine d'état qui suit l'approche d'un gradin et en déduit que l'on est au contact
 // L'idée est de la faire tourner tout le temps
