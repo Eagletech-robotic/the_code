@@ -136,7 +136,7 @@ Status evadeOpponent(input_t *, Command *command, State *) {
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
     if (state->bleacher_lifted) {
-        if (input->tof_m > 0.50f) {
+        if (state->filtered_tof_m > 0.50f) {
             auto carried_bleacher = state->world.carried_bleacher();
 
             // The bleacher was dropped: update the state...
