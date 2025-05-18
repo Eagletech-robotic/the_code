@@ -141,8 +141,10 @@ Status hasBleacherAttached(input_t *input, Command *command, State *state) {
 Status isClearOfDroppedBleacher(input_t *input, Command *command, State *state) {
     float x, y, _orientation;
     state->getPositionAndOrientation(x, y, _orientation);
-    const auto [bleacher, distance] = state->world.closest_dropped_bleacher(x, y);
-    return (distance >= 0.3f ? Status::SUCCESS : Status::FAILURE);
+    const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
+    return (distance >= 0.4f || std::abs(angle_normalize(_orientation - bleacher.orientation - M_PI)) > to_radians(20))
+               ? Status::SUCCESS
+               : Status::FAILURE;
 }
 
 Status escapeBleacher(input_t *input, Command *command, State *state) {

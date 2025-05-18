@@ -80,7 +80,7 @@ void input_get(input_t &input) {
     input.imu_accel_x_mss = um7.accel_x;
     input.imu_accel_y_mss = um7.accel_y;
     input.imu_accel_z_mss = um7.accel_z;
-    input.blue_button = ! HAL_GPIO_ReadPin(BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin);
+    input.blue_button = !HAL_GPIO_ReadPin(BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin);
     input.clock_ms = HAL_GetTick(); // gestion du temps
 }
 

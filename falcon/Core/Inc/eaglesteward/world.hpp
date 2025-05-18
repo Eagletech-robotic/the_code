@@ -50,7 +50,7 @@ class World {
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher, float> closest_available_bleacher(float x, float y) const;
 
-    [[nodiscard]] std::pair<Bleacher, float> closest_dropped_bleacher(float x, float y) const;
+    [[nodiscard]] std::pair<Bleacher, float> closest_bleacher_in_building_area(float x, float y) const;
 
     [[nodiscard]] std::pair<BuildingArea, float> closest_available_building_area(float x, float y) const;
 

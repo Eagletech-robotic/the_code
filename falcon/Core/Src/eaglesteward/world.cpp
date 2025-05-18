@@ -76,6 +76,8 @@ void World::reset_dijkstra() {
     // Add targets to the queue
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
+            if (bleacher.in_building_area(building_areas_))
+                continue;
             for (auto [x, y] : bleacher.waypoints()) {
                 enqueue_grid_cell(x, y);
             }
@@ -274,7 +276,7 @@ std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) c
     return {Bleacher{}, std::numeric_limits<float>::max()};
 }
 
-std::pair<Bleacher, float> World::closest_dropped_bleacher(float x, float y) const {
+std::pair<Bleacher, float> World::closest_bleacher_in_building_area(float x, float y) const {
     Bleacher best;
     float best_distance = std::numeric_limits<float>::max();
 
