@@ -50,12 +50,23 @@ void World::set_target(TargetType new_target) {
     reset_dijkstra();
 }
 
-bool World::remove_bleacher(const Bleacher &bleacher) {
-    bool const has_removed = bleachers_.remove(bleacher);
-    if (has_removed) {
-        reset_dijkstra();
+void World::carry_bleacher(Bleacher &bleacher) {
+    drop_carried_bleacher();
+    bleacher.is_carried = true;
+}
+
+void World::drop_carried_bleacher() {
+    for (auto &bleacher : bleachers_) {
+        bleacher.is_carried = false;
     }
-    return has_removed;
+}
+
+Bleacher *World::carried_bleacher() {
+    for (auto &bleacher : bleachers_) {
+        if (bleacher.is_carried)
+            return &bleacher;
+    }
+    return nullptr;
 }
 
 void World::reset_dijkstra() {
@@ -236,17 +247,13 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     }
 }
 
-/**
- * Confident bleachers are returned first. If there are no confident bleachers, the closest uncertain bleacher is
- * returned.
- */
-std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) const {
-    Bleacher best_confident;
+std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
+    Bleacher *best_confident = nullptr;
     float best_confident_dist = std::numeric_limits<float>::max();
-    Bleacher best_uncertain;
+    Bleacher *best_uncertain = nullptr;
     float best_uncertain_dist = std::numeric_limits<float>::max();
 
-    for (auto const &bleacher : bleachers_) {
+    for (auto &bleacher : bleachers_) {
         if (bleacher.in_building_area(building_areas_))
             continue;
         auto const dx = x - bleacher.x;
@@ -256,12 +263,12 @@ std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) c
         if (!bleacher.uncertain) {
             if (distance < best_confident_dist) {
                 best_confident_dist = distance;
-                best_confident = bleacher;
+                best_confident = &bleacher;
             }
         } else {
             if (distance < best_uncertain_dist) {
                 best_uncertain_dist = distance;
-                best_uncertain = bleacher;
+                best_uncertain = &bleacher;
             }
         }
     }
@@ -273,32 +280,32 @@ std::pair<Bleacher, float> World::closest_available_bleacher(float x, float y) c
         return {best_uncertain, best_uncertain_dist};
 
     // no bleacher found
-    return {Bleacher{}, std::numeric_limits<float>::max()};
+    return {nullptr, std::numeric_limits<float>::max()};
 }
 
-std::pair<Bleacher, float> World::closest_bleacher_in_building_area(float x, float y) const {
-    Bleacher best;
+std::pair<Bleacher *, float> World::closest_bleacher_in_building_area(float x, float y) {
+    Bleacher *best = nullptr;
     float best_distance = std::numeric_limits<float>::max();
 
-    for (const auto &bleacher : bleachers_) {
+    for (auto &bleacher : bleachers_) {
         if (!bleacher.in_building_area(building_areas_))
             continue;
         auto const dx = x - bleacher.x;
         auto const dy = y - bleacher.y;
         auto const distance = std::sqrt(dx * dx + dy * dy);
         if (distance < best_distance) {
-            best_distance = distance, best = bleacher;
+            best_distance = distance, best = &bleacher;
         }
     }
 
     return {best, best_distance};
 }
 
-std::pair<BuildingArea, float> World::closest_available_building_area(float x, float y) const {
-    BuildingArea best;
+std::pair<BuildingArea *, float> World::closest_available_building_area(float x, float y) {
+    BuildingArea *best = nullptr;
     float best_distance = std::numeric_limits<float>::max();
 
-    for (const auto &building_area : building_areas_) {
+    for (auto &building_area : building_areas_) {
         if (building_area.is_full() || building_area.colour != colour_)
             continue;
         auto const [slot_x, slot_y] = building_area.available_slot();
@@ -307,7 +314,7 @@ std::pair<BuildingArea, float> World::closest_available_building_area(float x, f
         float const distance = std::sqrt(dx * dx + dy * dy);
         if (distance < best_distance) {
             best_distance = distance;
-            best = building_area;
+            best = &building_area;
         }
     }
 

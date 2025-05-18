@@ -15,12 +15,19 @@ class State {
 
     /* I/O ----------------------------------------------------- */
     void print() const;
+
     [[nodiscard]] bool hasGameStarted() const;
+
     void gameNotStarted();
+
     void startGame(uint32_t clock_ms);
+
     [[nodiscard]] float elapsedTime(const input_t &input) const;
+
     void getPositionAndOrientation(float &x, float &y, float &theta) const;
+
     void updateFromInput(const config_t &cfg, const input_t &in);
+
     void updateFromBluetooth();
 
     /* PUBLIC DATA ---------------------------------------------------- */
@@ -48,7 +55,6 @@ class State {
     // TOF
     float filtered_tof_m{1.f};
     TofState tof_state{TofState::CLEAR_PATH};
-    bool bleacher_lifted{false};
 
     // Motors
     PID_t pid_diff{};
@@ -68,8 +74,11 @@ class State {
     //   void dump(); -> "{name}: [379]0.008 [386]0.007 [AVG] 0.003"
     // };
 
-    // Use by the behavior tree
-    int target_nb{0}; // for rectangle test
+    // Bleacher carrying
+    bool bleacher_lifted{false};
+
+    // Rectangle test
+    int target_nb{0};
 
     /* END PUBLIC DATA ------------------------------------ */
 

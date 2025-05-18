@@ -28,7 +28,8 @@ struct GameEntity {
 // Bleacher class
 class Bleacher : public GameEntity {
   public:
-    bool uncertain = false; // True if the bleacher was not detected by the TOF
+    bool uncertain = false;  // Previous failed pick-up attempt
+    bool is_carried = false; // Is our robot currently carrying it?
 
     Bleacher() = default;
 
