@@ -48,8 +48,8 @@
  * @param wheel_circumference_m [in] circonférence de la roue (m)
  * @param wheel_base_m [in] empattement (distance entre les roues) (m)
  */
-void fusion_odo_imu_fuse(float ax_imu_g, float ay_imu_g, float delta_yaw_imu, int delta_motor_left_ticks,
-                         int delta_motor_right_ticks, float dt, float theta, float *out_delta_x, float *out_delta_y,
+void fusion_odo_imu_fuse(float /*ax_imu_g*/, float /*ay_imu_g*/, float delta_yaw_imu, int delta_motor_left_ticks,
+                         int delta_motor_right_ticks, float /*dt*/, float theta, float *out_delta_x, float *out_delta_y,
                          float *out_delta_theta, const float alpha_orientation_ratio, const float ticks_per_rev,
                          const float wheel_circumference_m, const float wheel_base_m) {
     //--------------------------------------------------------------------------

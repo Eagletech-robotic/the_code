@@ -101,7 +101,7 @@ void World::reset_dijkstra() {
         }
     }
 
-    printf("RES_DIJSKTRA(%lu)\n", pqueue_.size());
+    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
 }
 
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {

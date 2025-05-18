@@ -32,14 +32,14 @@ void carre_init(carre_t *carre, float cycle_period_s) {
 }
 //
 // calcul de vitesses avec la vitesse moyenne et le rayon de courbure voulu selon l'entre-axe
-void r_to_v(float r, float v, float *v1, float *v2) {
-    //    *v1 = v * (1 + WHEELBASE_M / (2 * r));
-    //    *v2 = v * (1 - WHEELBASE_M / (2 * r));
+void r_to_v(float /*r*/, float /*v*/, float * /*v1*/, float * /*v2*/) {
+    //     //    *v1 = v * (1 + WHEELBASE_M / (2 * r));
+    //     //    *v2 = v * (1 - WHEELBASE_M / (2 * r));
 }
 //
 int carre_is_elapsed_time(carre_t *c, float t_s) { return c->time_from_start_s < (c->start_sequence_time_s + t_s); }
 
-void carre_sequence(carre_t *c, output_t *output) {
+void carre_sequence(carre_t * /*c*/, output_t * /*output*/) {
     //    float v_r = 1000.0;      // 2000
     //    float v_curve_r = 750.0; // 1500
     //    float t_curve_s = 0.65f;
@@ -97,7 +97,7 @@ void carre_in_loop(carre_t *c, output_t *output) {
 
 //////////////////// OLD stuff /// Delete ?
 
-void carre_in_loop_with_mag(carre_t *c, const float mag[3], output_t *output) {
+void carre_in_loop_with_mag(carre_t * /*c*/, const float /*mag*/[3], output_t * /*output*/) {
     // c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
     //
     // float v_r = 1000.0;
@@ -125,7 +125,7 @@ void carre_in_loop_with_mag(carre_t *c, const float mag[3], output_t *output) {
     // }
 }
 
-void carre_in_loop_with_heading(carre_t *c, const float heading, output_t *output) {
+void carre_in_loop_with_heading(carre_t * /*c*/, const float /*heading*/, output_t * /*output*/) {
     // c->time_from_start_s += c->timer_period_s; // il y a peut être un timer interne plus précis
     //
     // float v_r = 1000.0;
