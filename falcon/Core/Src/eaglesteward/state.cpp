@@ -76,7 +76,7 @@ void State::updateFromInput(const config_t &config, const input_t &input) {
     float delta_x_m, delta_y_m, delta_theta;
     fusion_odo_imu_fuse(input.imu_accel_x_mss, input.imu_accel_y_mss, input.delta_yaw, input.delta_encoder_left,
                         input.delta_encoder_right, config.time_step_s, imu_theta, &delta_x_m, &delta_y_m, &delta_theta,
-                        0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
+                        0.1f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
     imu_x += delta_x_m;
     imu_y += delta_y_m;
     imu_theta = angle_normalize(imu_theta + delta_theta);

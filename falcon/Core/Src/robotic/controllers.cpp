@@ -247,6 +247,35 @@ void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_) {
     pid_frequency(pid_speed, 250);
 }
 
+void controller_action(float error_angle, float distance, float wheelBase,
+		float Vmax, float *out_speed_left, float *out_speed_right) {
+	/* 3) Boucles proportionnelles ------------------------------------------*/
+	const float Kp_dist = 10.0f; /* distance → vitesse linéaire   */
+	const float Kp_angle = 100.0f; /* angle    → vitesse angulaire  */
+	/* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
+	float v;
+	if (fabsf(error_angle) > (M_PI / 4.f)) {
+		v = 0.0f;
+	} else {
+		v = Kp_dist * distance;
+	}
+	float w = Kp_angle * error_angle; /* rad/s */
+	/* 4) (v, w) → vitesses roues -------------------------------------------*/
+	float halfBase = wheelBase * 0.5f;
+	float v_left = v - w * halfBase;
+	float v_right = v + w * halfBase;
+	/* 5) Saturation par la roue la plus rapide -----------------------------*/
+	float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
+	if (max_abs > Vmax) {
+		float scale = Vmax / max_abs;
+		v_left *= scale;
+		v_right *= scale;
+	}
+	/* 6) Sorties ------------------------------------------------------------*/
+	*out_speed_left = v_left;
+	*out_speed_right = v_right;
+}
+
 /**
  * @brief  Contrôleur différentiel « nerveux » :
  *         - Vmax = vitesse max de la roue la plus rapide
@@ -274,37 +303,13 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta,
     float error_angle   = angle_normalize(desired_angle - robot_theta);
 
     /* 3) Boucles proportionnelles ------------------------------------------*/
-    const float Kp_dist  = 10.0f;   /* distance → vitesse linéaire   */
-    const float Kp_angle = 250.0f;   /* angle    → vitesse angulaire  */
-
-    /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
-    float v;
-    if(fabsf(error_angle) > (M_PI / 4.f)) {
-    	v = 0.0f;
-    } else {
-    	v =  Kp_dist * distance;
-    }
-
-    float w = Kp_angle * error_angle;             /* rad/s */
-
-    /* 4) (v, w) → vitesses roues -------------------------------------------*/
-    float halfBase = wheelBase * 0.5f;
-    float v_left  = v - w * halfBase;
-    float v_right = v + w * halfBase;
-
-    /* 5) Saturation par la roue la plus rapide -----------------------------*/
-    float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
-    if (max_abs > Vmax) {
-        float scale = Vmax / max_abs;
-        v_left  *= scale;
-        v_right *= scale;
-    }
-
-    /* 6) Sorties ------------------------------------------------------------*/
-    *out_speed_left  = v_left;
-    *out_speed_right = v_right;
+	controller_action(error_angle, distance, wheelBase, Vmax, out_speed_left,
+			out_speed_right);
     return false;                                  /* encore en route */
 }
+
+
+
 /**
  * @brief  Contrôleur différentiel utilisant 2 PID externes :
  *         - pid_speed  : distance  → vitesse linéaire  v  (m/s)

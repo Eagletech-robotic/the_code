@@ -40,7 +40,7 @@ bool isNearSpaceFree(const State &state) { return state.filtered_tof_m > 0.5f; }
 
 // Le robot ou une bordure ou un grand gradin sont proches (<15cm)
 // La chose est détecté aussi avec un gradin au contact mais avec peu de marge
-bool isBigThingClose(const State &state) { return state.filtered_tof_m < 0.21f; }
+bool isBigThingClose(const State &state) { return state.filtered_tof_m < 0.20f; }
 
 // On a ces chiffres si le gradin est là mais aussi si on approche
 bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.24f, state.filtered_tof_m, 0.26); }
