@@ -275,10 +275,29 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     return seq(const_cast<input_t *>(input), command, state);
 }
 
+Status leaveBleacherAttraction(input_t *input, Command *command, State *state) {
+    if (state->picking_up_bleacher) {
+        float x, y, _orientation;
+        state->getPositionAndOrientation(x, y, _orientation);
+
+        if (auto [local_x, local_y] = state->picking_up_bleacher->position_in_local_frame(x, y);
+            std::abs(local_x) > BLEACHER_ATTRACTION_HALF_LENGTH + 0.05f ||
+            std::abs(local_y) > BLEACHER_ATTRACTION_HALF_WIDTH + 0.05f) {
+            state->picking_up_bleacher = nullptr;
+            state->picking_up_bleacher_on_axis = false;
+        }
+    }
+    return Status::SUCCESS;
+}
+
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     auto seq = sequence(
         //
         [](input_t *, Command *command_, State *state_) {
+            if (state_->picking_up_bleacher) {
+                return Status::SUCCESS;
+            }
+
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
             const auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
@@ -292,6 +311,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
                 std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
                 std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
+                state_->picking_up_bleacher = bleacher;
                 return Status::SUCCESS;
             } else {
                 host_printf("Searching\n");
@@ -302,45 +322,31 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
         },
         [](input_t *, Command *command_, State *state_) {
+            const auto bleacher = state_->picking_up_bleacher;
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
 
-            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
-            constexpr float STOP_DISTANCE = 0.15f;
-
-            if (distance < STOP_DISTANCE)
-                return Status::SUCCESS;
-
-            auto const waypoints = bleacher->waypoints();
-            constexpr float MAX = std::numeric_limits<float>::max();
-            std::array<float, 3> closest_waypoint = {0, 0, MAX}; // [x, y, squared distance]
-            std::array<float, 3> farthest_waypoint = {0, 0, 0};  // [x, y, squared distance]
-            for (const auto &[wp_x, wp_y] : waypoints) {
-                const auto squared_distance = static_cast<float>(std::pow(wp_x - x, 2) + std::pow(wp_y - y, 2));
-                if (squared_distance < closest_waypoint[2])
-                    closest_waypoint = {wp_x, wp_y, squared_distance};
-                if (squared_distance > farthest_waypoint[2])
-                    farthest_waypoint = {wp_x, wp_y, squared_distance};
+            auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
+            if (std::abs(local_y) > 0.04f) {
+                state_->picking_up_bleacher_on_axis = false;
+            } else if (std::abs(local_y) < 0.02f) {
+                state_->picking_up_bleacher_on_axis = true;
             }
 
-            const bool has_arrived = stanley_controller(
-                x, y, orientation, closest_waypoint[0], closest_waypoint[1], bleacher->x, bleacher->y,
-                farthest_waypoint[0], farthest_waypoint[1], 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M, SLOW_DOWN_DISTANCE,
-                &command_->target_left_speed, &command_->target_right_speed);
-
-            if (has_arrived) {
+            if (state_->picking_up_bleacher_on_axis) {
                 return Status::SUCCESS;
             } else {
-                host_printf("Approaching bleacher x=%.3f y=%.3f\n", closest_waypoint[0], closest_waypoint[1]);
-                mcu_printf("BL-APP\n");
+                float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
+                float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
+                pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.f,
+                               &command_->target_left_speed, &command_->target_right_speed);
                 return Status::RUNNING;
             }
         },
         [](input_t *, Command *command_, State *state_) {
+            const auto bleacher = state_->picking_up_bleacher;
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
-            const auto bleacher = state_->world.closest_available_bleacher(x, y).first;
 
             const bool has_arrived = pid_controller(x, y, orientation, bleacher->x, bleacher->y, 0.8f, WHEELBASE_M,
                                                     0.15, &command_->target_left_speed, &command_->target_right_speed);
@@ -439,18 +445,11 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 
     myprintf("B%d\r\n", state->target_nb);
-    const bool has_arrived =
-        pid_controller(
-        		state->imu_x,
-        		state->imu_y,
-				state->imu_theta,
-				target_imu_x,
-				target_imu_y,
-				2.0f, // m/s Vmax 3.0 est le max
-				WHEELBASE_M, // m, entraxe
-                0.08, // m, distance à l'arrivé pour être arrivé
-				&command->target_left_speed,
-				&command->target_right_speed);
+    const bool has_arrived = pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y,
+                                            2.0f,        // m/s Vmax 3.0 est le max
+                                            WHEELBASE_M, // m, entraxe
+                                            0.08,        // m, distance à l'arrivé pour être arrivé
+                                            &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         state->target_nb++;
         return Status::SUCCESS;
@@ -502,8 +501,8 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
 
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
-		//alternative(infiniteRectangle, logAndFail("rectangle")),
-        alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
+        // alternative(infiniteRectangle, logAndFail("rectangle")),
+        alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd), leaveBleacherAttraction,
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
@@ -514,7 +513,4 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     return root(const_cast<input_t *>(input), command, state);
 }
 
-void behavior_init(State *state) {
-	controllers_pid_init(&state->pid_theta, &state->pid_speed);
-}
-
+void behavior_init(State *state) { controllers_pid_init(&state->pid_theta, &state->pid_speed); }
