@@ -141,6 +141,8 @@ Status carryBleacher(input_t *input, Command *command, State *state) {
 
             // The bleacher was dropped: update the state...
             state->bleacher_lifted = false;
+            state->picking_up_bleacher = nullptr;
+            state->picking_up_bleacher_on_axis = false;
             state->world.drop_carried_bleacher();
 
             // ... and mark the bleacher as uncertain.
@@ -210,7 +212,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             } else {
                 host_printf("Searching\n");
                 mcu_printf("BA-SRCH\n");
-                state_->world.set_target(TargetType::BuildingAreaWaypoint);
                 descend(*command_, *state_);
                 return Status::RUNNING;
             }
@@ -268,7 +269,10 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
             state_->bleacher_lifted = false;
+            state_->picking_up_bleacher = nullptr;
+            state_->picking_up_bleacher_on_axis = false;
             state_->world.drop_carried_bleacher();
+            state_->world.set_target(TargetType::BleacherWaypoint);
             return Status::RUNNING;
         });
 
@@ -316,7 +320,6 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             } else {
                 host_printf("Searching\n");
                 mcu_printf("BL-SRCH\n");
-                state_->world.set_target(TargetType::BleacherWaypoint);
                 descend(*command_, *state_);
                 return Status::RUNNING;
             }
@@ -368,6 +371,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             auto bleacher = state_->world.closest_available_bleacher(x, y).first;
             state_->bleacher_lifted = true;
+            state_->world.set_target(TargetType::BuildingAreaWaypoint);
             state_->world.carry_bleacher(*bleacher);
 
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
