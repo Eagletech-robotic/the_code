@@ -13,6 +13,7 @@ void top_init(config_t &config) {
     config.time_step_s = 0.004f;
     top_state = State(); // Call the constructor explicitly, as the simulator does not construct global variables.
     motor_init(config, top_state);
+    behavior_init(&top_state);
 }
 
 void top_step(const config_t &config, const input_t &input, output_t &output) {

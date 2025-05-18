@@ -6,3 +6,4 @@
 #include "iot01A/input.h"
 
 Status top_behavior(const input_t *input, Command *command, State *state);
+void behavior_init(State *state);

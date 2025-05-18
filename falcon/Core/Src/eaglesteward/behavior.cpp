@@ -401,8 +401,17 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 
     myprintf("B%d\r\n", state->target_nb);
     const bool has_arrived =
-        pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y, 0.8f, WHEELBASE_M,
-                       0.08, &command->target_left_speed, &command->target_right_speed);
+        pid_controller(
+        		state->imu_x,
+        		state->imu_y,
+				state->imu_theta,
+				target_imu_x,
+				target_imu_y,
+				2.0f, // m/s Vmax 3.0 est le max
+				WHEELBASE_M, // m, entraxe
+                0.08, // m, distance à l'arrivé pour être arrivé
+				&command->target_left_speed,
+				&command->target_right_speed);
     if (has_arrived) {
         state->target_nb++;
         return Status::SUCCESS;
@@ -454,6 +463,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
 
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
+		//alternative(infiniteRectangle, logAndFail("rectangle")),
         alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
@@ -463,3 +473,8 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
 }
+
+void behavior_init(State *state) {
+	controllers_pid_init(&state->pid_theta, &state->pid_speed);
+}
+

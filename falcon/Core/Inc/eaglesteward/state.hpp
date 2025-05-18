@@ -54,6 +54,10 @@ class State {
     PID_t pid_diff{};
     PID_t pid_sum{};
 
+    // Navigation
+    PID_t pid_theta{};
+    PID_t pid_speed{};
+
     // Bluetooth
     bool packet_received_at_this_step{false};
 
