@@ -48,9 +48,7 @@ bool isBleacherPossiblyAtContact(const State &state) { return isInRange(0.24f, s
 // Bleacher si présent à moins de 30 cm dans l'axe
 bool isPossiblyBleacherApproch(const State &state) { return isInRange(0.22f, state.filtered_tof_m, 0.4); }
 
-bool isPossiblyBleacherApprochMinimum(const State &state) {
-    return state.filtered_tof_m < 0.23f;
-} // ~10cm
+bool isPossiblyBleacherApprochMinimum(const State &state) { return state.filtered_tof_m < 0.23f; } // ~10cm
 
 // Machine d'état qui suit l'approche d'un gradin et en déduit que l'on est au contact
 // L'idée est de la faire tourner tout le temps
