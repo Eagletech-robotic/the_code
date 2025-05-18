@@ -1,10 +1,7 @@
 #pragma once
 #include <math.h>
 
-// Robot physical constants
-static constexpr float WHEELBASE_M = 0.33f; // Distance between the wheels
-static constexpr float WHEEL_CIRCUMFERENCE_M = .069f * M_PI;
-static constexpr int TICKS_PER_REV = 72000; // Encoder ticks per revolution of the wheel
+// Constants for the 2025 Coupe de France game
 
 // Potential field for gradient descent
 static constexpr int SQUARE_SIZE_CM = 4;
