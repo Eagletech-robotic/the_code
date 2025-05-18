@@ -3,9 +3,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "robotic/pid.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
-#include "robotic/pid.hpp"
 
 /**
  * @brief Stanley Controller simplifié pour un robot différentiel.
@@ -164,7 +164,7 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
  * @return true si le robot est dans le rayon d'arrivée, sinon false
  */
 bool pid_controller_1(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
-                    float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
+                      float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     //----------------------------------------------------------------------
     // 1) Calcul de la distance à la cible
     //----------------------------------------------------------------------
@@ -235,7 +235,7 @@ PID_t *pid_speed;
 void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_) {
     pid_theta = pid_theta_;
     pid_speed = pid_speed_;
-	pid_init(pid_theta);
+    pid_init(pid_theta);
     pid_tune(pid_theta, 300.0f, 0.0000000f, 0.f);
     pid_limits(pid_theta, -2.0f, 2.0f);
     pid_frequency(pid_theta, 250);
@@ -247,33 +247,33 @@ void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_) {
     pid_frequency(pid_speed, 250);
 }
 
-void controller_action(float error_angle, float distance, float wheelBase,
-		float Vmax, float *out_speed_left, float *out_speed_right) {
-	/* 3) Boucles proportionnelles ------------------------------------------*/
-	const float Kp_dist = 10.0f; /* distance → vitesse linéaire   */
-	const float Kp_angle = 100.0f; /* angle    → vitesse angulaire  */
-	/* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
-	float v;
-	if (fabsf(error_angle) > (M_PI / 4.f)) {
-		v = 0.0f;
-	} else {
-		v = Kp_dist * distance;
-	}
-	float w = Kp_angle * error_angle; /* rad/s */
-	/* 4) (v, w) → vitesses roues -------------------------------------------*/
-	float halfBase = wheelBase * 0.5f;
-	float v_left = v - w * halfBase;
-	float v_right = v + w * halfBase;
-	/* 5) Saturation par la roue la plus rapide -----------------------------*/
-	float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
-	if (max_abs > Vmax) {
-		float scale = Vmax / max_abs;
-		v_left *= scale;
-		v_right *= scale;
-	}
-	/* 6) Sorties ------------------------------------------------------------*/
-	*out_speed_left = v_left;
-	*out_speed_right = v_right;
+void controller_action(float error_angle, float distance, float wheelBase, float Vmax, float *out_speed_left,
+                       float *out_speed_right) {
+    /* 3) Boucles proportionnelles ------------------------------------------*/
+    const float Kp_dist = 10.0f;   /* distance → vitesse linéaire   */
+    const float Kp_angle = 100.0f; /* angle    → vitesse angulaire  */
+    /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
+    float v;
+    if (fabsf(error_angle) > (M_PI / 4.f)) {
+        v = 0.0f;
+    } else {
+        v = Kp_dist * distance;
+    }
+    float w = Kp_angle * error_angle; /* rad/s */
+    /* 4) (v, w) → vitesses roues -------------------------------------------*/
+    float halfBase = wheelBase * 0.5f;
+    float v_left = v - w * halfBase;
+    float v_right = v + w * halfBase;
+    /* 5) Saturation par la roue la plus rapide -----------------------------*/
+    float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
+    if (max_abs > Vmax) {
+        float scale = Vmax / max_abs;
+        v_left *= scale;
+        v_right *= scale;
+    }
+    /* 6) Sorties ------------------------------------------------------------*/
+    *out_speed_left = v_left;
+    *out_speed_right = v_right;
 }
 
 /**
@@ -282,33 +282,27 @@ void controller_action(float error_angle, float distance, float wheelBase,
  *         - Correction d’angle agressive
  * @return true si le robot est arrivé, sinon false
  */
-bool pid_controller(float robot_x, float robot_y, float robot_theta,
-                         float x_target, float y_target,
-                         float Vmax, float wheelBase, float arrivalThreshold,
-                         float *out_speed_left, float *out_speed_right)
-{
+bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
+                    float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     /* 1) Distance à la cible ------------------------------------------------*/
     float dx = x_target - robot_x;
     float dy = y_target - robot_y;
-    float distance = sqrtf(dx*dx + dy*dy);
+    float distance = sqrtf(dx * dx + dy * dy);
 
-    if (distance <= arrivalThreshold) {          /* On est arrivé */
-        *out_speed_left  = 0.f;
+    if (distance <= arrivalThreshold) { /* On est arrivé */
+        *out_speed_left = 0.f;
         *out_speed_right = 0.f;
         return true;
     }
 
     /* 2) Erreur angulaire ---------------------------------------------------*/
     float desired_angle = atan2f(dy, dx);
-    float error_angle   = angle_normalize(desired_angle - robot_theta);
+    float error_angle = angle_normalize(desired_angle - robot_theta);
 
     /* 3) Boucles proportionnelles ------------------------------------------*/
-	controller_action(error_angle, distance, wheelBase, Vmax, out_speed_left,
-			out_speed_right);
-    return false;                                  /* encore en route */
+    controller_action(error_angle, distance, wheelBase, Vmax, out_speed_left, out_speed_right);
+    return false; /* encore en route */
 }
-
-
 
 /**
  * @brief  Contrôleur différentiel utilisant 2 PID externes :
@@ -318,25 +312,21 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta,
  *
  * @return true si le robot est dans le rayon d’arrivée.
  */
-bool pid_controller_kd(float robot_x, float robot_y, float robot_theta,
-                        float x_target,  float y_target,
-                        float Vmax,      float wheelBase,
-                        float arrivalThreshold,
-                        float *out_speed_left, float *out_speed_right)
-{
+bool pid_controller_kd(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
+                       float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
     /* 1) Distance et angle vers la cible ---------------------------------- */
     float dx = x_target - robot_x;
     float dy = y_target - robot_y;
-    float distance = sqrtf(dx*dx + dy*dy);
+    float distance = sqrtf(dx * dx + dy * dy);
 
-    if (distance <= arrivalThreshold) {                /* on est arrivé */
-        *out_speed_left  = 0.f;
+    if (distance <= arrivalThreshold) { /* on est arrivé */
+        *out_speed_left = 0.f;
         *out_speed_right = 0.f;
         return true;
     }
 
     float desired_angle = atan2f(dy, dx);
-    float err_theta     = angle_normalize(desired_angle - robot_theta);
+    float err_theta = angle_normalize(desired_angle - robot_theta);
 
     /* 2) PIDs -------------------------------------------------------------- *
        Règle de base  :
@@ -349,26 +339,26 @@ bool pid_controller_kd(float robot_x, float robot_y, float robot_theta,
 
     /* vitesse linéaire v (m/s) : seulement si la cible est ±90° devant     */
     float v = 0.f;
-    if (fabsf(err_theta) < (M_PI/2.f))
-        v = -pid_(pid_speed, 0.0f, distance);     /* - ( … )  ⇒ signe + */
+    if (fabsf(err_theta) < (M_PI / 2.f))
+        v = -pid_(pid_speed, 0.0f, distance); /* - ( … )  ⇒ signe + */
 
     /* vitesse angulaire w (rad/s) : toujours active                         */
-    float w = -pid_(pid_theta, 0.0f, err_theta);  /* - ( … )  ⇒ signe + */
+    float w = -pid_(pid_theta, 0.0f, err_theta); /* - ( … )  ⇒ signe + */
 
     /* 3) (v,w) → roues ----------------------------------------------------- */
     float h = 0.5f * wheelBase;
-    float v_left  = v - w * h;
+    float v_left = v - w * h;
     float v_right = v + w * h;
 
     /* 4) Saturation : la roue la plus rapide = ±Vmax ---------------------- */
     float maxAbs = fmaxf(fabsf(v_left), fabsf(v_right));
     if (maxAbs > Vmax) {
         float k = Vmax / maxAbs;
-        v_left  *= k;
+        v_left *= k;
         v_right *= k;
     }
 
-    *out_speed_left  = v_left;
+    *out_speed_left = v_left;
     *out_speed_right = v_right;
-    return false;                                         /* en mouvement */
+    return false; /* en mouvement */
 }

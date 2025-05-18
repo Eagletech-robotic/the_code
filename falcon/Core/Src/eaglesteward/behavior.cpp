@@ -35,35 +35,35 @@ void descend(Command &command, State &state) {
                 command.target_right_speed = -0.5f;
             }
         } else {
-//            float const speed_left = 0.5f - angle_diff / M_PI;
-//            float const speed_right = 0.5f + angle_diff / M_PI;
-//            float const max = std::max(speed_left, speed_right);
-//            command.target_left_speed = MAX_SPEED / max * speed_left;
-//            command.target_right_speed = MAX_SPEED / max * speed_right;
+            //            float const speed_left = 0.5f - angle_diff / M_PI;
+            //            float const speed_right = 0.5f + angle_diff / M_PI;
+            //            float const max = std::max(speed_left, speed_right);
+            //            command.target_left_speed = MAX_SPEED / max * speed_left;
+            //            command.target_right_speed = MAX_SPEED / max * speed_right;
 
-        	const float Kp_angle = 100.0f; /* angle    → vitesse angulaire  */
-        	/* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
-        	float v;
-        	if (fabsf(angle_diff) > (M_PI / 4.f)) {
-        		v = 0.0f;
-        	} else {
-        		v = MAX_SPEED;
-        	}
-        	float w = Kp_angle * angle_diff; /* rad/s */
-        	/* 4) (v, w) → vitesses roues -------------------------------------------*/
-        	float halfBase = WHEELBASE_M * 0.5f;
-        	float v_left = v - w * halfBase;
-        	float v_right = v + w * halfBase;
-        	/* 5) Saturation par la roue la plus rapide -----------------------------*/
-        	float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
-        	if (max_abs > MAX_SPEED) {
-        		float scale = MAX_SPEED / max_abs;
-        		v_left *= scale;
-        		v_right *= scale;
-        	}
-        	/* 6) Sorties ------------------------------------------------------------*/
-        	command.target_left_speed = v_left;
-        	command.target_right_speed = v_right;
+            const float Kp_angle = 100.0f; /* angle    → vitesse angulaire  */
+            /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
+            float v;
+            if (fabsf(angle_diff) > (M_PI / 4.f)) {
+                v = 0.0f;
+            } else {
+                v = MAX_SPEED;
+            }
+            float w = Kp_angle * angle_diff; /* rad/s */
+            /* 4) (v, w) → vitesses roues -------------------------------------------*/
+            float halfBase = WHEELBASE_M * 0.5f;
+            float v_left = v - w * halfBase;
+            float v_right = v + w * halfBase;
+            /* 5) Saturation par la roue la plus rapide -----------------------------*/
+            float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
+            if (max_abs > MAX_SPEED) {
+                float scale = MAX_SPEED / max_abs;
+                v_left *= scale;
+                v_right *= scale;
+            }
+            /* 6) Sorties ------------------------------------------------------------*/
+            command.target_left_speed = v_left;
+            command.target_right_speed = v_right;
         }
     }
 }
@@ -143,10 +143,10 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-//    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta, 0.01f)) {
-//        myprintf("BigThing\n");
-//        return Status::FAILURE;
-//    }
+    //    if (isBigThingClose(*state) && !isLookingOutwards(3.0f, 2.0f, 0.3f, x, y, theta, 0.01f)) {
+    //        myprintf("BigThing\n");
+    //        return Status::FAILURE;
+    //    }
 
     return Status::SUCCESS;
 }
@@ -463,18 +463,11 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
     }
 
     myprintf("B%d\r\n", state->target_nb);
-    const bool has_arrived =
-        pid_controller(
-        		state->imu_x,
-        		state->imu_y,
-				state->imu_theta,
-				target_imu_x,
-				target_imu_y,
-				2.0f, // m/s Vmax 3.0 est le max
-				WHEELBASE_M, // m, entraxe
-                0.08, // m, distance à l'arrivé pour être arrivé
-				&command->target_left_speed,
-				&command->target_right_speed);
+    const bool has_arrived = pid_controller(state->imu_x, state->imu_y, state->imu_theta, target_imu_x, target_imu_y,
+                                            2.0f,        // m/s Vmax 3.0 est le max
+                                            WHEELBASE_M, // m, entraxe
+                                            0.08,        // m, distance à l'arrivé pour être arrivé
+                                            &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         state->target_nb++;
         return Status::SUCCESS;
@@ -526,7 +519,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
 
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
-		//alternative(infiniteRectangle, logAndFail("rectangle")),
+        // alternative(infiniteRectangle, logAndFail("rectangle")),
         alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd),
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
@@ -538,7 +531,4 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     return root(const_cast<input_t *>(input), command, state);
 }
 
-void behavior_init(State *state) {
-	controllers_pid_init(&state->pid_theta, &state->pid_speed);
-}
-
+void behavior_init(State *state) { controllers_pid_init(&state->pid_theta, &state->pid_speed); }
