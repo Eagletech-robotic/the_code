@@ -44,11 +44,6 @@ class State {
     float imu_y{0.f};
     float imu_theta{0.f};
 
-    // Opponent robot
-    float opponent_x{0.f}; // meters
-    float opponent_y{0.f};
-    float opponent_theta{0.f};
-
     // World
     World world{colour};
 

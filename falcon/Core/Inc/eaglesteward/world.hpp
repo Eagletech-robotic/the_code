@@ -64,6 +64,11 @@ class World {
 
     RobotColour colour_;
 
+    // Opponent robot
+    float opponent_x{0.f}; // meters
+    float opponent_y{0.f};
+    float opponent_theta{0.f};
+
     // State of the world
     SizedArray<Bleacher, 10> bleachers_;
     SizedArray<BuildingArea, 8> building_areas_;
