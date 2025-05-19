@@ -1,10 +1,10 @@
 #include "eaglesteward/state.hpp"
 
+#include "eaglesteward/constants.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/bluetooth.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "robotic/fusion_odo_imu.hpp"
-#include "robotic/robot_constants.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 

@@ -6,6 +6,7 @@
 #include <cfloat>
 #include <cmath>
 
+#include "eaglesteward/constants.hpp"
 #include "utils/angles.hpp"
 
 World::World(RobotColour colour) {

@@ -1,10 +1,10 @@
 #include "eaglesteward/behavior.hpp"
 #include "eaglesteward/behaviortree.hpp"
+#include "eaglesteward/constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
 #include "math.h"
 #include "robotic/controllers.hpp"
-#include "robotic/robot_constants.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
