@@ -7,6 +7,13 @@
 
 enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTACT };
 
+enum class Mode {
+	Other,
+    Waiting,
+    GotoBleacher,
+	GotoConstruction
+};
+
 class State {
   public:
     State() { reset(); }
@@ -72,6 +79,9 @@ class State {
     //   void tick(step_nb, time_ms);
     //   void dump(); -> "{name}: [379]0.008 [386]0.007 [AVG] 0.003"
     // };
+
+    // Pseudo state
+    std::uint32_t bt_tick = 0;
 
     // Bleacher carrying
     bool bleacher_lifted{false};

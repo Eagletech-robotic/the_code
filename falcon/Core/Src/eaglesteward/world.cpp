@@ -330,7 +330,12 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
 
-    if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
+    //ordre 4
+//    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
+//    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
+    float norm = sqrtf(dx*dx + dy*dy);
+    //if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
+    if(norm <= SLOPE_THRESHOLD) {
         myprintf("Reached local minimum");
         out_is_local_minimum = true;
         out_yaw = 0.f;
