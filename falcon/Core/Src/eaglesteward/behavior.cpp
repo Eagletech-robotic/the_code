@@ -334,11 +334,11 @@ Status leaveBleacherAttraction(input_t *input, Command *command, State *state) {
 
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-    auto seq = sequence(
+    auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
-            if (state_->picking_up_bleacher) {
-                return Status::SUCCESS;
-            }
+//            if (state_->picking_up_bleacher) {
+//                return Status::SUCCESS;
+//            }
 
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
@@ -348,25 +348,24 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 host_printf("No bleacher\n");
                 return Status::FAILURE;
             }
-
+            state_->picking_up_bleacher = bleacher;
             // Inside a rectangle centered around the bleacher's orthogonal axis?
-            if (auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
-                std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
-                std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
-                state_->picking_up_bleacher = bleacher;
-                return Status::SUCCESS;
-            } else {
+//            if (auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
+//                std::abs(local_x) <= BLEACHER_ATTRACTION_HALF_LENGTH &&
+//                std::abs(local_y) <= BLEACHER_ATTRACTION_HALF_WIDTH) {
+//                state_->picking_up_bleacher = bleacher;
+//                return Status::SUCCESS;
+//            } else {
                 host_printf("Searching\n");
                 mcu_printf("BL-SRCH\n");
                 if (descend(*command_, *state_) ){
                 	host_printf("Minimum\n");
-                    state_->picking_up_bleacher = bleacher;
                 	return Status::SUCCESS;
                 } else {
                 	return Status::RUNNING;
                 }
 
-            }
+            //}
         },
         [](input_t *, Command *command_, State *state_) {
 
@@ -375,21 +374,23 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->getPositionAndOrientation(x, y, orientation);
 
             auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
-            if (std::abs(local_y) > 0.04f) {
-                state_->picking_up_bleacher_on_axis = false;
-            } else if (std::abs(local_y) < 0.02f) {
-                state_->picking_up_bleacher_on_axis = true;
-            }
-
-            if (state_->picking_up_bleacher_on_axis) {
-                return Status::SUCCESS;
-            } else {
+//            if (std::abs(local_y) > 0.04f) {
+//                state_->picking_up_bleacher_on_axis = false;
+//            } else if (std::abs(local_y) < 0.02f) {
+//                state_->picking_up_bleacher_on_axis = true;
+//            }
+//
+//            if (state_->picking_up_bleacher_on_axis) {
+//                return Status::SUCCESS;
+//            } else {
                 float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
                 float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
-                pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.f,
-                               &command_->target_left_speed, &command_->target_right_speed);
+                if(pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.04f,
+                               &command_->target_left_speed, &command_->target_right_speed) ) {
+                	return Status::SUCCESS;
+                }
                 return Status::RUNNING;
-            }
+      //      }
         },
         [](input_t *, Command *command_, State *state_) {
             const auto bleacher = state_->picking_up_bleacher;
