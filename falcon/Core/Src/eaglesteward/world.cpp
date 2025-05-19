@@ -71,12 +71,25 @@ Bleacher *World::carried_bleacher() {
 }
 
 void World::reset_dijkstra() {
-    // Clear the potential field and the queue
+    // Clear previous calculations
     for (auto &row : potential_calculating()) {
         std::fill(row.begin(), row.end(), FLT_MAX);
     }
+    for (auto &row : obstacles_field_) {
+        std::fill(row.begin(), row.end(), ObstacleType::None);
+    }
     pqueue_.clear();
 
+    // Add targets
+    enqueue_targets();
+
+    // Add obstacles
+    // setup_obstacles_field();
+
+    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
+}
+
+void World::enqueue_targets() {
     auto enqueue_grid_cell = [this](float x, float y) {
         if (is_in_field(x, y)) {
             auto i = static_cast<uint8_t>(std::round(x / SQUARE_SIZE_M));
@@ -112,8 +125,88 @@ void World::reset_dijkstra() {
             enqueue_grid_cell(x, y);
         }
     }
+}
 
-    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
+void World::setup_obstacles_field() {
+    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type, bool force) {
+        int i0 = std::max(0, static_cast<int>(std::floor(x_min / SQUARE_SIZE_M)));
+        int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(x_max / SQUARE_SIZE_M)));
+        int j0 = std::max(0, static_cast<int>(std::floor(y_min / SQUARE_SIZE_M)));
+        int j1 = std::min(FIELD_HEIGHT_SQ - 1, static_cast<int>(std::floor(y_max / SQUARE_SIZE_M)));
+
+        for (int i = i0; i <= i1; ++i)
+            for (int j = j0; j <= j1; ++j)
+                obstacles_field_[i][j] = force ? type : std::max(obstacles_field_[i][j], type);
+    };
+
+    auto mark_circle = [this](float center_x, float center_y, float radius_f, ObstacleType type) {
+        int radius = static_cast<int>(std::ceil(radius_f / SQUARE_SIZE_M));
+        int square_radius = radius * radius;
+
+        int center_i = static_cast<int>(std::round(center_x / SQUARE_SIZE_M));
+        int center_j = static_cast<int>(std::round(center_y / SQUARE_SIZE_M));
+        int i0 = std::max(0, center_i - radius), i1 = std::min(FIELD_WIDTH_SQ - 1, center_i + radius);
+        int j0 = std::max(0, center_j - radius), j1 = std::min(FIELD_HEIGHT_SQ - 1, center_j + radius);
+
+        for (int i = i0; i <= i1; ++i) {
+            int square_i = (i - center_i) * (i - center_i);
+            for (int j = j0; j <= j1; ++j) {
+                int dj = j - center_j;
+                if (square_i + dj * dj <= square_radius)
+                    obstacles_field_[i][j] = std::max(obstacles_field_[i][j], type);
+            }
+        }
+    };
+
+    // ---------------
+    // Scene
+    // ---------------
+    mark_rectangle(0.f, FIELD_WIDTH_M, 1.55 - ROBOT_RADIUS, FIELD_HEIGHT_M, ObstacleType::Fixed, false);
+
+    // Backstage corridor
+    constexpr float CORRIDOR_Y_MIN = 1.55f - ROBOT_RADIUS;
+    constexpr float CORRIDOR_Y_MAX = 1.80f - ROBOT_RADIUS;
+
+    float corridor_x_min, corridor_x_max;
+    if (colour_ == RobotColour::Blue) {
+        corridor_x_min = 1.95f + ROBOT_RADIUS;
+        corridor_x_max = 2.40f - ROBOT_RADIUS;
+    } else {
+        // Yellow
+        corridor_x_min = 0.60f + ROBOT_RADIUS;
+        corridor_x_max = 1.05f - ROBOT_RADIUS;
+    }
+    mark_rectangle(corridor_x_min, corridor_x_max, CORRIDOR_Y_MIN, CORRIDOR_Y_MAX, ObstacleType::None, true);
+
+    // ---------------
+    // Opponent's building areas
+    // ---------------
+    for (const auto &building_area : building_areas_) {
+        if (building_area.colour == colour_)
+            continue;
+        float const half_width = building_area.span_x() / 2 + ROBOT_RADIUS;
+        float const half_height = building_area.span_y() / 2 + ROBOT_RADIUS;
+        mark_rectangle(building_area.x - half_width, building_area.x + half_width, building_area.y - half_height,
+                       building_area.y + half_height, ObstacleType::Fixed, false);
+    }
+
+    // ---------------
+    // Opponent robot
+    // ---------------
+    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 3, ObstacleType::Movable);
+    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+
+    // ---------------
+    // Bleachers
+    // ---------------
+    for (const auto &bleacher : bleachers_) {
+        if (bleacher.is_carried)
+            continue;
+        mark_circle(bleacher.x, bleacher.y, 0.35f, ObstacleType::Movable);
+        if (!bleacher.uncertain) {
+            mark_circle(bleacher.x, bleacher.y, 0.15f, ObstacleType::Fixed);
+        }
+    }
 }
 
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
@@ -147,7 +240,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
     /*const int MAX_DISTANCE = std::ceil(std::max(FIELD_WIDTH_SQ, FIELD_HEIGHT_SQ) *
                                            std::max({COST_STRAIGHT, COST_DIAG, COST_MOVABLE_OBSTACLE}));*/
 
-    const ObstacleType *obstaclesField = obstacles_field_[ready_field_].data();
+    const ObstacleType *obstaclesField = obstacles_field_.data()->data();
     float *potential = potential_calculating().data()->data();
 
     for (int it = 0; !pqueue_.empty(); ++it) {

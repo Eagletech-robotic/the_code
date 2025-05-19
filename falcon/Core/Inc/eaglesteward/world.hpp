@@ -16,7 +16,11 @@ struct PQueueNode {
     bool operator<(const PQueueNode &other) const { return distance > other.distance; }
 };
 
-enum class ObstacleType { None, Fixed, Movable };
+enum class ObstacleType {
+    None,    // Keep the order: each status has prevalence over previous ones
+    Movable, // Movable > None
+    Fixed    // Fixed > Movable
+};
 
 enum class TargetType {
     None,
@@ -91,4 +95,9 @@ class World {
     static bool is_in_field(float x, float y);
 
     static bool is_in_field_square(int i, int j);
+
+  private:
+    void enqueue_targets();
+
+    void setup_obstacles_field();
 };
