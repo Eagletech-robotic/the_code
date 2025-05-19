@@ -86,8 +86,8 @@ class State {
     // Bleacher carrying
     bool bleacher_lifted{false};
 
-    Bleacher *picking_up_bleacher{nullptr};
-    bool picking_up_bleacher_on_axis{false};
+    GameEntity *target{nullptr};
+  //  bool picking_up_bleacher_on_axis{false};
 
     // Rectangle test
     int target_nb{0};
