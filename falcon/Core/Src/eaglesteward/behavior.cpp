@@ -17,39 +17,10 @@ auto logAndFail(char const *s) {
     };
 }
 
-void proceed_heading(float error_angle, float Vmax, float Kp_angle, Command &command) {
+bool descend(Command &command, State &state, float max_speed) {
+    constexpr float KP_ROTATION = 100.0f; // Rotation PID's P gain
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
-    // const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
-
-    /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
-    float v;
-    if (fabsf(error_angle) > (M_PI / 4.f)) {
-        v = 0.0f;
-    } else {
-        v = Vmax;
-    }
-
-    float w = Kp_angle * error_angle; /* rad/s */
-
-    /* 4) (v, w) → vitesses roues -------------------------------------------*/
-    float halfBase = WHEELBASE_M * 0.5f;
-    float v_left = v - w * halfBase;
-    float v_right = v + w * halfBase;
-
-    /* 5) Saturation par la roue la plus rapide -----------------------------*/
-    float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
-    if (max_abs > Vmax) {
-        float scale = Vmax / max_abs;
-        v_left *= scale;
-        v_right *= scale;
-    }
-
-    /* 6) Sorties ------------------------------------------------------------*/
-    command.target_left_speed = v_left;
-    command.target_right_speed = v_right;
-}
-
-bool descend(Command &command, State &state, float MAX_SPEED) {
     auto &world = state.world;
 
     float x, y, orientation;
@@ -64,28 +35,33 @@ bool descend(Command &command, State &state, float MAX_SPEED) {
         command.target_left_speed = 0.1f;
         command.target_right_speed = 0.1f;
         return true;
+
     } else {
-        float const angle_diff = angle_normalize(target_angle - orientation);
+        auto const angle_diff = angle_normalize(target_angle - orientation);
 
-        proceed_heading(angle_diff, MAX_SPEED, 100.0f, command);
+        // Calculate the linear and angular speed
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : max_speed;
+        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
+        if (state.bleacher_lifted)
+            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
 
-        //        if (std::abs(angle_diff) >= M_PI_2) {
-        //            if (angle_diff >= 0) {
-        //                command.target_left_speed = -0.5f;
-        //                command.target_right_speed = 0.5f;
-        //            } else {
-        //                command.target_left_speed = 0.5f;
-        //                command.target_right_speed = -0.5f;
-        //            }
-        //        } else {
-        //            float const speed_left = 0.5f - angle_diff / M_PI;
-        //            float const speed_right = 0.5f + angle_diff / M_PI;
-        //            float const max = std::max(speed_left, speed_right);
-        //            command.target_left_speed = MAX_SPEED / max * speed_left;
-        //            command.target_right_speed = MAX_SPEED / max * speed_right;
-        //        }
+        // Wheel speeds
+        constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
+        auto speed_left = linear_speed - angular_speed * HALF_BASE;
+        auto speed_right = linear_speed + angular_speed * HALF_BASE;
+
+        // Saturation by the fastest wheel
+        auto const abs_fastest_wheel = fmaxf(fabsf(speed_left), fabsf(speed_right));
+        if (abs_fastest_wheel > max_speed) {
+            float scale = max_speed / abs_fastest_wheel;
+            speed_left *= scale;
+            speed_right *= scale;
+        }
+
+        command.target_left_speed = speed_left;
+        command.target_right_speed = speed_right;
+        return false;
     }
-    return false;
 }
 
 /*
@@ -222,11 +198,15 @@ Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
     float x, y, _orientation;
     state->getPositionAndOrientation(x, y, _orientation);
     const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
-    return (state->bleacher_lifted || // Do not escape the bleacher we are carrying
-            !bleacher || distance >= 0.4f ||
-            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) > to_radians(20))
-               ? Status::SUCCESS
-               : Status::FAILURE;
+
+    if (!bleacher || distance >= 0.4f || state->bleacher_lifted // Do not escape the bleacher we are carrying
+    ) {
+        return Status::SUCCESS;
+    }
+
+    float bearing = std::atan2(bleacher->y - y, bleacher->x - x);
+    bool is_facing_bleacher = std::abs(angle_normalize(_orientation - bearing)) <= to_radians(20);
+    return is_facing_bleacher ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status escapeBleacher(input_t *, Command *command, State *) {
@@ -705,19 +685,6 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
-    if (state->elapsedTime(*input) > 1.0f) {
-        return Status::SUCCESS;
-    }
-    return Status::FAILURE;
-}
-
-Status deployFlag(const input_t *, Command *command, State *) {
-    command->target_left_speed = 0.5f;
-    command->target_right_speed = 0.5f;
-    return Status::RUNNING;
-}
-
 // DEBUG - used by infiniteRectangle
 Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *, Command *command, State *state) {
     if (state->target_nb != target_nb) {
@@ -737,6 +704,20 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
         return Status::RUNNING;
     }
 }
+
+Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
+    if (state->elapsedTime(*input) > 0.5f) {
+        return Status::SUCCESS;
+    }
+    return Status::FAILURE;
+}
+
+Status deployFlag(const input_t *, Command *command, State *) {
+    command->target_left_speed = 0.5f;
+    command->target_right_speed = 0.5f;
+    return Status::RUNNING;
+}
+
 // DEBUG - move around a rectangle
 Status infiniteRectangle(const input_t *input, Command *command, State *state) {
     auto seq = sequence(
