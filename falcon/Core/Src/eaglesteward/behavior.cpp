@@ -18,9 +18,6 @@ auto logAndFail(char const *s) {
 }
 
 void proceed_heading(float error_angle, float Vmax, float Kp_angle, Command &command) {
-
-    //const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
-
     /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
     float v;
     if (fabsf(error_angle) > (M_PI / 4.f)) {
@@ -61,29 +58,10 @@ bool descend(Command &command, State &state, float MAX_SPEED) {
 
     if (is_local_minimum) {
         // Move forward slowly rather than remaining trapped
-        command.target_left_speed = 0.1f;
-        command.target_right_speed = 0.1f;
         return true;
     } else {
         float const angle_diff = angle_normalize(target_angle - orientation);
-
         proceed_heading(angle_diff, MAX_SPEED, 100.0f, command);
-
-//        if (std::abs(angle_diff) >= M_PI_2) {
-//            if (angle_diff >= 0) {
-//                command.target_left_speed = -0.5f;
-//                command.target_right_speed = 0.5f;
-//            } else {
-//                command.target_left_speed = 0.5f;
-//                command.target_right_speed = -0.5f;
-//            }
-//        } else {
-//            float const speed_left = 0.5f - angle_diff / M_PI;
-//            float const speed_right = 0.5f + angle_diff / M_PI;
-//            float const max = std::max(speed_left, speed_right);
-//            command.target_left_speed = MAX_SPEED / max * speed_left;
-//            command.target_right_speed = MAX_SPEED / max * speed_right;
-//        }
     }
     return false;
 }
@@ -434,8 +412,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
        //     state_->picking_up_bleacher_on_axis = false;
             state_->world.drop_carried_bleacher();
             state_->world.set_target(TargetType::BleacherWaypoint);
-            return Status::RUNNING;
-        },
+            return Status::SUCCESS;
+        }, //todo : make it work
 		alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher)
         );
 
