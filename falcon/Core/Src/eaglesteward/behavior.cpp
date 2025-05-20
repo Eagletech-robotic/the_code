@@ -18,7 +18,7 @@ auto logAndFail(char const *s) {
 }
 
 bool descend(Command &command, State &state, float max_speed) {
-    constexpr float KP_ROTATION = 100.0f; // Rotation PID's P gain
+    constexpr float KP_ROTATION = 100.0f;            // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
     auto &world = state.world;
