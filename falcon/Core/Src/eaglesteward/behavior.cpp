@@ -9,7 +9,13 @@
 #include "utils/myprintf.hpp"
 
 void descend(Command &command, State &state) {
-    constexpr float MAX_SPEED = 1.0f; // m/s
+    constexpr float MAX_SPEED = 2.0f;     // m/s
+    constexpr float KP_ROTATION = 100.0f; // Rotation PID's P gain
+
+    // Limits when we carry a bleacher
+    constexpr float MAX_SPEED_LOADED = 1.0f;         // m/s
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // rad/s
+
     auto &world = state.world;
 
     float x, y, orientation;
@@ -24,23 +30,30 @@ void descend(Command &command, State &state) {
         command.target_left_speed = 0.3f;
         command.target_right_speed = 0.3f;
     } else {
-        float const angle_diff = angle_normalize(target_angle - orientation);
+        auto const angle_diff = angle_normalize(target_angle - orientation);
 
-        if (std::abs(angle_diff) >= M_PI_2) {
-            if (angle_diff >= 0) {
-                command.target_left_speed = -0.5f;
-                command.target_right_speed = 0.5f;
-            } else {
-                command.target_left_speed = 0.5f;
-                command.target_right_speed = -0.5f;
-            }
-        } else {
-            float const speed_left = 0.5f - angle_diff / M_PI;
-            float const speed_right = 0.5f + angle_diff / M_PI;
-            float const max = std::max(speed_left, speed_right);
-            command.target_left_speed = MAX_SPEED / max * speed_left;
-            command.target_right_speed = MAX_SPEED / max * speed_right;
+        // Calculate the linear and angular speed
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : MAX_SPEED;
+        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
+        if (state.bleacher_lifted)
+            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
+
+        // Wheel speeds
+        constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
+        auto speed_left = linear_speed - angular_speed * HALF_BASE;
+        auto speed_right = linear_speed + angular_speed * HALF_BASE;
+
+        // Saturation by the fastest wheel
+        auto const abs_fastest_wheel = fmaxf(fabsf(speed_left), fabsf(speed_right));
+        auto const max_speed = state.bleacher_lifted ? MAX_SPEED_LOADED : MAX_SPEED;
+        if (abs_fastest_wheel > max_speed) {
+            float scale = max_speed / abs_fastest_wheel;
+            speed_left *= scale;
+            speed_right *= scale;
         }
+
+        command.target_left_speed = speed_left;
+        command.target_right_speed = speed_right;
     }
 }
 
@@ -467,7 +480,7 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
 }
 
 Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
-    if (state->elapsedTime(*input) > 1.0f) {
+    if (state->elapsedTime(*input) > 0.5f) {
         return Status::SUCCESS;
     }
     return Status::FAILURE;

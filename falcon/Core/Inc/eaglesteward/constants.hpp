@@ -21,16 +21,16 @@ static constexpr float FIELD_HEIGHT_M = 2.00;
 // Robot default position and orientation on the field.
 static constexpr float INITIAL_ORIENTATION = M_PI_2;
 static constexpr float INITIAL_X = 1.775f;
-static constexpr float INITIAL_Y = 0.225f;
+static constexpr float INITIAL_Y = 0.15f;
 
 // Bleacher
 static constexpr float BLEACHER_WIDTH = 0.10f;
-static constexpr float BLEACHER_WAYPOINT_DISTANCE = 0.40f;      // Distance to bleacher's centre on an orthogonal axis
+static constexpr float BLEACHER_WAYPOINT_DISTANCE = 0.30f;      // Distance to bleacher's centre on an orthogonal axis
 static constexpr float BLEACHER_ATTRACTION_HALF_LENGTH = 0.40f; // Length of the attraction area along orthogonal axis
 static constexpr float BLEACHER_ATTRACTION_HALF_WIDTH = 0.15f;  // Width of the attraction area along bleacher axis
 
 // Building area
-static constexpr float BUILDING_AREA_WAYPOINT_DISTANCE = 0.40f; // Distance to the edge oriented toward the field
+static constexpr float BUILDING_AREA_WAYPOINT_DISTANCE = 0.30f; // Distance to the edge oriented toward the field
 static constexpr float BUILDING_AREA_LENGTH_SMALL = 0.15f;
 static constexpr float BUILDING_AREA_LENGTH_LARGE = 0.45f;
 static constexpr float BUILDING_AREA_WIDTH = 0.45f;
