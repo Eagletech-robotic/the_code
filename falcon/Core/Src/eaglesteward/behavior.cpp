@@ -17,36 +17,10 @@ auto logAndFail(char const *s) {
     };
 }
 
-void proceed_heading(float error_angle, float Vmax, float Kp_angle, Command &command) {
-    /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
-    float v;
-    if (fabsf(error_angle) > (M_PI / 4.f)) {
-        v = 0.0f;
-    } else {
-        v = Vmax;
-    }
+bool descend(Command &command, State &state, float max_speed) {
+    constexpr float KP_ROTATION = 100.0f;            // Rotation PID's P gain
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
-    float w = Kp_angle * error_angle; /* rad/s */
-
-    /* 4) (v, w) → vitesses roues -------------------------------------------*/
-    float halfBase = WHEELBASE_M * 0.5f;
-    float v_left = v - w * halfBase;
-    float v_right = v + w * halfBase;
-
-    /* 5) Saturation par la roue la plus rapide -----------------------------*/
-    float max_abs = fmaxf(fabsf(v_left), fabsf(v_right));
-    if (max_abs > Vmax) {
-        float scale = Vmax / max_abs;
-        v_left *= scale;
-        v_right *= scale;
-    }
-
-    /* 6) Sorties ------------------------------------------------------------*/
-    command.target_left_speed = v_left;
-    command.target_right_speed = v_right;
-}
-
-bool descend(Command &command, State &state, float MAX_SPEED) {
     auto &world = state.world;
 
     float x, y, orientation;
@@ -59,11 +33,33 @@ bool descend(Command &command, State &state, float MAX_SPEED) {
     if (is_local_minimum) {
         // Move forward slowly rather than remaining trapped
         return true;
+
     } else {
-        float const angle_diff = angle_normalize(target_angle - orientation);
-        proceed_heading(angle_diff, MAX_SPEED, 100.0f, command);
+        auto const angle_diff = angle_normalize(target_angle - orientation);
+
+        // Calculate the linear and angular speed
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : max_speed;
+        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
+        if (state.bleacher_lifted)
+            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
+
+        // Wheel speeds
+        constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
+        auto speed_left = linear_speed - angular_speed * HALF_BASE;
+        auto speed_right = linear_speed + angular_speed * HALF_BASE;
+
+        // Saturation by the fastest wheel
+        auto const abs_fastest_wheel = fmaxf(fabsf(speed_left), fabsf(speed_right));
+        if (abs_fastest_wheel > max_speed) {
+            float scale = max_speed / abs_fastest_wheel;
+            speed_left *= scale;
+            speed_right *= scale;
+        }
+
+        command.target_left_speed = speed_left;
+        command.target_right_speed = speed_right;
+        return false;
     }
-    return false;
 }
 
 /*
@@ -164,7 +160,7 @@ Status carryBleacher(input_t *input, Command *command, State *state) {
             // The bleacher was dropped: update the state...
             state->bleacher_lifted = false;
             state->target = nullptr;
-        //    state->picking_up_bleacher_on_axis = false;
+            //    state->picking_up_bleacher_on_axis = false;
             state->world.drop_carried_bleacher();
 
             // ... and mark the bleacher as uncertain.
@@ -200,11 +196,15 @@ Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
     float x, y, _orientation;
     state->getPositionAndOrientation(x, y, _orientation);
     const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
-    return (state->bleacher_lifted || // Do not escape the bleacher we are carrying
-            !bleacher || distance >= 0.4f ||
-            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) > to_radians(20))
-               ? Status::SUCCESS
-               : Status::FAILURE;
+
+    if (!bleacher || distance >= 0.4f || state->bleacher_lifted // Do not escape the bleacher we are carrying
+    ) {
+        return Status::SUCCESS;
+    }
+
+    float bearing = std::atan2(bleacher->y - y, bleacher->x - x);
+    bool is_facing_bleacher = std::abs(angle_normalize(_orientation - bearing)) <= to_radians(20);
+    return is_facing_bleacher ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status escapeBleacher(input_t *, Command *command, State *) {
@@ -213,7 +213,7 @@ Status escapeBleacher(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 //
-//Status goToClosestBuildingArea_old(input_t *input, Command *command, State *state) {
+// Status goToClosestBuildingArea_old(input_t *input, Command *command, State *state) {
 //    auto seq = statenode(
 //        //
 //        [](input_t *, Command *command_, State *state_) {
@@ -319,68 +319,70 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             // Inside a rectangle centered around the building area's orthogonal axis?
-//            if (auto [local_x, local_y] = building_area->position_in_local_frame(x, y);
-//                std::abs(local_x) <= BUILDING_AREA_ATTRACTION_HALF_LENGTH &&
-//                std::abs(local_y) <= BUILDING_AREA_ATTRACTION_HALF_WIDTH) {
-//                return Status::SUCCESS;
-//            } else {
-                host_printf("Searching\n");
-                mcu_printf("BA-SRCH\n");
-                if(descend(*command_, *state_, .8f)) { // vitesse plus lente pour ne rien lacher
-                	return Status::SUCCESS;
-                }
-            	return Status::RUNNING;
+            //            if (auto [local_x, local_y] = building_area->position_in_local_frame(x, y);
+            //                std::abs(local_x) <= BUILDING_AREA_ATTRACTION_HALF_LENGTH &&
+            //                std::abs(local_y) <= BUILDING_AREA_ATTRACTION_HALF_WIDTH) {
+            //                return Status::SUCCESS;
+            //            } else {
+            host_printf("Searching\n");
+            mcu_printf("BA-SRCH\n");
+            if (descend(*command_, *state_, .8f)) { // vitesse plus lente pour ne rien lacher
+                return Status::SUCCESS;
+            }
+            return Status::RUNNING;
             //}
-        },     [](input_t *, Command *command_, State *state_) {
-        	//Aller en face
-        	float x, y, orientation;
-        	state_->getPositionAndOrientation(x, y, orientation);
-        	auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
-        	auto const [wp_x, wp_y] = building_area->waypoint();
-        	if(pid_controller(x, y, orientation, wp_x, wp_y, .8f, WHEELBASE_M, 0.04f,
-        	            		&command_->target_left_speed, &command_->target_right_speed) ) {
-        	   return Status::SUCCESS;
-        	}
-        	return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-        	//Aller en face
+            // Aller en face
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
-//
-//            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
-//            constexpr float STOP_DISTANCE = 0.15f;
+            auto const [wp_x, wp_y] = building_area->waypoint();
+            if (pid_controller(x, y, orientation, wp_x, wp_y, .8f, WHEELBASE_M, 0.04f, &command_->target_left_speed,
+                               &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *state_) {
+            // Aller en face
+            float x, y, orientation;
+            state_->getPositionAndOrientation(x, y, orientation);
+            auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
+            //
+            //            constexpr float SLOW_DOWN_DISTANCE = 0.3f;
+            //            constexpr float STOP_DISTANCE = 0.15f;
 
-//            if (distance < STOP_DISTANCE) {
-//                return Status::SUCCESS;
-//            }
+            //            if (distance < STOP_DISTANCE) {
+            //                return Status::SUCCESS;
+            //            }
 
-//            auto const [wp_x, wp_y] = building_area->waypoint();
+            //            auto const [wp_x, wp_y] = building_area->waypoint();
             auto const [target_x, target_y] = building_area->available_slot();
 
-          	if(pid_controller(x, y, orientation, target_x, target_y, .8f, WHEELBASE_M, 0.04f,
-            	            		&command_->target_left_speed, &command_->target_right_speed) ) {
-            	   return Status::SUCCESS;
-            	}
+            if (pid_controller(x, y, orientation, target_x, target_y, .8f, WHEELBASE_M, 0.04f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
             host_printf("Approaching building area x=%.3f y=%.3f\n", target_x, target_y);
             mcu_printf("BA-APP\n");
 
-          	return Status::RUNNING;
+            return Status::RUNNING;
 
+            //            const bool has_arrived =
+            //                stanley_controller(x, y, orientation, wp_x, wp_y, target_x, target_y, target_x - (wp_x -
+            //                target_x),
+            //                                   target_y - (wp_y - target_y), 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
+            //                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed,
+            //                                   &command_->target_right_speed);
 
-//            const bool has_arrived =
-//                stanley_controller(x, y, orientation, wp_x, wp_y, target_x, target_y, target_x - (wp_x - target_x),
-//                                   target_y - (wp_y - target_y), 0.8f, 1.0f, 0.3f, 200.0f, WHEELBASE_M,
-//                                   SLOW_DOWN_DISTANCE, &command_->target_left_speed, &command_->target_right_speed);
-
-//            if (has_arrived) {
-//                return Status::SUCCESS;
-//            } else {
-//                host_printf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
-//                mcu_printf("BA-APP\n");
-//                return Status::RUNNING;
-//            }
+            //            if (has_arrived) {
+            //                return Status::SUCCESS;
+            //            } else {
+            //                host_printf("Approaching building area x=%.3f y=%.3f\n", wp_x, wp_y);
+            //                mcu_printf("BA-APP\n");
+            //                return Status::RUNNING;
+            //            }
         },
         [](input_t *, Command *command_, State *state_) {
             float x, y, orientation;
@@ -409,9 +411,10 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->target_right_speed = 0.f;
             state_->bleacher_lifted = false;
             state_->target = nullptr;
-       //     state_->picking_up_bleacher_on_axis = false;
+            //     state_->picking_up_bleacher_on_axis = false;
             state_->world.drop_carried_bleacher();
             state_->world.set_target(TargetType::BleacherWaypoint);
+
             return Status::SUCCESS;
         }, //todo : make it work
 		alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher)
@@ -419,7 +422,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
     return seq(const_cast<input_t *>(input), command, state);
 }
-
 
 Status leaveBleacherAttraction(input_t *input, Command *command, State *state) {
     if (state->target) {
@@ -430,18 +432,17 @@ Status leaveBleacherAttraction(input_t *input, Command *command, State *state) {
             std::abs(local_x) > BLEACHER_ATTRACTION_HALF_LENGTH + 0.05f ||
             std::abs(local_y) > BLEACHER_ATTRACTION_HALF_WIDTH + 0.05f) {
             state->target = nullptr;
-     //       state->picking_up_bleacher_on_axis = false;
+            //       state->picking_up_bleacher_on_axis = false;
         }
     }
 
     return Status::SUCCESS;
 }
 
-
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
-    		//descente de gradient vers le plus proche
+            // descente de gradient vers le plus proche
 
             float x, y, _orientation;
             state_->getPositionAndOrientation(x, y, _orientation);
@@ -454,15 +455,15 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->target = bleacher;
             host_printf("Searching\n");
             mcu_printf("BL-SRCH\n");
-            if (descend(*command_, *state_, 2.0f) ){
-            	host_printf("Minimum\n");
-            	return Status::SUCCESS;
+            if (descend(*command_, *state_, 2.0f)) {
+                host_printf("Minimum\n");
+                return Status::SUCCESS;
             } else {
-            	return Status::RUNNING;
+                return Status::RUNNING;
             }
         },
         [](input_t *, Command *command_, State *state_) {
-        	// aller en face du gradin
+            // aller en face du gradin
             const auto bleacher = state_->target;
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
@@ -471,14 +472,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
             float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
-            if(pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.04f,
-            		&command_->target_left_speed, &command_->target_right_speed) ) {
-            	return Status::SUCCESS;
+            if (pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.04f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
             }
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-        	// aller vers le gradin
+            // aller vers le gradin
             const auto bleacher = state_->target;
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
@@ -495,7 +496,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
         },
         [](input_t *, Command *command_, State *state_) {
-        	// On va ailleurs !
+            // On va ailleurs !
             host_printf("Pick up bleacher\n");
             mcu_printf("BL-PKP\n");
 
@@ -517,7 +518,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     return seq(const_cast<input_t *>(input), command, state);
 }
 //
-//Status gotoClosestBleacher_old(input_t *input, Command *command, State *state) {
+// Status gotoClosestBleacher_old(input_t *input, Command *command, State *state) {
 //    auto seq = sequence(
 //        //
 //        [](input_t *, Command *command_, State *state_) {
@@ -554,7 +555,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 //                	//    const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
 //                	//    return (state->bleacher_lifted || // Do not escape the bleacher we are carrying
 //                	//            !bleacher || distance >= 0.4f ||
-//                	//            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) > to_radians(20))
+//                	//            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) >
+//                to_radians(20))
 //                	//               ? Status::SUCCESS
 //                	//               : Status::FAILURE;
 //                	//}
@@ -591,7 +593,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 //            state_->getPositionAndOrientation(x, y, orientation);
 //
 //            const bool has_arrived = pid_controller(x, y, orientation, bleacher->x, bleacher->y, 0.8f, WHEELBASE_M,
-//                                                    0.15, &command_->target_left_speed, &command_->target_right_speed);
+//                                                    0.15, &command_->target_left_speed,
+//                                                    &command_->target_right_speed);
 //
 //            if (has_arrived) {
 //                return Status::SUCCESS;
@@ -630,7 +633,7 @@ Status isJackRemoved(input_t *input, Command *, State *state) {
 
     if (input->jack_removed) {
         return Status::SUCCESS;
-    }//Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
+    } // Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
     //    float x, y, _orientation;
     //    state->getPositionAndOrientation(x, y, _orientation);
     //    const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
@@ -682,21 +685,6 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-
-
-Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
-    if (state->elapsedTime(*input) > 1.0f) {
-        return Status::SUCCESS;
-    }
-    return Status::FAILURE;
-}
-
-Status deployFlag(const input_t *, Command *command, State *) {
-    command->target_left_speed = 0.5f;
-    command->target_right_speed = 0.5f;
-    return Status::RUNNING;
-}
-
 // DEBUG - used by infiniteRectangle
 Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t *, Command *command, State *state) {
     if (state->target_nb != target_nb) {
@@ -716,6 +704,20 @@ Status gotoTarget(float target_imu_x, float target_imu_y, int target_nb, input_t
         return Status::RUNNING;
     }
 }
+
+Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
+    if (state->elapsedTime(*input) > 0.5f) {
+        return Status::SUCCESS;
+    }
+    return Status::FAILURE;
+}
+
+Status deployFlag(const input_t *, Command *command, State *) {
+    command->target_left_speed = 0.5f;
+    command->target_right_speed = 0.5f;
+    return Status::RUNNING;
+}
+
 // DEBUG - move around a rectangle
 Status infiniteRectangle(const input_t *input, Command *command, State *state) {
     auto seq = sequence(
@@ -754,19 +756,17 @@ Status gotoTarget2(float target_imu_x, float target_imu_y, int target_nb, input_
 }
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
-    auto node = statenode(
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget2(0.6, 0.0, 0, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget2(0.6, 0.6, 1, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget2(0.0, 0.6, 2, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget2(0.0, 0.0, 3, input_, command_, state_);
-        });
+    auto node = statenode([](input_t *input_, Command *command_,
+                             State *state_) { return gotoTarget2(0.6, 0.0, 0, input_, command_, state_); },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoTarget2(0.6, 0.6, 1, input_, command_, state_);
+                          },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoTarget2(0.0, 0.6, 2, input_, command_, state_);
+                          },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoTarget2(0.0, 0.0, 3, input_, command_, state_);
+                          });
 
     return node(const_cast<input_t *>(input), command, state);
 }
@@ -777,13 +777,13 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
-        //alternative(logAndFail("rectangle statenode"),infiniteRectangleStateNode) ,
+        // alternative(logAndFail("rectangle statenode"),infiniteRectangleStateNode) ,
         alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd), leaveBleacherAttraction,
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
-        //alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher),
+        // alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher),
         alternative(hasBleacherAttached, logAndFail("pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);

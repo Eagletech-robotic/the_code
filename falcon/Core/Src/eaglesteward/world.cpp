@@ -12,20 +12,26 @@
 World::World(RobotColour colour) {
     colour_ = colour;
 
-    // Default bleachers
-    bleachers_ = {
-        {0.075f, 0.400f, 0.0f},
-        {0.075f, 1.325f, 0.0f},
-        {0.775f, 0.250f, M_PI_2},
-        {0.825f, 1.725f, M_PI_2},
-        {1.100f, 0.950f, M_PI_2},
-        {FIELD_WIDTH_M - 0.075f, 0.400f, 0.0f},
-        {FIELD_WIDTH_M - 0.075f, 1.325f, 0.0f},
-        {FIELD_WIDTH_M - 0.775f, 0.250f, M_PI_2},
-        {FIELD_WIDTH_M - 0.825f, 1.725f, M_PI_2},
-        {FIELD_WIDTH_M - 1.100f, 0.950f, M_PI_2},
+    // Default bleachers, sorted clockwise from the center right
+    default_bleachers_ = {
+        {FIELD_WIDTH_M - 1.100f, 0.950f, M_PI_2, true},
+        {FIELD_WIDTH_M - 0.825f, 1.725f, M_PI_2, true},
+        {FIELD_WIDTH_M - 0.075f, 1.325f, 0.0f, true},
+        {FIELD_WIDTH_M - 0.075f, 0.400f, 0.0f, true},
+        {FIELD_WIDTH_M - 0.775f, 0.250f, M_PI_2, true},
+        {0.775f, 0.250f, M_PI_2, true},
+        {0.075f, 0.400f, 0.0f, true},
+        {0.075f, 1.325f, 0.0f, true},
+        {0.825f, 1.725f, M_PI_2, true},
+        {1.100f, 0.950f, M_PI_2, true},
     };
 
+    // Create a copy of the default bleachers; these are the actual bleachers in the world.
+    for (auto default_bleacher : default_bleachers_) {
+        bleachers_.push_back(default_bleacher);
+    }
+
+    // Building areas, fixed positions.
     building_areas_ = {
         {0.775f, 0.075f, M_PI_2, BuildingArea::Type::Small, RobotColour::Yellow},
         {1.225f, 0.225f, M_PI_2, BuildingArea::Type::Large, RobotColour::Yellow},
@@ -84,7 +90,7 @@ void World::reset_dijkstra() {
     enqueue_targets();
 
     // Add obstacles
-    // setup_obstacles_field();
+    setup_obstacles_field();
 
     printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
 }
@@ -128,7 +134,7 @@ void World::enqueue_targets() {
 }
 
 void World::setup_obstacles_field() {
-    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type, bool force) {
+    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type) {
         int i0 = std::max(0, static_cast<int>(std::floor(x_min / SQUARE_SIZE_M)));
         int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(x_max / SQUARE_SIZE_M)));
         int j0 = std::max(0, static_cast<int>(std::floor(y_min / SQUARE_SIZE_M)));
@@ -136,7 +142,7 @@ void World::setup_obstacles_field() {
 
         for (int i = i0; i <= i1; ++i)
             for (int j = j0; j <= j1; ++j)
-                obstacles_field_[i][j] = force ? type : std::max(obstacles_field_[i][j], type);
+                obstacles_field_[i][j] = std::max(obstacles_field_[i][j], type);
     };
 
     auto mark_circle = [this](float center_x, float center_y, float radius_f, ObstacleType type) {
@@ -161,22 +167,30 @@ void World::setup_obstacles_field() {
     // ---------------
     // Scene
     // ---------------
-    mark_rectangle(0.f, FIELD_WIDTH_M, 1.55 - ROBOT_RADIUS, FIELD_HEIGHT_M, ObstacleType::Fixed, false);
+    // Central scene
+    mark_rectangle(0.825f - ROBOT_RADIUS, 3.00f - 0.825f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f,
+                   ObstacleType::Fixed);
 
-    // Backstage corridor
-    constexpr float CORRIDOR_Y_MIN = 1.55f - ROBOT_RADIUS;
-    constexpr float CORRIDOR_Y_MAX = 1.80f - ROBOT_RADIUS;
+    // Lateral ramps
+    mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+    mark_rectangle(3.00f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.80f - ROBOT_RADIUS, 2.00f,
+                   ObstacleType::Fixed);
 
-    float corridor_x_min, corridor_x_max;
+    // Opponent reserved bleacher
     if (colour_ == RobotColour::Blue) {
-        corridor_x_min = 1.95f + ROBOT_RADIUS;
-        corridor_x_max = 2.40f - ROBOT_RADIUS;
+        mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.675f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS,
+                       ObstacleType::Fixed);
     } else {
-        // Yellow
-        corridor_x_min = 0.60f + ROBOT_RADIUS;
-        corridor_x_max = 1.05f - ROBOT_RADIUS;
+        mark_rectangle(3.0f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.675f - ROBOT_RADIUS,
+                       1.80f - ROBOT_RADIUS, ObstacleType::Fixed);
     }
-    mark_rectangle(corridor_x_min, corridor_x_max, CORRIDOR_Y_MIN, CORRIDOR_Y_MAX, ObstacleType::None, true);
+
+    // Opponent backstage area
+    if (colour_ == RobotColour::Blue) {
+        mark_rectangle(0.00f, 0.60f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+    } else {
+        mark_rectangle(3.00f - (0.60f + ROBOT_RADIUS), 3.00f, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+    }
 
     // ---------------
     // Opponent's building areas
@@ -187,7 +201,7 @@ void World::setup_obstacles_field() {
         float const half_width = building_area.span_x() / 2 + ROBOT_RADIUS;
         float const half_height = building_area.span_y() / 2 + ROBOT_RADIUS;
         mark_rectangle(building_area.x - half_width, building_area.x + half_width, building_area.y - half_height,
-                       building_area.y + half_height, ObstacleType::Fixed, false);
+                       building_area.y + half_height, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -197,14 +211,30 @@ void World::setup_obstacles_field() {
     mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
 
     // ---------------
-    // Bleachers
+    // Bleachers in their initial position
     // ---------------
     for (const auto &bleacher : bleachers_) {
-        if (bleacher.is_carried)
+        if (!bleacher.initial_position)
             continue;
         mark_circle(bleacher.x, bleacher.y, 0.35f, ObstacleType::Movable);
         if (!bleacher.uncertain) {
-            mark_circle(bleacher.x, bleacher.y, 0.15f, ObstacleType::Fixed);
+            mark_circle(bleacher.x, bleacher.y, 0.20f, ObstacleType::Fixed);
+        }
+    }
+
+    // ---------------
+    // Cans & planks
+    // ---------------
+    for (const auto &can : cans_) {
+        mark_circle(can.x, can.y, 0.20f, ObstacleType::Movable);
+        if (target_ == TargetType::BuildingAreaWaypoint) {
+            mark_circle(can.x, can.y, 0.10f, ObstacleType::Fixed);
+        }
+    }
+    for (const auto &plank : planks_) {
+        mark_circle(plank.x, plank.y, 0.25f, ObstacleType::Movable);
+        if (target_ == TargetType::BuildingAreaWaypoint) {
+            mark_circle(plank.x, plank.y, 0.15f, ObstacleType::Fixed);
         }
     }
 }
@@ -300,19 +330,40 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
     // Reset objects
     bleachers_.clear();
+    cans_.clear();
+    planks_.clear();
 
-    // Insert objects from the packet
+    // 1) Insert initial bleachers from  the header
+    for (size_t i = 0; i < 10; ++i) {
+        if (packet.initial_bleachers[i]) {
+            bleachers_.push_back(default_bleachers_[i]);
+        }
+    }
+
+    // 2) Insert objects from the object list
     for (uint8_t i = 0; i < packet.object_count; ++i) {
-        const auto &object = packet.objects[i];
-        if (object.type != ObjectType::Bleacher)
-            continue;
+        auto const &object = packet.objects[i];
 
-        float const x = object.x_cm * 0.01f;
-        float const y = object.y_cm * 0.01f;
-        float const orientation = object.orientation_deg * M_PI / 180.0f;
-        bleachers_.push_back({x, y, orientation});
-        if (bleachers_.full())
+        auto const x = static_cast<float>(object.x_cm) * 0.01f;
+        auto const y = static_cast<float>(object.y_cm) * 0.01f;
+        auto const orientation = to_radians(object.orientation_deg);
+
+        switch (object.type) {
+        case ObjectType::Bleacher:
+            if (!bleachers_.full())
+                bleachers_.push_back({x, y, orientation, false});
             break;
+        case ObjectType::Can:
+            if (!cans_.full())
+                cans_.push_back({x, y, orientation});
+            break;
+        case ObjectType::Plank:
+            if (!planks_.full())
+                planks_.push_back({x, y, orientation});
+            break;
+        default:
+            break;
+        }
     }
 
     // Force the recalculation of the potential field
@@ -330,12 +381,13 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
     float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
 
-    //ordre 4
-//    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
-//    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
-    float norm = sqrtf(dx*dx + dy*dy);
-    //if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-    if(norm <= SLOPE_THRESHOLD) {
+    // ordre 4
+    //    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
+    //    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
+    float norm = sqrtf(dx * dx + dy * dy);
+    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD)
+    // {
+    if (norm <= SLOPE_THRESHOLD) {
         myprintf("Reached local minimum");
         out_is_local_minimum = true;
         out_yaw = 0.f;
