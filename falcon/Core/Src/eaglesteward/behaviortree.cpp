@@ -55,17 +55,15 @@ int behaviortree_test() {
     return 0;
 }
 
-
-int statenode_test()
-{
+int statenode_test() {
     /* Étape 1 : succès immédiat -------------------------------------------- */
-    auto step1 = [](input_t*, Command*, State*) {
+    auto step1 = [](input_t *, Command *, State *) {
         puts("STEP-1  (SUCCESS)");
         return Status::SUCCESS;
     };
 
     /* Étape 2 : reste en RUNNING 2 ticks avant SUCCESS ---------------------- */
-    auto step2 = [](input_t*, Command*, State*) {
+    auto step2 = [](input_t *, Command *, State *) {
         static int cnt = 0;
         if (cnt < 2) {
             printf("STEP-2  (RUNNING %d)\n", cnt + 1);
@@ -78,7 +76,7 @@ int statenode_test()
     };
 
     /* Étape 3 : succès final ------------------------------------------------ */
-    auto step3 = [](input_t*, Command*, State*) {
+    auto step3 = [](input_t *, Command *, State *) {
         puts("STEP-3  (SUCCESS)");
         return Status::SUCCESS;
     };
@@ -88,14 +86,13 @@ int statenode_test()
 
     /* ---------------------------------------------------------------------- */
     input_t input{};
-    Command  cmd{};
-    State    st{};
+    Command cmd{};
+    State st{};
 
     puts("\n=== StateNode demo ===");
 
-    for (int tick = 0; tick < 6; ++tick)
-    {
-        st.bt_tick++;                 // nouveau tick global
+    for (int tick = 0; tick < 6; ++tick) {
+        st.bt_tick++; // nouveau tick global
 
         /* Simule une priorité supérieure au tick 3 : on NE PASSE PAS par state_seq */
         if (tick == 3) {
