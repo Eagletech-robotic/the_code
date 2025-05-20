@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-constexpr int PACKET_SIZE = 128;
+constexpr int PACKET_SIZE = 109;
 
 class BluetoothDecoder {
   public:

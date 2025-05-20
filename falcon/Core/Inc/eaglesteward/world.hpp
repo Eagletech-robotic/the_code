@@ -73,8 +73,13 @@ class World {
     float opponent_y{0.f};
     float opponent_theta{0.f};
 
+    // Default bleachers positions
+    SizedArray<Bleacher, 10> default_bleachers_;
+
     // State of the world
     SizedArray<Bleacher, 10> bleachers_;
+    SizedArray<Can, 40> cans_;
+    SizedArray<Plank, 20> planks_;
     SizedArray<BuildingArea, 8> building_areas_;
 
     // Potential field

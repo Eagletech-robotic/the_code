@@ -30,14 +30,34 @@ class Bleacher : public GameEntity {
   public:
     bool uncertain = false;  // Previous failed pick-up attempt
     bool is_carried = false; // Is our robot currently carrying it?
+    bool initial_position = false;
 
     Bleacher() = default;
 
-    Bleacher(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
+    Bleacher(float x_val, float y_val, float orientation_val, bool initial_position_val)
+        : GameEntity(x_val, y_val, orientation_val) {
+        initial_position = initial_position_val;
+    }
 
     [[nodiscard]] std::array<std::pair<float, float>, 2> waypoints() const;
 
     [[nodiscard]] bool in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const;
+};
+
+// Can class
+class Can : public GameEntity {
+  public:
+    Can() = default;
+
+    Can(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
+};
+
+// Plank class
+class Plank : public GameEntity {
+  public:
+    Plank() = default;
+
+    Plank(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
 };
 
 // BuildingArea class
@@ -48,7 +68,7 @@ class BuildingArea : public GameEntity {
     enum class Type { Small, Large };
 
     Type type = Type::Small;
-    RobotColour colour;
+    RobotColour colour = RobotColour::Blue;
     int8_t first_available_slot = 0;
 
     BuildingArea() = default;
