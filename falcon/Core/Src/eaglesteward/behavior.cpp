@@ -178,11 +178,15 @@ Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
     float x, y, _orientation;
     state->getPositionAndOrientation(x, y, _orientation);
     const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(x, y);
-    return (state->bleacher_lifted || // Do not escape the bleacher we are carrying
-            !bleacher || distance >= 0.4f ||
-            std::abs(angle_normalize(_orientation - bleacher->orientation - M_PI)) > to_radians(20))
-               ? Status::SUCCESS
-               : Status::FAILURE;
+
+    if (!bleacher || distance >= 0.4f || state->bleacher_lifted // Do not escape the bleacher we are carrying
+    ) {
+        return Status::SUCCESS;
+    }
+
+    float bearing = std::atan2(bleacher->y - y, bleacher->x - x);
+    bool is_facing_bleacher = std::abs(angle_normalize(_orientation - bearing)) <= to_radians(20);
+    return is_facing_bleacher ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status escapeBleacher(input_t *, Command *command, State *) {
