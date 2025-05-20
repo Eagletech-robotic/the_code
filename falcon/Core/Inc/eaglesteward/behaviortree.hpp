@@ -84,29 +84,6 @@ template <typename... Fs> struct StaticStateNode {
     /* Appelle l’enfant I --------------------------------------------- */
     template <std::size_t I> Status call(input_t *in, Command *c, State *s) { return std::get<I>(children)(in, c, s); }
 
-    /* Dispatch sur l’index courant (pliage) -------------------------- */
-    //    template <std::size_t... Is>
-    //    Status dispatch(input_t* in, Command* c, State* s,
-    //                    std::index_sequence<Is...>)
-    //    {
-    //        Status r = Status::FAILURE;
-    //        ((cursor == Is && (r = call<Is>(in, c, s), true)), ...);
-    //
-    //        switch (r)
-    //        {
-    //            case Status::SUCCESS:
-    //                ++cursor;
-    //                if (cursor == sizeof...(Fs)) { cursor = 0; return Status::SUCCESS; }
-    //                return Status::RUNNING;
-    //            case Status::RUNNING:
-    //                return Status::RUNNING;
-    //            case Status::FAILURE:
-    //            default:
-    //                cursor = 0;
-    //                return Status::FAILURE;
-    //        }
-    //    }
-
     template <std::size_t... Is> Status dispatch(input_t *in, Command *c, State *s, std::index_sequence<Is...>) {
         Status r = Status::FAILURE;
 
