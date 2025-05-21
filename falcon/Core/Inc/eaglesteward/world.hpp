@@ -66,6 +66,8 @@ class World {
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
 
+    float potential_at(float x, float y) const;
+
     RobotColour colour_;
 
     // Opponent robot

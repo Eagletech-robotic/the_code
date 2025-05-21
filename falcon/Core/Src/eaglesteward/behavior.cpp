@@ -331,7 +331,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             state_->target = bleacher;
             host_printf("Searching\n");
             mcu_printf("BL-SRCH\n");
-            if (descend(*command_, *state_, 2.0f)) {
+            if (descend(*command_, *state_, 1.0f)) {
                 host_printf("Minimum\n");
                 return Status::SUCCESS;
             } else {

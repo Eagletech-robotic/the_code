@@ -33,7 +33,7 @@ class State {
     void updateFromBluetooth();
 
     /* PUBLIC DATA ---------------------------------------------------- */
-    RobotColour colour{RobotColour::Blue};
+    RobotColour colour{RobotColour::Yellow};
 
     // TODO
     // 1 - Should we overwrite the IMU coordinates with the field coordinates when we receive a packet?

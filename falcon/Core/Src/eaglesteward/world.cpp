@@ -370,33 +370,91 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
-    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
-    constexpr float SLOPE_THRESHOLD = 0.01f;
+// Renvoie V(x,y) pour des coordonnées réelles (en mètres)
+float World::potential_at(float px, float py) const
+{
+    const auto &P = potential_ready();
 
-    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
-    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
+    // indices fractionnaires
+    float gx = px / SQUARE_SIZE_M;
+    float gy = py / SQUARE_SIZE_M;
 
-    const auto &potential = potential_ready();
-    float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
-    float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
+    int i = static_cast<int>(std::floor(gx));
+    int j = static_cast<int>(std::floor(gy));
+    float tx = gx - i;          // 0..1
+    float ty = gy - j;          // 0..1
 
-    // ordre 4
-    //    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
-    //    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
-    float norm = sqrtf(dx * dx + dy * dy);
-    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD)
-    // {
-    if (norm <= SLOPE_THRESHOLD) {
-        myprintf("Reached local minimum");
+    // bornes (à adapter si vous mettez un halo)
+    i = std::clamp(i, 0, FIELD_WIDTH_SQ  - 2);
+    j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
+
+    // bilinéaire
+    float v00 = P[i][j];
+    float v10 = P[i+1][j];
+    float v01 = P[i][j+1];
+    float v11 = P[i+1][j+1];
+
+    return (1-tx)*(1-ty)*v00 +
+           (  tx)*(1-ty)*v10 +
+           (1-tx)*(  ty)*v01 +
+           (  tx)*(  ty)*v11;
+}
+
+void World::potential_field_descent(float x, float y,
+                                    bool &out_is_local_minimum,
+                                    float &out_yaw) const
+{
+    constexpr float DELTA = 0.25f * SQUARE_SIZE_M;   // pas sous-cellule
+    constexpr float SLOPE_THRESHOLD = 0.5f;
+    static float current_out_yaw = 0.0f;
+
+    float dx = (potential_at(x + DELTA, y) - potential_at(x - DELTA, y)) / (2.f * DELTA);
+    float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
+
+    float norm = std::hypot(dx, dy);
+
+    if (norm <= SLOPE_THRESHOLD)
+    {
         out_is_local_minimum = true;
         out_yaw = 0.f;
-    } else {
+    }
+    else
+    {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
-        myprintf("Target angle: %f - distance: %f\n", to_degrees(out_yaw), potential[i][j]);
+        current_out_yaw = 0.99f * current_out_yaw + 0.01f * out_yaw;
+        out_yaw = current_out_yaw;
     }
 }
+
+//
+//void World::potential_field_descent_old(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
+//    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
+//    constexpr float SLOPE_THRESHOLD = 0.01f;
+//
+//    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
+//    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
+//
+//    const auto &potential = potential_ready();
+//    float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
+//    float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
+//
+//    // ordre 4
+//    //    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
+//    //    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
+//    float norm = sqrtf(dx * dx + dy * dy);
+//    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD)
+//    // {
+//    if (norm <= SLOPE_THRESHOLD) {
+//        myprintf("Reached local minimum");
+//        out_is_local_minimum = true;
+//        out_yaw = 0.f;
+//    } else {
+//        out_is_local_minimum = false;
+//        out_yaw = std::atan2(-dy, -dx);
+//        myprintf("Target angle: %f - distance: %f\n", to_degrees(out_yaw), potential[i][j]);
+//    }
+//}
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
     Bleacher *best = nullptr;
