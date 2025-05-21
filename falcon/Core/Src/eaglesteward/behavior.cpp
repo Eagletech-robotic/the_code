@@ -552,7 +552,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isJackRemoved, logAndFail("game-not-started"), waitBeforeGame),
         // alternative(logAndFail("rectangle statenode"),infiniteRectangleStateNode) ,
         alternative(isGameActive, logAndFail("game-finished"), holdAfterEnd), //leaveBleacherAttraction,
-       // carryBleacher, // Keep this action before evasive maneuvers
+        carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("release_flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("go-to-backstage"), goToBackstage),
