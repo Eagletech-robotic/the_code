@@ -89,7 +89,7 @@ class World {
 
     std::array<std::array<ObstacleType, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> obstacles_field_{};
 
-    BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
+    BoundedPriorityQueue<PQueueNode, 5'000> pqueue_; // No upper limit, but should be enough for the field size
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
