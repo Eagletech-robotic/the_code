@@ -45,7 +45,7 @@ World::World(RobotColour colour) {
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    //reset_dijkstra();
+    // reset_dijkstra();
     while (do_some_calculations([]() { return true; }))
         ;
 }
@@ -134,18 +134,18 @@ void World::enqueue_targets() {
         }
     }
 
-    if(target_ == TargetType::MiddlePoint0) {
+    if (target_ == TargetType::MiddlePoint0) {
         enqueue_grid_cell(0.75f, 0.30f);
     }
-    if(target_ == TargetType::MiddlePoint1) {
-            enqueue_grid_cell(1.5f, 0.30f);
-        }
-    if(target_ == TargetType::MiddlePoint2) {
-            enqueue_grid_cell(1.5f, 1.2f);
-        }
-    if(target_ == TargetType::MiddlePoint3) {
-            enqueue_grid_cell(0.75f, 1.2f);
-        }
+    if (target_ == TargetType::MiddlePoint1) {
+        enqueue_grid_cell(1.5f, 0.30f);
+    }
+    if (target_ == TargetType::MiddlePoint2) {
+        enqueue_grid_cell(1.5f, 1.2f);
+    }
+    if (target_ == TargetType::MiddlePoint3) {
+        enqueue_grid_cell(0.75f, 1.2f);
+    }
 }
 
 void World::setup_obstacles_field() {
@@ -386,8 +386,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 }
 
 // Renvoie V(x,y) pour des coordonnées réelles (en mètres)
-float World::potential_at(float px, float py) const
-{
+float World::potential_at(float px, float py) const {
     const auto &P = potential_ready();
 
     // indices fractionnaires
@@ -396,30 +395,24 @@ float World::potential_at(float px, float py) const
 
     int i = static_cast<int>(std::floor(gx));
     int j = static_cast<int>(std::floor(gy));
-    float tx = gx - i;          // 0..1
-    float ty = gy - j;          // 0..1
+    float tx = gx - i; // 0..1
+    float ty = gy - j; // 0..1
 
     // bornes (à adapter si vous mettez un halo)
-    i = std::clamp(i, 0, FIELD_WIDTH_SQ  - 2);
+    i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
     float v00 = P[i][j];
-    float v10 = P[i+1][j];
-    float v01 = P[i][j+1];
-    float v11 = P[i+1][j+1];
+    float v10 = P[i + 1][j];
+    float v01 = P[i][j + 1];
+    float v11 = P[i + 1][j + 1];
 
-    return (1-tx)*(1-ty)*v00 +
-           (  tx)*(1-ty)*v10 +
-           (1-tx)*(  ty)*v01 +
-           (  tx)*(  ty)*v11;
+    return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
 
-void World::potential_field_descent(float x, float y,
-                                    bool &out_is_local_minimum,
-                                    float &out_yaw) const
-{
-    constexpr float DELTA = 0.25f * SQUARE_SIZE_M;   // pas sous-cellule
+void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
+    constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
     constexpr float SLOPE_THRESHOLD = 0.5f;
     static float current_out_yaw = 0.0f;
 
@@ -428,13 +421,10 @@ void World::potential_field_descent(float x, float y,
 
     float norm = std::hypot(dx, dy);
 
-    if (norm <= SLOPE_THRESHOLD)
-    {
+    if (norm <= SLOPE_THRESHOLD) {
         out_is_local_minimum = true;
         out_yaw = 0.f;
-    }
-    else
-    {
+    } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
         current_out_yaw = 0.99f * current_out_yaw + 0.01f * out_yaw;
@@ -443,7 +433,7 @@ void World::potential_field_descent(float x, float y,
 }
 
 //
-//void World::potential_field_descent_old(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
+// void World::potential_field_descent_old(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
 //    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
 //    constexpr float SLOPE_THRESHOLD = 0.01f;
 //
@@ -458,7 +448,8 @@ void World::potential_field_descent(float x, float y,
 //    //    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
 //    //    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
 //    float norm = sqrtf(dx * dx + dy * dy);
-//    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD)
+//    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <=
+//    SLOPE_THRESHOLD)
 //    // {
 //    if (norm <= SLOPE_THRESHOLD) {
 //        myprintf("Reached local minimum");
