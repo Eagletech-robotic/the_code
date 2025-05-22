@@ -191,6 +191,13 @@ void World::setup_obstacles_field() {
     };
 
     // ---------------
+    // Borders
+    // ---------------
+    mark_rectangle(0.0f, FIELD_WIDTH_M, 0.0f, ROBOT_RADIUS, ObstacleType::Fixed);
+    mark_rectangle(0.0f, ROBOT_RADIUS, 0.0f, FIELD_HEIGHT_M, ObstacleType::Fixed);
+    mark_rectangle(3.00f - ROBOT_RADIUS, FIELD_WIDTH_M, 0.0f, FIELD_HEIGHT_M, ObstacleType::Fixed);
+
+    // ---------------
     // Scene
     // ---------------
     // Central scene
