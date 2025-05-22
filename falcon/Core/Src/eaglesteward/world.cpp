@@ -45,7 +45,7 @@ World::World(RobotColour colour) {
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    reset_dijkstra();
+    //reset_dijkstra();
     while (do_some_calculations([]() { return true; }))
         ;
 }
