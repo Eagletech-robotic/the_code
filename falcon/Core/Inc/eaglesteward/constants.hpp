@@ -20,7 +20,7 @@ static constexpr float FIELD_HEIGHT_M = 2.00;
 
 // Robot default position and orientation on the field.
 static constexpr float INITIAL_ORIENTATION = M_PI_2;
-static constexpr float INITIAL_X = 3-1.775f;
+static constexpr float INITIAL_X = 3 - 1.775f;
 static constexpr float INITIAL_Y = 0.15f;
 
 // Bleacher

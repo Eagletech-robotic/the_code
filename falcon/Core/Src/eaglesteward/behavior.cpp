@@ -18,7 +18,7 @@ auto logAndFail(char const *s) {
 }
 
 bool descend(Command &command, State &state, float max_speed) {
-    constexpr float KP_ROTATION = 50.0f;            // Rotation PID's P gain
+    constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
     myprintf("descend");
     auto &world = state.world;
@@ -212,7 +212,7 @@ Status escapeBleacher(input_t *, Command *command, State *) {
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-	state->world.set_target(TargetType::BuildingAreaWaypoint);
+    state->world.set_target(TargetType::BuildingAreaWaypoint);
     auto seq = statenode(
         //
         [](input_t *, Command *command_, State *state_) {
@@ -252,32 +252,34 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             myprintf("slot");
             if (pid_controller(x, y, orientation, target_x, target_y, .8f, WHEELBASE_M, 0.04f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
-            	 building_area->first_available_slot++;
+                building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
             host_printf("Approaching building area x=%.3f y=%.3f\n", target_x, target_y);
 
             return Status::RUNNING;
         },
-//        [](input_t *, Command *command_, State *state_) {
-//            float x, y, orientation;
-//            state_->getPositionAndOrientation(x, y, orientation);
-//            auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
-//            auto const [target_x, target_y] = building_area->available_slot();
-//
-//            const bool has_arrived = pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M, 0.15,
-//                                                    &command_->target_left_speed, &command_->target_right_speed);
-//
-//            if (has_arrived) {
-//                // Mark the slot as occupied
-//                building_area->first_available_slot++;
-//                return Status::SUCCESS;
-//            } else {
-//                host_printf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
-//                mcu_printf("BA-APPCNT\n");
-//                return Status::RUNNING;
-//            }
-//        },
+        //        [](input_t *, Command *command_, State *state_) {
+        //            float x, y, orientation;
+        //            state_->getPositionAndOrientation(x, y, orientation);
+        //            auto [building_area, distance] = state_->world.closest_available_building_area(x, y);
+        //            auto const [target_x, target_y] = building_area->available_slot();
+        //
+        //            const bool has_arrived = pid_controller(x, y, orientation, target_x, target_y, 0.8f, WHEELBASE_M,
+        //            0.15,
+        //                                                    &command_->target_left_speed,
+        //                                                    &command_->target_right_speed);
+        //
+        //            if (has_arrived) {
+        //                // Mark the slot as occupied
+        //                building_area->first_available_slot++;
+        //                return Status::SUCCESS;
+        //            } else {
+        //                host_printf("Approaching building area centre x=%.3f y=%.3f\n", target_x, target_y);
+        //                mcu_printf("BA-APPCNT\n");
+        //                return Status::RUNNING;
+        //            }
+        //        },
         [](input_t *, Command *command_, State *state_) {
             host_printf("Drop the bleacher\n");
             mcu_printf("BA-DROP\n");
@@ -290,9 +292,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             state_->world.drop_carried_bleacher();
 
             return Status::SUCCESS;
-        }, 
-		alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher)
-        );
+        },
+        alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher));
 
     return seq(const_cast<input_t *>(input), command, state);
 }
@@ -314,7 +315,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 // }
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-	state->world.set_target(TargetType::BleacherWaypoint);
+    state->world.set_target(TargetType::BleacherWaypoint);
     auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
             // descente de gradient vers le plus proche
@@ -343,7 +344,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
             const auto [bleacher, distance] = state_->world.closest_available_bleacher(x, y);
-            //const auto bleacher = state_->target;
+            // const auto bleacher = state_->target;
 
             auto [local_x, local_y] = bleacher->position_in_local_frame(x, y);
 
@@ -357,7 +358,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         },
         [](input_t *, Command *command_, State *state_) {
             // aller vers le gradin
-            //const auto bleacher = state_->target;
+            // const auto bleacher = state_->target;
 
             float x, y, orientation;
             state_->getPositionAndOrientation(x, y, orientation);
@@ -515,8 +516,8 @@ Status infiniteRectangle(const input_t *input, Command *command, State *state) {
 }
 
 Status gotoTarget2(float target_imu_x, float target_imu_y, int target_nb, input_t *, Command *command, State *state) {
-	float x, y, _orientation;
-	state->getPositionAndOrientation(x, y, _orientation);
+    float x, y, _orientation;
+    state->getPositionAndOrientation(x, y, _orientation);
     const bool has_arrived = pid_controller(x, y, _orientation, target_imu_x, target_imu_y,
                                             2.0f,        // m/s Vmax 3.0 est le max
                                             WHEELBASE_M, // m, entraxe
@@ -531,8 +532,7 @@ Status gotoTarget2(float target_imu_x, float target_imu_y, int target_nb, input_
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
-                             State *state_) {
-    						  return gotoTarget2(0.75f, 0.30, 0, input_, command_, state_); },
+                             State *state_) { return gotoTarget2(0.75f, 0.30, 0, input_, command_, state_); },
                           [](input_t *input_, Command *command_, State *state_) {
                               return gotoTarget2(1.50, 0.30, 1, input_, command_, state_);
                           },
@@ -546,33 +546,30 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
     return node(const_cast<input_t *>(input), command, state);
 }
 
-Status gotoDescend(const char * name, Command *command, State *state, TargetType target)   {
-	state->world.set_target(target);
-	myprintf("%s\n",name);
-	if(descend(*command, *state, 2.0)) {
-		return Status::SUCCESS;
-	}
-	return Status::RUNNING;
+Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
+    state->world.set_target(target);
+    myprintf("%s\n", name);
+    if (descend(*command, *state, 2.0)) {
+        return Status::SUCCESS;
+    }
+    return Status::RUNNING;
 }
 
 Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
 
-	auto node = statenode(
-	[](input_t *input_, Command *command_, State *state_) {
-		return gotoDescend("0", command_, state_, TargetType::MiddlePoint0);
-	},
-	[](input_t *input_, Command *command_, State *state_) {
-		return gotoDescend("1", command_, state_, TargetType::MiddlePoint1);
-	},
-	[](input_t *input_, Command *command_, State *state_) {
-		return gotoDescend("2", command_, state_, TargetType::MiddlePoint2);
-	},
-	[](input_t *input_, Command *command_, State *state_) {
-		return gotoDescend("3", command_, state_, TargetType::MiddlePoint3);
-	});
+    auto node = statenode([](input_t *input_, Command *command_,
+                             State *state_) { return gotoDescend("0", command_, state_, TargetType::MiddlePoint0); },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoDescend("1", command_, state_, TargetType::MiddlePoint1);
+                          },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoDescend("2", command_, state_, TargetType::MiddlePoint2);
+                          },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoDescend("3", command_, state_, TargetType::MiddlePoint3);
+                          });
 
-	return node(const_cast<input_t *>(input), command, state);
-
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 // Top level node
@@ -581,9 +578,9 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-        //alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
-		alternative(logAndFail("Rectangle descend"),infiniteRectangleDescend) ,
-        alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd), //leaveBleacherAttraction,
+        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+        alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
+        alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd), // leaveBleacherAttraction,
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
