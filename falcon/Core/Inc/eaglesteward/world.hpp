@@ -27,6 +27,10 @@ enum class TargetType {
     BleacherWaypoint,
     BackstageWaypoint,
     BuildingAreaWaypoint,
+	MiddlePoint0, // pour test de la descente
+	MiddlePoint1,
+	MiddlePoint2,
+	MiddlePoint3,
 };
 
 class World {

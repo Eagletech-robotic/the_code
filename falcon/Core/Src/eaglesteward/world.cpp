@@ -133,6 +133,19 @@ void World::enqueue_targets() {
             enqueue_grid_cell(x, y);
         }
     }
+
+    if(target_ == TargetType::MiddlePoint0) {
+        enqueue_grid_cell(0.75f, 0.30f);
+    }
+    if(target_ == TargetType::MiddlePoint1) {
+            enqueue_grid_cell(1.5f, 0.30f);
+        }
+    if(target_ == TargetType::MiddlePoint2) {
+            enqueue_grid_cell(1.5f, 1.2f);
+        }
+    if(target_ == TargetType::MiddlePoint3) {
+            enqueue_grid_cell(0.75f, 1.2f);
+        }
 }
 
 void World::setup_obstacles_field() {

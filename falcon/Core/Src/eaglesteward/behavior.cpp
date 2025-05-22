@@ -546,13 +546,43 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
     return node(const_cast<input_t *>(input), command, state);
 }
 
+Status gotoDescend(const char * name, Command *command, State *state, TargetType target)   {
+	state->world.set_target(target);
+	myprintf("%s\n",name);
+	if(descend(*command, *state, 2.0)) {
+		return Status::SUCCESS;
+	}
+	return Status::RUNNING;
+}
+
+Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
+
+	auto node = statenode(
+	[](input_t *input_, Command *command_, State *state_) {
+		return gotoDescend("0", command_, state_, TargetType::MiddlePoint0);
+	},
+	[](input_t *input_, Command *command_, State *state_) {
+		return gotoDescend("1", command_, state_, TargetType::MiddlePoint1);
+	},
+	[](input_t *input_, Command *command_, State *state_) {
+		return gotoDescend("2", command_, state_, TargetType::MiddlePoint2);
+	},
+	[](input_t *input_, Command *command_, State *state_) {
+		return gotoDescend("3", command_, state_, TargetType::MiddlePoint3);
+	});
+
+	return node(const_cast<input_t *>(input), command, state);
+
+}
+
 // Top level node
 Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-        alternative(logAndFail("rectangle statenode"),infiniteRectangleStateNode) ,
+        //alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+		alternative(logAndFail("Rectangle descend"),infiniteRectangleDescend) ,
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd), //leaveBleacherAttraction,
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
