@@ -413,7 +413,7 @@ float World::potential_at(float px, float py) const {
 
 void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
     constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
-    constexpr float SLOPE_THRESHOLD = 0.5f;
+    constexpr float SLOPE_THRESHOLD = 1.5f;
     static float current_out_yaw = 0.0f;
 
     float dx = (potential_at(x + DELTA, y) - potential_at(x - DELTA, y)) / (2.f * DELTA);

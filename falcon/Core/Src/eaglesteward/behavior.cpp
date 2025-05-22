@@ -578,7 +578,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
         // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
-        alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
+       // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd), // leaveBleacherAttraction,
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
