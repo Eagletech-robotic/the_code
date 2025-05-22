@@ -27,6 +27,10 @@ enum class TargetType {
     BleacherWaypoint,
     BackstageWaypoint,
     BuildingAreaWaypoint,
+    TestPoint0, // pour test de la descente
+    TestPoint1,
+    TestPoint2,
+    TestPoint3,
 };
 
 class World {
@@ -47,6 +51,8 @@ class World {
 
     /** Replace objects with those found in EaglePacket. */
     void update_from_eagle_packet(const EaglePacket &packet);
+
+    float potential_at(float x, float y) const;
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
     void potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const;

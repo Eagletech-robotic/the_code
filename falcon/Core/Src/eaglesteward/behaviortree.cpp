@@ -54,3 +54,55 @@ int behaviortree_test() {
     printf("Final : %d\n", static_cast<int>(s));
     return 0;
 }
+
+int statenode_test() {
+    /* Étape 1 : succès immédiat -------------------------------------------- */
+    auto step1 = [](input_t *, Command *, State *) {
+        puts("STEP-1  (SUCCESS)");
+        return Status::SUCCESS;
+    };
+
+    /* Étape 2 : reste en RUNNING 2 ticks avant SUCCESS ---------------------- */
+    auto step2 = [](input_t *, Command *, State *) {
+        static int cnt = 0;
+        if (cnt < 2) {
+            printf("STEP-2  (RUNNING %d)\n", cnt + 1);
+            ++cnt;
+            return Status::RUNNING;
+        }
+        puts("STEP-2  (SUCCESS)");
+        cnt = 0;
+        return Status::SUCCESS;
+    };
+
+    /* Étape 3 : succès final ------------------------------------------------ */
+    auto step3 = [](input_t *, Command *, State *) {
+        puts("STEP-3  (SUCCESS)");
+        return Status::SUCCESS;
+    };
+
+    /* StateNode sans heap (= séquence mémorisée) --------------------------- */
+    auto state_seq = statenode(step1, step2, step3);
+
+    /* ---------------------------------------------------------------------- */
+    input_t input{};
+    Command cmd{};
+    State st{};
+
+    puts("\n=== StateNode demo ===");
+
+    for (int tick = 0; tick < 6; ++tick) {
+        st.bt_tick++; // nouveau tick global
+
+        /* Simule une priorité supérieure au tick 3 : on NE PASSE PAS par state_seq */
+        if (tick == 3) {
+            puts(">>> autre branche prioritaire, StateNode ignoré ce tick");
+            continue;
+        }
+
+        Status s = state_seq(&input, &cmd, &st);
+
+        printf("tick %d → Status %d\n", tick, (int)s);
+    }
+    return 0;
+}

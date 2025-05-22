@@ -55,9 +55,10 @@ template <typename T, size_t Capacity> class SizedArray {
      * @throws std::out_of_range if index is out of range.
      */
     T &operator[](size_t index) {
-        if (index >= size_) {
-            throw std::out_of_range("Index out of range");
-        }
+        // if (index >= size_) {
+        //    throw std::out_of_range("Index out of range");
+
+        //}
         return data_[index];
     }
 
