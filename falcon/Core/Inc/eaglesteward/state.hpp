@@ -7,8 +7,6 @@
 
 enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTACT };
 
-enum class Mode { Other, Waiting, GotoBleacher, GotoConstruction };
-
 class State {
   public:
     State() { reset(); }
@@ -82,7 +80,6 @@ class State {
     bool bleacher_lifted{false};
 
     GameEntity *target{nullptr};
-    //  bool picking_up_bleacher_on_axis{false};
 
     // Rectangle test
     int target_nb{0};

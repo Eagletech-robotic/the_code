@@ -10,3 +10,4 @@ inline float to_radians(float degrees) { return degrees * DEG_TO_RAD; }
 
 float angle_normalize_deg(float angle_deg);
 float angle_normalize(float angle);
+bool isLookingOutwards(float w, float h, float s, float x, float y, float theta, float tol);

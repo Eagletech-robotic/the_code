@@ -45,7 +45,6 @@ World::World(RobotColour colour) {
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
     set_target(TargetType::BleacherWaypoint);
-    // reset_dijkstra();
     while (do_some_calculations([]() { return true; }))
         ;
 }
@@ -134,18 +133,17 @@ void World::enqueue_targets() {
         }
     }
 
-    if (target_ == TargetType::MiddlePoint0) {
+    if (target_ == TargetType::TestPoint0)
         enqueue_grid_cell(0.75f, 0.30f);
-    }
-    if (target_ == TargetType::MiddlePoint1) {
+
+    if (target_ == TargetType::TestPoint1)
         enqueue_grid_cell(1.5f, 0.30f);
-    }
-    if (target_ == TargetType::MiddlePoint2) {
+
+    if (target_ == TargetType::TestPoint2)
         enqueue_grid_cell(1.5f, 1.2f);
-    }
-    if (target_ == TargetType::MiddlePoint3) {
+
+    if (target_ == TargetType::TestPoint3)
         enqueue_grid_cell(0.75f, 1.2f);
-    }
 }
 
 void World::setup_obstacles_field() {
@@ -431,36 +429,6 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
         out_yaw = current_out_yaw;
     }
 }
-
-//
-// void World::potential_field_descent_old(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
-//    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
-//    constexpr float SLOPE_THRESHOLD = 0.01f;
-//
-//    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
-//    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
-//
-//    const auto &potential = potential_ready();
-//    float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
-//    float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
-//
-//    // ordre 4
-//    //    float const dx = (-potential[i+2][j] + 8.0*potential[i+1][j] - 8.0*potential[i-1][j] + potential[i-2][j]);
-//    //    float const dy = (-potential[i][j+2] + 8.0*potential[i][j+1]  - 8.0*potential[i][j-1] + potential[i][j-2]);
-//    float norm = sqrtf(dx * dx + dy * dy);
-//    // if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <=
-//    SLOPE_THRESHOLD)
-//    // {
-//    if (norm <= SLOPE_THRESHOLD) {
-//        myprintf("Reached local minimum");
-//        out_is_local_minimum = true;
-//        out_yaw = 0.f;
-//    } else {
-//        out_is_local_minimum = false;
-//        out_yaw = std::atan2(-dy, -dx);
-//        myprintf("Target angle: %f - distance: %f\n", to_degrees(out_yaw), potential[i][j]);
-//    }
-//}
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
     Bleacher *best = nullptr;
