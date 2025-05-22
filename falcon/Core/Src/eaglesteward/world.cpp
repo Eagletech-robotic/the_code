@@ -101,6 +101,7 @@ void World::enqueue_targets() {
             auto i = static_cast<uint8_t>(std::round(x / SQUARE_SIZE_M));
             auto j = static_cast<uint8_t>(std::round(y / SQUARE_SIZE_M));
             pqueue_.emplace(0, i, j);
+            potential_calculating()[i][j] = 0;
         }
     };
 
