@@ -165,32 +165,41 @@ void World::setup_obstacles_field() {
         }
     };
 
+    auto mark_rectangle_with_padding = [this, mark_rectangle, mark_circle](float x_min, float x_max, float y_min,
+                                                                           float y_max, ObstacleType type) {
+        // mark_rectangle(x_min - ROBOT_RADIUS, x_max + ROBOT_RADIUS, y_min - ROBOT_RADIUS, y_max + ROBOT_RADIUS, type);
+        mark_rectangle(x_min, x_max, y_min - ROBOT_RADIUS, y_max + ROBOT_RADIUS, type);
+        mark_rectangle(x_min - ROBOT_RADIUS, x_min, y_min, y_max, type);
+        mark_rectangle(x_max, x_max + ROBOT_RADIUS, y_min, y_max, type);
+
+        mark_circle(x_min, y_min, ROBOT_RADIUS, type);
+        mark_circle(x_min, y_max, ROBOT_RADIUS, type);
+        mark_circle(x_max, y_min, ROBOT_RADIUS, type);
+        mark_circle(x_max, y_max, ROBOT_RADIUS, type);
+    };
+
     // ---------------
     // Scene
     // ---------------
     // Central scene
-    mark_rectangle(0.825f - ROBOT_RADIUS, 3.00f - 0.825f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f,
-                   ObstacleType::Fixed);
+    mark_rectangle_with_padding(1.05f, 3.00f - 1.05f, 1.55f, 2.00f, ObstacleType::Fixed);
 
     // Lateral ramps
-    mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
-    mark_rectangle(3.00f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.80f - ROBOT_RADIUS, 2.00f,
-                   ObstacleType::Fixed);
+    mark_rectangle_with_padding(0.65f, 1.05f, 1.80f, 2.00f, ObstacleType::Fixed);
+    mark_rectangle_with_padding(3.00f - 1.05f, 3.00f - 0.65f, 1.80f, 2.00f, ObstacleType::Fixed);
 
     // Opponent reserved bleacher
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.675f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS,
-                       ObstacleType::Fixed);
+        mark_rectangle_with_padding(0.60f, 1.05f, 1.675f, 1.80f, ObstacleType::Fixed);
     } else {
-        mark_rectangle(3.0f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.675f - ROBOT_RADIUS,
-                       1.80f - ROBOT_RADIUS, ObstacleType::Fixed);
+        mark_rectangle_with_padding(3.0f - 1.05f, 3.00f - 0.60f, 1.675f, 1.80f, ObstacleType::Fixed);
     }
 
     // Opponent backstage area
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle(0.00f, 0.60f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+        mark_rectangle_with_padding(0.00f, 0.60f, 1.55f, 2.00f, ObstacleType::Fixed);
     } else {
-        mark_rectangle(3.00f - (0.60f + ROBOT_RADIUS), 3.00f, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+        mark_rectangle_with_padding(3.00f - 0.60f, 3.00f, 1.55f, 2.00f, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -199,10 +208,10 @@ void World::setup_obstacles_field() {
     for (const auto &building_area : building_areas_) {
         if (building_area.colour == colour_)
             continue;
-        float const half_width = building_area.span_x() / 2 + ROBOT_RADIUS;
-        float const half_height = building_area.span_y() / 2 + ROBOT_RADIUS;
-        mark_rectangle(building_area.x - half_width, building_area.x + half_width, building_area.y - half_height,
-                       building_area.y + half_height, ObstacleType::Fixed);
+        float const half_width = building_area.span_x() / 2;
+        float const half_height = building_area.span_y() / 2;
+        mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
+                                    building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -239,7 +248,6 @@ void World::setup_obstacles_field() {
         }
     }
 }
-
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     return partial_compute_dijkstra(can_continue);
 }
