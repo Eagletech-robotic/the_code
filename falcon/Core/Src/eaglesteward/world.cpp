@@ -260,6 +260,7 @@ void World::setup_obstacles_field() {
         }
     }
 }
+
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     return partial_compute_dijkstra(can_continue);
 }
@@ -391,6 +392,39 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
+static inline float resolved_potential(const auto &P, int i, int j) {
+    float const v = P[i][j];
+    if (v != FLT_MAX)
+        return v;
+
+    // Look for the neighbour with the highest finite potential
+    float best = -FLT_MAX;
+    int best_c = 0, best_r = 0;
+
+    for (int c = -1; c <= 1; ++c)
+        for (int r = -1; r <= 1; ++r) {
+            if (c == 0 && r == 0)
+                continue;
+            int ii = i + c;
+            int jj = j + r;
+            if (ii < 0 || ii >= FIELD_WIDTH_SQ || jj < 0 || jj >= FIELD_HEIGHT_SQ)
+                continue;
+            float neighbour = P[ii][jj];
+            if (neighbour != FLT_MAX && neighbour > best) {
+                best = neighbour;
+                best_c = c;
+                best_r = r;
+            }
+        }
+
+    // all neighbours are infinite
+    if (best == -FLT_MAX)
+        return FLT_MAX;
+
+    constexpr float d_cell = SQUARE_SIZE_M;
+    return best + d_cell * std::sqrt(float(best_c * best_c + best_r * best_r));
+}
+
 // Renvoie V(x,y) pour des coordonnées réelles (en mètres)
 float World::potential_at(float px, float py) const {
     const auto &P = potential_ready();
@@ -404,15 +438,15 @@ float World::potential_at(float px, float py) const {
     float tx = gx - i; // 0..1
     float ty = gy - j; // 0..1
 
-    // bornes (à adapter si vous mettez un halo)
+    // bornes
     i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
-    float v00 = P[i][j];
-    float v10 = P[i + 1][j];
-    float v01 = P[i][j + 1];
-    float v11 = P[i + 1][j + 1];
+    float v00 = resolved_potential(P, i, j);
+    float v10 = resolved_potential(P, i + 1, j);
+    float v01 = resolved_potential(P, i, j + 1);
+    float v11 = resolved_potential(P, i + 1, j + 1);
 
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
@@ -429,7 +463,8 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
 
     if (norm <= SLOPE_THRESHOLD) {
         out_is_local_minimum = true;
-        out_yaw = 0.f;
+        myprintf("Local minimum %.3f\n", norm);
+        out_yaw = current_out_yaw;
     } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
