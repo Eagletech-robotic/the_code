@@ -89,13 +89,13 @@ class World {
     SizedArray<BuildingArea, 8> building_areas_;
 
     // Potential field
-    TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
+    TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
     std::array<std::array<ObstacleType, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> obstacles_field_{};
 
-    BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
+    BoundedPriorityQueue<PQueueNode, 5'000> pqueue_; // No upper limit, but should be enough for the field size
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
