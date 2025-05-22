@@ -4,7 +4,7 @@
 
 int main(int /*argc*/, char **/*argv*/) {
     State state;
-    state.world.set_target(TargetType::BuildingAreaWaypoint);
+    state.world.set_target(TargetType::BleacherWaypoint);
 
     state.world.reset_dijkstra();
     state.world.do_all_calculations_LONG();
