@@ -83,7 +83,7 @@ class World {
     SizedArray<BuildingArea, 8> building_areas_;
 
     // Potential field
-    TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
+    TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
