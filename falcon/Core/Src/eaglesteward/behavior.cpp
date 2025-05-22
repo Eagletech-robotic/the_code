@@ -12,7 +12,6 @@
 auto logAndFail(char const *s) {
     return [s](input_t *, Command *, State *) -> Status {
         myprintf("%s\n", s);
-        host_printf("%s\n", s);
         return Status::FAILURE;
     };
 }
