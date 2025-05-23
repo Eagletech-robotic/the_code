@@ -85,23 +85,27 @@ void State::updateFromBluetooth() {
     // Read the colour
     colour = eagle_packet.robot_colour;
 
-    // Read our position and orientation
-    robot_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-    robot_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-    robot_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+    if (eagle_packet.robot_detected) {
+        // Read our position and orientation
+        robot_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
+        robot_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
+        robot_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
-    // Latency compensation
-    constexpr int32_t LATENCY_COMPENSATION = 80; // Nb of steps
-    float corr_dx, corr_dy, corr_dtheta;
-    odo_history.integrateLastSteps(LATENCY_COMPENSATION, corr_dx, corr_dy, corr_dtheta);
-    robot_x += corr_dx;
-    robot_y += corr_dy;
-    robot_theta = angle_normalize(robot_theta + corr_dtheta);
+        // Latency compensation
+        constexpr int32_t LATENCY_COMPENSATION = 80; // Nb of steps
+        float corr_dx, corr_dy, corr_dtheta;
+        odo_history.integrateLastSteps(LATENCY_COMPENSATION, corr_dx, corr_dy, corr_dtheta);
+        robot_x += corr_dx;
+        robot_y += corr_dy;
+        robot_theta = angle_normalize(robot_theta + corr_dtheta);
+    }
 
-    // Read the opponent's position and orientation
-    world.opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
-    world.opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
-    world.opponent_theta = angle_normalize(to_radians(eagle_packet.opponent_theta_deg));
+    if (eagle_packet.opponent_detected) {
+        // Read the opponent's position and orientation
+        world.opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
+        world.opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
+        world.opponent_theta = angle_normalize(to_radians(eagle_packet.opponent_theta_deg));
+    }
 
     // Update the world from the packet
     world.update_from_eagle_packet(eagle_packet);
