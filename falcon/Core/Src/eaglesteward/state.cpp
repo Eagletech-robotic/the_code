@@ -14,6 +14,7 @@ void State::reset() {
     robot_x = INITIAL_X;
     robot_y = INITIAL_Y;
     robot_theta = INITIAL_ORIENTATION;
+    odo_history.clear();
 }
 
 void State::print() const {
@@ -54,6 +55,9 @@ void State::updateFromInput(const config_t &config, const input_t &input) {
     robot_y += delta_y_m;
     robot_theta = angle_normalize(robot_theta + delta_theta);
 
+    // Memorise the odometry history
+    odo_history.push(delta_x_m, delta_y_m, delta_theta);
+
     // Filter the TOF value
     filtered_tof_m = tof_filter(*this, input.tof_m);
 
@@ -85,6 +89,14 @@ void State::updateFromBluetooth() {
     robot_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
     robot_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
     robot_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+
+    // Latency compensation
+    constexpr int32_t LATENCY_COMPENSATION = 80; // Nb of steps
+    float corr_dx, corr_dy, corr_dtheta;
+    odo_history.integrateLastSteps(LATENCY_COMPENSATION, corr_dx, corr_dy, corr_dtheta);
+    robot_x += corr_dx;
+    robot_y += corr_dy;
+    robot_theta = angle_normalize(robot_theta + corr_dtheta);
 
     // Read the opponent's position and orientation
     world.opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
