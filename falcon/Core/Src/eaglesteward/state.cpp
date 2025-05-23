@@ -132,8 +132,8 @@ void State::updateFromBluetooth() {
         const float dtheta_err = angle_normalize(cam_theta - best_theta);
         constexpr int STEP_MS = 4;
         const int32_t latency_ms = best_k * STEP_MS;
-        myprintf("BT latency %d ms (%d steps), pose error dx=%.3f m dy=%.3f m dθ=%.3f rad\n",
-                 latency_ms, best_k, cam_x - best_x, cam_y - best_y, dtheta_err);
+        myprintf("BT latency %d ms (%d steps), pose error dx=%.3f dy=%.3f dth=%.3f deg\n",
+                 latency_ms, best_k, cam_x - best_x, cam_y - best_y, to_degrees(dtheta_err));
 
         const float cos_err = std::cos(dtheta_err);
         const float sin_err = std::sin(dtheta_err);
