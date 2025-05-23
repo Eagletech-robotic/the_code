@@ -90,41 +90,42 @@ void State::updateFromBluetooth() {
     if (eagle_packet.robot_detected) {
         constexpr int MAX_AGE = 100; // nb steps
 
-        /* 1. Camera pose at capture time --------------------------------- */
-        const float cam_x     = 0.01f * static_cast<float>(eagle_packet.robot_x_cm);
-        const float cam_y     = 0.01f * static_cast<float>(eagle_packet.robot_y_cm);
+        const float odom_x = robot_x;
+        const float odom_y = robot_y;
+        const float odom_theta = robot_theta;
+
+        /* 1. Camera pose (at capture time) */
+        const float cam_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
+        const float cam_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
         const float cam_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
-        /* 2. Walk back through odometry history and find pose
-              whose position is closest to the camera pose.                */
-        float     test_x = robot_x, test_y = robot_y, test_theta = robot_theta;
-        float     best_x = test_x, best_y = test_y, best_theta = test_theta;
-        float     min_d2 = FLT_MAX;      // squared distance
-        int       best_k = 0;            // steps ago
+        /* 2. Walk back in odometry history to find pose nearest to camera */
+        float test_x = robot_x, test_y = robot_y, test_theta = robot_theta;
+        float best_x = test_x, best_y = test_y, best_theta = test_theta;
+        float min_d2 = FLT_MAX;
+        int best_k = 0;
 
         for (int k = 0; k < MAX_AGE; ++k) {
-            const float dx = test_x - cam_x;
-            const float dy = test_y - cam_y;
-            const float d2 = dx * dx + dy * dy;
+            float dx = test_x - cam_x;
+            float dy = test_y - cam_y;
+            float d2 = dx * dx + dy * dy;
 
             if (d2 < min_d2) {
-                min_d2   = d2;
-                best_k   = k;
-                best_x   = test_x;
-                best_y   = test_y;
+                min_d2 = d2;
+                best_k = k;
+                best_x = test_x;
+                best_y = test_y;
                 best_theta = test_theta;
             }
 
-            /* go one step further back; stop if buffer not primed */
-            const int idx_back = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
-            if (odo_history.dx[idx_back] == 0.0f &&
-                odo_history.dy[idx_back] == 0.0f &&
+            int idx_back = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
+            if (odo_history.dx[idx_back] == 0.0f && odo_history.dy[idx_back] == 0.0f &&
                 odo_history.dtheta[idx_back] == 0.0f)
-                break;                   // history not filled yet
+                break; // history not yet filled
 
-            test_x     -= odo_history.dx[idx_back];
-            test_y     -= odo_history.dy[idx_back];
-            test_theta  = angle_normalize(test_theta - odo_history.dtheta[idx_back]);
+            test_x -= odo_history.dx[idx_back];
+            test_y -= odo_history.dy[idx_back];
+            test_theta = angle_normalize(test_theta - odo_history.dtheta[idx_back]);
         }
 
         /* 3. Orientation error between best historic pose and camera pose */
@@ -132,30 +133,32 @@ void State::updateFromBluetooth() {
         const float cos_err = std::cos(dtheta_err);
         const float sin_err = std::sin(dtheta_err);
 
-        /* 4. Re-integrate deltas from camera time up to now,
-              rotating each delta by the orientation error.                */
+        /* 4. Re-integrate deltas from capture time up to now,
+              rotating each delta by orientation error                     */
         float corr_x = cam_x;
         float corr_y = cam_y;
         float corr_theta = cam_theta;
 
         for (int k = best_k; k > 0; --k) {
-            const int idx_fwd = (odo_history.idx - k + RollingHistory::SIZE) % RollingHistory::SIZE;
-            const float dx = odo_history.dx[idx_fwd];
-            const float dy = odo_history.dy[idx_fwd];
+            int idx_fwd = (odo_history.idx - k + RollingHistory::SIZE) % RollingHistory::SIZE;
+            float dx = odo_history.dx[idx_fwd];
+            float dy = odo_history.dy[idx_fwd];
 
-            /* rotate delta */
-            const float rdx =  cos_err * dx - sin_err * dy;
-            const float rdy =  sin_err * dx + cos_err * dy;
+            /* rotate delta to camera frame */
+            float rdx = cos_err * dx - sin_err * dy;
+            float rdy = sin_err * dx + cos_err * dy;
 
-            corr_x     += rdx;
-            corr_y     += rdy;
-            corr_theta  = angle_normalize(corr_theta + odo_history.dtheta[idx_fwd]);
+            corr_x += rdx;
+            corr_y += rdy;
+            corr_theta = angle_normalize(corr_theta + odo_history.dtheta[idx_fwd]);
         }
 
-        /* 5. Update state with corrected pose */
-        robot_x     = corr_x;
-        robot_y     = corr_y;
-        robot_theta = corr_theta;
+        /* 5. Complementary-filter blend with current odometry */
+        constexpr float ALPHA = 0.5f; // tune 0-1
+        robot_x = odom_x * (1.0f - ALPHA) + corr_x * ALPHA;
+        robot_y = odom_y * (1.0f - ALPHA) + corr_y * ALPHA;
+        float dtheta_blend = angle_normalize(corr_theta - odom_theta);
+        robot_theta = angle_normalize(odom_theta + ALPHA * dtheta_blend);
     }
 
     if (eagle_packet.opponent_detected) {
