@@ -419,15 +419,15 @@ float World::potential_at(float px, float py) const {
 
 void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
     constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
-    constexpr float SLOPE_THRESHOLD = 1.5f;
+    constexpr float SLOPE_THRESHOLD = 0.01f;
     static float current_out_yaw = 0.0f;
 
     float dx = (potential_at(x + DELTA, y) - potential_at(x - DELTA, y)) / (2.f * DELTA);
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-
-    if (norm <= SLOPE_THRESHOLD) {
+    host_printf("potential=%.2f n=%.2f\n", potential_at(x,y), norm);
+    if (norm <= SLOPE_THRESHOLD || potential_at(x,y) < 0.09) { // le robot à du mal à passer sous 0.08
         out_is_local_minimum = true;
         out_yaw = 0.f;
     } else {
