@@ -1,5 +1,7 @@
 #include "eaglesteward/state.hpp"
 
+#include <cfloat>
+
 #include "eaglesteward/constants.hpp"
 #include "eaglesteward/tof.hpp"
 #include "robotic/bluetooth.hpp"
@@ -86,27 +88,74 @@ void State::updateFromBluetooth() {
     colour = eagle_packet.robot_colour;
 
     if (eagle_packet.robot_detected) {
-        const float odom_x = robot_x;
-        const float odom_y = robot_y;
-        const float odom_theta = robot_theta;
+        constexpr int MAX_AGE = 100; // nb steps
 
-        // Project the packet pose backward with the saved odometry
-        const float pkt_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
-        const float pkt_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
-        const float pkt_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+        /* 1. Camera pose at capture time --------------------------------- */
+        const float cam_x     = 0.01f * static_cast<float>(eagle_packet.robot_x_cm);
+        const float cam_y     = 0.01f * static_cast<float>(eagle_packet.robot_y_cm);
+        const float cam_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
-        float corr_dx, corr_dy, corr_dtheta;
-        odo_history.integrateLastSteps(50, corr_dx, corr_dy, corr_dtheta);
+        /* 2. Walk back through odometry history and find pose
+              whose position is closest to the camera pose.                */
+        float     test_x = robot_x, test_y = robot_y, test_theta = robot_theta;
+        float     best_x = test_x, best_y = test_y, best_theta = test_theta;
+        float     min_d2 = FLT_MAX;      // squared distance
+        int       best_k = 0;            // steps ago
 
-        const float proj_x = pkt_x + corr_dx;
-        const float proj_y = pkt_y + corr_dy;
-        const float proj_theta = angle_normalize(pkt_theta + corr_dtheta);
+        for (int k = 0; k < MAX_AGE; ++k) {
+            const float dx = test_x - cam_x;
+            const float dy = test_y - cam_y;
+            const float d2 = dx * dx + dy * dy;
 
-        // Alpha filter the odometry and the projected pose
-        constexpr float ALPHA = 0.3f; // The closer to 1, the more the robot trusts the packet
-        robot_x = odom_x * (1.0f - ALPHA) + proj_x * ALPHA;
-        robot_y = odom_y * (1.0f - ALPHA) + proj_y * ALPHA;
-        robot_theta = angle_normalize(odom_theta * (1.0f - ALPHA) + proj_theta * ALPHA);
+            if (d2 < min_d2) {
+                min_d2   = d2;
+                best_k   = k;
+                best_x   = test_x;
+                best_y   = test_y;
+                best_theta = test_theta;
+            }
+
+            /* go one step further back; stop if buffer not primed */
+            const int idx_back = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
+            if (odo_history.dx[idx_back] == 0.0f &&
+                odo_history.dy[idx_back] == 0.0f &&
+                odo_history.dtheta[idx_back] == 0.0f)
+                break;                   // history not filled yet
+
+            test_x     -= odo_history.dx[idx_back];
+            test_y     -= odo_history.dy[idx_back];
+            test_theta  = angle_normalize(test_theta - odo_history.dtheta[idx_back]);
+        }
+
+        /* 3. Orientation error between best historic pose and camera pose */
+        const float dtheta_err = angle_normalize(cam_theta - best_theta);
+        const float cos_err = std::cos(dtheta_err);
+        const float sin_err = std::sin(dtheta_err);
+
+        /* 4. Re-integrate deltas from camera time up to now,
+              rotating each delta by the orientation error.                */
+        float corr_x = cam_x;
+        float corr_y = cam_y;
+        float corr_theta = cam_theta;
+
+        for (int k = best_k; k > 0; --k) {
+            const int idx_fwd = (odo_history.idx - k + RollingHistory::SIZE) % RollingHistory::SIZE;
+            const float dx = odo_history.dx[idx_fwd];
+            const float dy = odo_history.dy[idx_fwd];
+
+            /* rotate delta */
+            const float rdx =  cos_err * dx - sin_err * dy;
+            const float rdy =  sin_err * dx + cos_err * dy;
+
+            corr_x     += rdx;
+            corr_y     += rdy;
+            corr_theta  = angle_normalize(corr_theta + odo_history.dtheta[idx_fwd]);
+        }
+
+        /* 5. Update state with corrected pose */
+        robot_x     = corr_x;
+        robot_y     = corr_y;
+        robot_theta = corr_theta;
     }
 
     if (eagle_packet.opponent_detected) {
