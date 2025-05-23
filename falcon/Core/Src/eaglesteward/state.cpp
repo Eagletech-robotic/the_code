@@ -87,6 +87,33 @@ void State::updateFromBluetooth() {
     // Read the colour
     colour = eagle_packet.robot_colour;
 
+    /* --------- discard packet if robot spun >5° in last 100 steps ------- */
+    constexpr int ROT_CHECK_STEPS = 100; // 100 × 4 ms = 400 ms
+    const float ROT_THRESH_RAD = to_radians(5.0f);
+
+    float orient = 0.0f; // unwrapped orientation diff (rad)
+    float min_o = 0.0f, max_o = 0.0f;
+    int valid_steps = 0;
+
+    for (int k = 0; k < ROT_CHECK_STEPS && k < RollingHistory::SIZE; ++k) {
+        int idx = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
+        if (odo_history.dx[idx] == 0.0f && odo_history.dy[idx] == 0.0f && odo_history.dtheta[idx] == 0.0f)
+            break; // history not yet primed
+
+        orient -= odo_history.dtheta[idx]; // accumulate backwards
+        min_o = std::min(min_o, orient);
+        max_o = std::max(max_o, orient);
+        ++valid_steps;
+    }
+
+    const float rot_span = max_o - min_o; // always ≥ 0
+
+    if (rot_span > ROT_THRESH_RAD && eagle_packet.robot_detected) {
+        printf("BT ignored rot span %.2f\n", rot_span * 180.0f / M_PI);
+        /* we still use the packet for opponent & world updates below */
+        eagle_packet.robot_detected = false; // suppress self-pose use
+    }
+
     if (eagle_packet.robot_detected) {
         constexpr int MAX_AGE = 100; // nb steps
 
@@ -132,8 +159,8 @@ void State::updateFromBluetooth() {
         const float dtheta_err = angle_normalize(cam_theta - best_theta);
         constexpr int STEP_MS = 4;
         const int32_t latency_ms = best_k * STEP_MS;
-        myprintf("BT latency %d ms (%d steps), pose error dx=%.3f dy=%.3f dth=%.3f deg\n",
-                 latency_ms, best_k, cam_x - best_x, cam_y - best_y, to_degrees(dtheta_err));
+        printf("BT latency %d ms dx=%.3f dy=%.3f dth=%.3f\n", latency_ms, cam_x - best_x, cam_y - best_y,
+               to_degrees(dtheta_err));
 
         const float cos_err = std::cos(dtheta_err);
         const float sin_err = std::sin(dtheta_err);
