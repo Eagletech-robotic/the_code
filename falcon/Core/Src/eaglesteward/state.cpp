@@ -86,18 +86,27 @@ void State::updateFromBluetooth() {
     colour = eagle_packet.robot_colour;
 
     if (eagle_packet.robot_detected) {
-        // Read our position and orientation
-        robot_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-        robot_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-        robot_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+        const float odom_x = robot_x;
+        const float odom_y = robot_y;
+        const float odom_theta = robot_theta;
 
-        // Latency compensation
-        constexpr int32_t LATENCY_COMPENSATION = 80; // Nb of steps
+        // Project the packet pose backward with the saved odometry
+        const float pkt_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
+        const float pkt_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
+        const float pkt_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+
         float corr_dx, corr_dy, corr_dtheta;
-        odo_history.integrateLastSteps(LATENCY_COMPENSATION, corr_dx, corr_dy, corr_dtheta);
-        robot_x += corr_dx;
-        robot_y += corr_dy;
-        robot_theta = angle_normalize(robot_theta + corr_dtheta);
+        odo_history.integrateLastSteps(50, corr_dx, corr_dy, corr_dtheta);
+
+        const float proj_x = pkt_x + corr_dx;
+        const float proj_y = pkt_y + corr_dy;
+        const float proj_theta = angle_normalize(pkt_theta + corr_dtheta);
+
+        // Alpha filter the odometry and the projected pose
+        constexpr float ALPHA = 0.3f; // The closer to 1, the more the robot trusts the packet
+        robot_x = odom_x * (1.0f - ALPHA) + proj_x * ALPHA;
+        robot_y = odom_y * (1.0f - ALPHA) + proj_y * ALPHA;
+        robot_theta = angle_normalize(odom_theta * (1.0f - ALPHA) + proj_theta * ALPHA);
     }
 
     if (eagle_packet.opponent_detected) {
