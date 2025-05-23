@@ -132,6 +132,18 @@ void World::enqueue_targets() {
             enqueue_grid_cell(x, y);
         }
     }
+
+    if (target_ == TargetType::TestPoint0)
+        enqueue_grid_cell(0.75f, 0.30f);
+
+    if (target_ == TargetType::TestPoint1)
+        enqueue_grid_cell(1.5f, 0.30f);
+
+    if (target_ == TargetType::TestPoint2)
+        enqueue_grid_cell(1.5f, 1.2f);
+
+    if (target_ == TargetType::TestPoint3)
+        enqueue_grid_cell(0.75f, 1.2f);
 }
 
 void World::setup_obstacles_field() {
@@ -165,32 +177,41 @@ void World::setup_obstacles_field() {
         }
     };
 
+    auto mark_rectangle_with_padding = [this, mark_rectangle, mark_circle](float x_min, float x_max, float y_min,
+                                                                           float y_max, ObstacleType type) {
+        // mark_rectangle(x_min - ROBOT_RADIUS, x_max + ROBOT_RADIUS, y_min - ROBOT_RADIUS, y_max + ROBOT_RADIUS, type);
+        mark_rectangle(x_min, x_max, y_min - ROBOT_RADIUS, y_max + ROBOT_RADIUS, type);
+        mark_rectangle(x_min - ROBOT_RADIUS, x_min, y_min, y_max, type);
+        mark_rectangle(x_max, x_max + ROBOT_RADIUS, y_min, y_max, type);
+
+        mark_circle(x_min, y_min, ROBOT_RADIUS, type);
+        mark_circle(x_min, y_max, ROBOT_RADIUS, type);
+        mark_circle(x_max, y_min, ROBOT_RADIUS, type);
+        mark_circle(x_max, y_max, ROBOT_RADIUS, type);
+    };
+
     // ---------------
     // Scene
     // ---------------
     // Central scene
-    mark_rectangle(0.825f - ROBOT_RADIUS, 3.00f - 0.825f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f,
-                   ObstacleType::Fixed);
+    mark_rectangle_with_padding(1.05f, 3.00f - 1.05f, 1.55f, 2.00f, ObstacleType::Fixed);
 
     // Lateral ramps
-    mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
-    mark_rectangle(3.00f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.80f - ROBOT_RADIUS, 2.00f,
-                   ObstacleType::Fixed);
+    mark_rectangle_with_padding(0.65f, 1.05f, 1.80f, 2.00f, ObstacleType::Fixed);
+    mark_rectangle_with_padding(3.00f - 1.05f, 3.00f - 0.65f, 1.80f, 2.00f, ObstacleType::Fixed);
 
     // Opponent reserved bleacher
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle(0.60f - ROBOT_RADIUS, 0.825f - ROBOT_RADIUS, 1.675f - ROBOT_RADIUS, 1.80f - ROBOT_RADIUS,
-                       ObstacleType::Fixed);
+        mark_rectangle_with_padding(0.60f, 1.05f, 1.675f, 1.80f, ObstacleType::Fixed);
     } else {
-        mark_rectangle(3.0f - (0.825f - ROBOT_RADIUS), 3.00f - (0.60f - ROBOT_RADIUS), 1.675f - ROBOT_RADIUS,
-                       1.80f - ROBOT_RADIUS, ObstacleType::Fixed);
+        mark_rectangle_with_padding(3.0f - 1.05f, 3.00f - 0.60f, 1.675f, 1.80f, ObstacleType::Fixed);
     }
 
     // Opponent backstage area
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle(0.00f, 0.60f + ROBOT_RADIUS, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+        mark_rectangle_with_padding(0.00f, 0.60f, 1.55f, 2.00f, ObstacleType::Fixed);
     } else {
-        mark_rectangle(3.00f - (0.60f + ROBOT_RADIUS), 3.00f, 1.55f - ROBOT_RADIUS, 2.00f, ObstacleType::Fixed);
+        mark_rectangle_with_padding(3.00f - 0.60f, 3.00f, 1.55f, 2.00f, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -199,10 +220,10 @@ void World::setup_obstacles_field() {
     for (const auto &building_area : building_areas_) {
         if (building_area.colour == colour_)
             continue;
-        float const half_width = building_area.span_x() / 2 + ROBOT_RADIUS;
-        float const half_height = building_area.span_y() / 2 + ROBOT_RADIUS;
-        mark_rectangle(building_area.x - half_width, building_area.x + half_width, building_area.y - half_height,
-                       building_area.y + half_height, ObstacleType::Fixed);
+        float const half_width = building_area.span_x() / 2;
+        float const half_height = building_area.span_y() / 2;
+        mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
+                                    building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -239,7 +260,6 @@ void World::setup_obstacles_field() {
         }
     }
 }
-
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     return partial_compute_dijkstra(can_continue);
 }
@@ -371,25 +391,50 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
+// Renvoie V(x,y) pour des coordonnées réelles (en mètres)
+float World::potential_at(float px, float py) const {
+    const auto &P = potential_ready();
+
+    // indices fractionnaires
+    float gx = px / SQUARE_SIZE_M;
+    float gy = py / SQUARE_SIZE_M;
+
+    int i = static_cast<int>(std::floor(gx));
+    int j = static_cast<int>(std::floor(gy));
+    float tx = gx - i; // 0..1
+    float ty = gy - j; // 0..1
+
+    // bornes (à adapter si vous mettez un halo)
+    i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
+    j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
+
+    // bilinéaire
+    float v00 = P[i][j];
+    float v10 = P[i + 1][j];
+    float v01 = P[i][j + 1];
+    float v11 = P[i + 1][j + 1];
+
+    return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
+}
+
 void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
-    constexpr int LOOKAHEAD_DISTANCE = 1; // In squares
-    constexpr float SLOPE_THRESHOLD = 0.01f;
+    constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
+    constexpr float SLOPE_THRESHOLD = 1.5f;
+    static float current_out_yaw = 0.0f;
 
-    int const i = static_cast<int>(std::round(x / SQUARE_SIZE_M));
-    int const j = static_cast<int>(std::round(y / SQUARE_SIZE_M));
+    float dx = (potential_at(x + DELTA, y) - potential_at(x - DELTA, y)) / (2.f * DELTA);
+    float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
-    const auto &potential = potential_ready();
-    float const dx = potential[i + LOOKAHEAD_DISTANCE][j] - potential[i - LOOKAHEAD_DISTANCE][j];
-    float const dy = potential[i][j + LOOKAHEAD_DISTANCE] - potential[i][j - LOOKAHEAD_DISTANCE];
+    float norm = std::hypot(dx, dy);
 
-    if (std::abs(dx) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD && std::abs(dy) / LOOKAHEAD_DISTANCE <= SLOPE_THRESHOLD) {
-        myprintf("Reached local minimum");
+    if (norm <= SLOPE_THRESHOLD) {
         out_is_local_minimum = true;
         out_yaw = 0.f;
     } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
-        myprintf("Target angle: %f - distance: %f\n", to_degrees(out_yaw), potential[i][j]);
+        current_out_yaw = 0.99f * current_out_yaw + 0.01f * out_yaw;
+        out_yaw = current_out_yaw;
     }
 }
 

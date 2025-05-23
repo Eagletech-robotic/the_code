@@ -31,7 +31,7 @@ class State {
     void updateFromBluetooth();
 
     /* PUBLIC DATA ---------------------------------------------------- */
-    RobotColour colour{RobotColour::Blue};
+    RobotColour colour{RobotColour::Yellow};
 
     // TODO
     // 1 - Should we overwrite the IMU coordinates with the field coordinates when we receive a packet?
@@ -73,11 +73,13 @@ class State {
     //   void dump(); -> "{name}: [379]0.008 [386]0.007 [AVG] 0.003"
     // };
 
+    // Pseudo state
+    std::uint32_t bt_tick = 0;
+
     // Bleacher carrying
     bool bleacher_lifted{false};
 
-    Bleacher *picking_up_bleacher{nullptr};
-    bool picking_up_bleacher_on_axis{false};
+    GameEntity *target{nullptr};
 
     // Rectangle test
     int target_nb{0};

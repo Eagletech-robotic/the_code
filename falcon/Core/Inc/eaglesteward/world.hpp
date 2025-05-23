@@ -27,6 +27,10 @@ enum class TargetType {
     BleacherWaypoint,
     BackstageWaypoint,
     BuildingAreaWaypoint,
+    TestPoint0, // pour test de la descente
+    TestPoint1,
+    TestPoint2,
+    TestPoint3,
 };
 
 class World {
@@ -47,6 +51,8 @@ class World {
 
     /** Replace objects with those found in EaglePacket. */
     void update_from_eagle_packet(const EaglePacket &packet);
+
+    float potential_at(float x, float y) const;
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
     void potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const;
@@ -83,13 +89,13 @@ class World {
     SizedArray<BuildingArea, 8> building_areas_;
 
     // Potential field
-    TargetType target_ = TargetType::BleacherWaypoint; // First target when the game starts
+    TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
     uint8_t ready_field_ = 1;
     std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
     std::array<std::array<ObstacleType, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> obstacles_field_{};
 
-    BoundedPriorityQueue<PQueueNode, FIELD_WIDTH_SQ * FIELD_HEIGHT_SQ> pqueue_;
+    BoundedPriorityQueue<PQueueNode, 5'000> pqueue_; // No upper limit, but should be enough for the field size
 
     [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
 
