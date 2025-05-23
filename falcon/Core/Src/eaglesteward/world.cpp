@@ -427,7 +427,8 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
 
     float norm = std::hypot(dx, dy);
     host_printf("potential=%.2f n=%.2f\n", potential_at(x,y), norm);
-    if (norm <= SLOPE_THRESHOLD || potential_at(x,y) < 0.09) { // le robot à du mal à passer sous 0.08
+    float p = potential_at(x,y) ;
+    if (norm <= SLOPE_THRESHOLD || (p < 0.09f) || p > 1000.0f) { // le robot à du mal à passer sous 0.08
         out_is_local_minimum = true;
         out_yaw = 0.f;
     } else {
