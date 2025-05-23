@@ -159,7 +159,7 @@ void World::setup_obstacles_field() {
     };
 
     auto mark_circle = [this](float center_x, float center_y, float radius_f, ObstacleType type) {
-        int radius = static_cast<int>(std::ceil(radius_f / SQUARE_SIZE_M));
+        int radius = static_cast<int>(std::floor(radius_f / SQUARE_SIZE_M));
         int square_radius = radius * radius;
 
         int center_i = static_cast<int>(std::round(center_x / SQUARE_SIZE_M));
