@@ -130,6 +130,11 @@ void State::updateFromBluetooth() {
 
         /* 3. Orientation error between best historic pose and camera pose */
         const float dtheta_err = angle_normalize(cam_theta - best_theta);
+        constexpr int STEP_MS = 4;
+        const int32_t latency_ms = best_k * STEP_MS;
+        myprintf("BT latency %d ms (%d steps), pose error dx=%.3f m dy=%.3f m dθ=%.3f rad\n",
+                 latency_ms, best_k, cam_x - best_x, cam_y - best_y, dtheta_err);
+
         const float cos_err = std::cos(dtheta_err);
         const float sin_err = std::sin(dtheta_err);
 
@@ -154,7 +159,7 @@ void State::updateFromBluetooth() {
         }
 
         /* 5. Complementary-filter blend with current odometry */
-        constexpr float ALPHA = 0.5f; // tune 0-1
+        constexpr float ALPHA = 1.0f; // tune 0-1
         robot_x = odom_x * (1.0f - ALPHA) + corr_x * ALPHA;
         robot_y = odom_y * (1.0f - ALPHA) + corr_y * ALPHA;
         float dtheta_blend = angle_normalize(corr_theta - odom_theta);
