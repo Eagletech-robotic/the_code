@@ -11,8 +11,9 @@
 #include <math.h>
 
 void State::reset() {
-    // Set the initial state for the IMU to field coordinate transformation.
-    saveImuToFieldTransform(INITIAL_X, INITIAL_Y, INITIAL_ORIENTATION);
+    robot_x = INITIAL_X;
+    robot_y = INITIAL_Y;
+    robot_theta = INITIAL_ORIENTATION;
 }
 
 void State::print() const {
@@ -22,10 +23,8 @@ void State::print() const {
     } else {
         col = "YLW";
     }
-    float x, y, theta_deg;
-    getPositionAndOrientation(x, y, theta_deg);
-    myprintf("ROB %s %.3f,%.3f,%.0f TOF %.3f OPP %.3f,%.3f,%.0f\n", col, x, y, to_degrees(theta_deg), filtered_tof_m,
-             world.opponent_x, world.opponent_y, to_degrees(world.opponent_theta));
+    myprintf("ROB %s %.3f,%.3f,%.0f TOF %.3f OPP %.3f,%.3f,%.0f\n", col, robot_x, robot_y, to_degrees(robot_theta),
+             filtered_tof_m, world.opponent_x, world.opponent_y, to_degrees(world.opponent_theta));
 }
 
 bool State::hasGameStarted() const { return start_time_ms != -1; }
@@ -43,43 +42,17 @@ float State::elapsedTime(const input_t &input) const {
 }
 
 /**
- * Calculates the transformation from IMU coordinates to field coordinates and saves it in the state.
- */
-void State::saveImuToFieldTransform(float x_field, float y_field, float theta_field) {
-    // Calculate the rotation offset
-    transformation_theta = theta_field - imu_theta;
-
-    // Calculate the translation offsets
-    transformation_x = x_field - (imu_x * cos(transformation_theta) - imu_y * sin(transformation_theta));
-    transformation_y = y_field - (imu_x * sin(transformation_theta) + imu_y * cos(transformation_theta));
-}
-
-/**
- * Converts coordinates from IMU coordinate system to field coordinate system.
- * Returns the position (x, y) and orientation (theta) in the field coordinate system.
- */
-void State::getPositionAndOrientation(float &out_x, float &out_y, float &out_theta) const {
-    // Apply rotation and translation to convert coordinates
-    out_x = imu_x * cos(transformation_theta) - imu_y * sin(transformation_theta) + transformation_x;
-    out_y = imu_x * sin(transformation_theta) + imu_y * cos(transformation_theta) + transformation_y;
-
-    // Convert angle from IMU system to field system
-    out_theta = imu_theta + transformation_theta;
-    out_theta = angle_normalize(out_theta);
-}
-
-/**
  * Updates the state based on the input data: IMU, encoders, and TOF.
  */
 void State::updateFromInput(const config_t &config, const input_t &input) {
     // Updates the robot's position and orientation based on the IMU and encoder data
     float delta_x_m, delta_y_m, delta_theta;
     fusion_odo_imu_fuse(input.imu_accel_x_mss, input.imu_accel_y_mss, input.delta_yaw, input.delta_encoder_left,
-                        input.delta_encoder_right, config.time_step_s, imu_theta, &delta_x_m, &delta_y_m, &delta_theta,
-                        0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
-    imu_x += delta_x_m;
-    imu_y += delta_y_m;
-    imu_theta = angle_normalize(imu_theta + delta_theta);
+                        input.delta_encoder_right, config.time_step_s, robot_theta, &delta_x_m, &delta_y_m,
+                        &delta_theta, 0.5f, TICKS_PER_REV, WHEEL_CIRCUMFERENCE_M, WHEELBASE_M);
+    robot_x += delta_x_m;
+    robot_y += delta_y_m;
+    robot_theta = angle_normalize(robot_theta + delta_theta);
 
     // Filter the TOF value
     filtered_tof_m = tof_filter(*this, input.tof_m);
@@ -108,12 +81,10 @@ void State::updateFromBluetooth() {
     // Read the colour
     colour = eagle_packet.robot_colour;
 
-    // Read our position and orientation, and calculate the transformation
-    float x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
-    float y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
-    float theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
-    // Save the IMU -> field coordinate transformation in the state
-    saveImuToFieldTransform(x, y, theta);
+    // Read our position and orientation
+    robot_x = static_cast<float>(eagle_packet.robot_x_cm) / 100.0f;
+    robot_y = static_cast<float>(eagle_packet.robot_y_cm) / 100.0f;
+    robot_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
     // Read the opponent's position and orientation
     world.opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
