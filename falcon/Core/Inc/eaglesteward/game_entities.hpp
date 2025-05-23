@@ -39,7 +39,7 @@ class Bleacher : public GameEntity {
         initial_position = initial_position_val;
     }
 
-    [[nodiscard]] std::array<std::pair<float, float>, 2> waypoints() const;
+    [[nodiscard]] std::array<GameEntity, 2> waypoints() const;
 
     [[nodiscard]] bool in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const;
 };
@@ -79,9 +79,9 @@ class BuildingArea : public GameEntity {
         colour = colour_val;
     }
 
-    [[nodiscard]] std::pair<float, float> available_slot() const;
+    [[nodiscard]] GameEntity available_slot() const;
 
-    [[nodiscard]] std::pair<float, float> waypoint() const;
+    [[nodiscard]] GameEntity waypoint() const;
 
     [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 3; }
     [[nodiscard]] bool is_full() const { return first_available_slot >= nb_slots(); }
