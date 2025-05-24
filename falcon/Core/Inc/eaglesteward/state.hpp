@@ -79,9 +79,6 @@ class State {
     // Bleacher carrying
     bool bleacher_lifted{false};
 
-    // Rectangle test
-    int target_nb{0};
-
     /* END PUBLIC DATA ------------------------------------ */
 
   private:

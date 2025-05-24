@@ -84,7 +84,8 @@ Status evadeOpponent(input_t *, Command *command, State *) {
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
     if (state->bleacher_lifted) {
-        if (state->filtered_tof_m > 0.50f) {
+       // if (state->filtered_tof_m > 0.50f) {
+    	 if (false) {
             auto carried_bleacher = state->world.carried_bleacher();
 
             // The bleacher was dropped: update the state...
@@ -333,26 +334,26 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 }
 
 // DEBUG - used by infiniteRectangle
-Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
-                  State *state) {
-    if (state->target_nb != target_nb) {
-        return Status::SUCCESS;
-    }
-
-    myprintf("B%d\r\n", state->target_nb);
-    const bool has_arrived =
-        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
-                       WHEELBASE_M, // m, entraxe
-                       0.08,        // m, distance à l'arrivée pour être arrivé
-                       &command->target_left_speed, &command->target_right_speed);
-    if (has_arrived) {
-        state->target_nb++;
-        return Status::SUCCESS;
-    } else {
-        return Status::RUNNING;
-    }
-}
+//Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
+//                  State *state) {
+//    if (state->target_nb != target_nb) {
+//        return Status::SUCCESS;
+//    }
+//
+//    myprintf("B%d\r\n", state->target_nb);
+//    const bool has_arrived =
+//        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
+//                       2.0f,        // m/s Vmax 3.0 est le max
+//                       WHEELBASE_M, // m, entraxe
+//                       0.08,        // m, distance à l'arrivée pour être arrivé
+//                       &command->target_left_speed, &command->target_right_speed);
+//    if (has_arrived) {
+//        state->target_nb++;
+//        return Status::SUCCESS;
+//    } else {
+//        return Status::RUNNING;
+//    }
+//}
 
 Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
     if (state->elapsedTime(*input) > 1.5f) {
@@ -367,35 +368,11 @@ Status deployFlag(const input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-// DEBUG - move around a rectangle
-Status infiniteRectangle(const input_t *input, Command *command, State *state) {
-    auto seq = sequence(
-        //
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.6, 0.0, 0, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.6, 0.6, 1, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.0, 0.6, 2, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.0, 0.0, 3, input_, command_, state_);
-        },
-        [](input_t *, Command *, State *state_) {
-            state_->target_nb = 0;
-            return Status::SUCCESS;
-        });
-
-    return seq(const_cast<input_t *>(input), command, state);
-}
-
 Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
                    State *state) {
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
+                       0.6f,        // m/s Vmax 3.0 est le max
                        WHEELBASE_M, // m, entraxe
                        0.08,        // m, distance à l'arrivé pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
@@ -405,6 +382,18 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
         return Status::RUNNING;
     }
 }
+
+
+Status backAndForwardStateNode(const input_t *input, Command *command, State *state) {
+    auto node = statenode([](input_t *input_, Command *command_,
+                             State *state_) { return gotoTarget2(0.6f, 0.60, 0, input_, command_, state_); },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoTarget2(3.0f-.60f, 0.60, 1, input_, command_, state_);
+                          });
+
+    return node(const_cast<input_t *>(input), command, state);
+}
+
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
@@ -454,12 +443,13 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+		// alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
+		alternative(logAndFail("back and forward"),backAndForwardStateNode) ,
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));
