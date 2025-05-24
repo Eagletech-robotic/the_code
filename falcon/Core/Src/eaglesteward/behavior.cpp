@@ -25,17 +25,20 @@ bool descend(Command &command, State &state, float max_speed) {
     bool is_local_minimum;
     float target_angle;
     world.potential_field_descent(state.robot_x, state.robot_y, is_local_minimum, target_angle);
-
+    float min_speed = 0.0f;
     if (is_local_minimum) {
         return true;
     } else {
         auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
 
-        // Calculate the linear and angular speed
-        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : max_speed;
+
         auto angular_speed = KP_ROTATION * angle_diff; // rad/s
-        if (state.bleacher_lifted)
+        if (state.bleacher_lifted) {
             angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
+            min_speed = 0.05f; // pour éviter le glissement
+        }
+        // Calculate the linear and angular speed
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? min_speed : max_speed;
 
         // Wheel speeds
         constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
@@ -55,6 +58,7 @@ bool descend(Command &command, State &state, float max_speed) {
         return false;
     }
 }
+
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
 Status isSafe(input_t *, Command *, State *state) {
@@ -176,7 +180,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const [target_x, target_y] = building_area->available_slot();
             myprintf("slot");
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, .8f,
-                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
+                               WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
                 building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
@@ -195,7 +199,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             return Status::SUCCESS;
         },
-        alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher));
+		alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher)
+		);
 
     return seq(const_cast<input_t *>(input), command, state);
 }
@@ -246,7 +251,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             const bool has_arrived =
                 pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.8f,
-                               WHEELBASE_M, 0.15, &command_->target_left_speed, &command_->target_right_speed);
+                               WHEELBASE_M, 0.08, &command_->target_left_speed, &command_->target_right_speed);
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             if (has_arrived) {
                 host_printf("has_arrived\n");
@@ -387,7 +392,7 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
                    State *state) {
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
+                       1.50f,        // m/s Vmax 3.0 est le max
                        WHEELBASE_M, // m, entraxe
                        0.08,        // m, distance à l'arrivé pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
@@ -446,7 +451,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+        //alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
         carryBleacher, // Keep this action before evasive maneuvers
