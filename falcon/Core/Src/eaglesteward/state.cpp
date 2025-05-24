@@ -88,14 +88,13 @@ void State::updateFromBluetooth() {
     colour = eagle_packet.robot_colour;
 
     if (eagle_packet.robot_detected) {
-        constexpr int LOOKBACK_WINDOW_SIZE = 200; // nb steps. Keep lower than RollingHistory::SIZE
         float const camera_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
         float const camera_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
         float const camera_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
         // Walk back in odometry history to find pose nearest to camera
         int lookback_steps = 0;
-        odo_history.find_nearest_pose(camera_x - robot_x, camera_y - robot_y, LOOKBACK_WINDOW_SIZE, lookback_steps);
+        odo_history.find_nearest_pose(camera_x - robot_x, camera_y - robot_y, RollingHistory::SIZE, lookback_steps);
         // myprintf("find_nearest_pose(%.3f %.3f) => %d\n", camera_x - robot_x, camera_y - robot_y, lookback_steps);
         // odo_history.print_for_debug();
 
@@ -106,7 +105,7 @@ void State::updateFromBluetooth() {
         // Calculate the amplitude of our rotations around the camera pose
         float rotation_span;
         odo_history.rotation_span_in_area(-relative_x - 0.05f, -relative_y - 0.05f, -relative_x + 0.05f,
-                                          -relative_y + 0.05f, LOOKBACK_WINDOW_SIZE, rotation_span);
+                                          -relative_y + 0.05f, RollingHistory::SIZE, rotation_span);
 
         // Only trust the camera orientation for limited rotation amplitudes
         float corrected_theta = robot_theta;

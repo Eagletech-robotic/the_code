@@ -5,7 +5,7 @@
 #include "utils/myprintf.hpp"
 
 struct RollingHistory {
-    static constexpr int SIZE = 250;
+    static constexpr int SIZE = 400;
     std::array<float, SIZE> deltas_x{}, deltas_y{}, deltas_theta{};
     int idx{0};
 
