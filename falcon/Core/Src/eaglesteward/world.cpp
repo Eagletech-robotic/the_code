@@ -92,7 +92,7 @@ void World::reset_dijkstra() {
     // Add obstacles
     setup_obstacles_field();
 
-    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
+    printf("DIJSK RST %lu\n", pqueue_.size());
 }
 
 void World::enqueue_targets() {
@@ -191,6 +191,13 @@ void World::setup_obstacles_field() {
     };
 
     // ---------------
+    // Borders
+    // ---------------
+    mark_rectangle(0.0f, FIELD_WIDTH_M, 0.0f, ROBOT_RADIUS, ObstacleType::Fixed);
+    mark_rectangle(0.0f, ROBOT_RADIUS, 0.0f, FIELD_HEIGHT_M, ObstacleType::Fixed);
+    mark_rectangle(3.00f - ROBOT_RADIUS, FIELD_WIDTH_M, 0.0f, FIELD_HEIGHT_M, ObstacleType::Fixed);
+
+    // ---------------
     // Scene
     // ---------------
     // Central scene
@@ -260,6 +267,7 @@ void World::setup_obstacles_field() {
         }
     }
 }
+
 bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     return partial_compute_dijkstra(can_continue);
 }
@@ -341,7 +349,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
         }
     }
 
-    printf("COMP_DIJSKTRA\n");
+    printf("DIJSK DONE\n");
     ready_field_ ^= 1;
     return false;
 }
@@ -391,6 +399,41 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
+// Returns the potential value at the given grid cell (i, j).
+// If the value is infinite, return the potential of the best neighbour + distance to it.
+static inline float finite_potential(const auto &P, int i, int j) {
+    float const v = P[i][j];
+    if (v != FLT_MAX)
+        return v;
+
+    // Look for the neighbour with the highest finite potential
+    float best = -FLT_MAX;
+    int best_c = 0, best_r = 0;
+
+    for (int c = -1; c <= 1; ++c)
+        for (int r = -1; r <= 1; ++r) {
+            if (c == 0 && r == 0)
+                continue;
+            int ii = i + c;
+            int jj = j + r;
+            if (ii < 0 || ii >= FIELD_WIDTH_SQ || jj < 0 || jj >= FIELD_HEIGHT_SQ)
+                continue;
+            float neighbour = P[ii][jj];
+            if (neighbour != FLT_MAX && neighbour > best) {
+                best = neighbour;
+                best_c = c;
+                best_r = r;
+            }
+        }
+
+    // all neighbours are infinite
+    if (best == -FLT_MAX)
+        return FLT_MAX;
+
+    constexpr float d_cell = SQUARE_SIZE_M;
+    return best + d_cell * std::sqrt(float(best_c * best_c + best_r * best_r));
+}
+
 // Renvoie V(x,y) pour des coordonnées réelles (en mètres)
 float World::potential_at(float px, float py) const {
     const auto &P = potential_ready();
@@ -404,15 +447,15 @@ float World::potential_at(float px, float py) const {
     float tx = gx - i; // 0..1
     float ty = gy - j; // 0..1
 
-    // bornes (à adapter si vous mettez un halo)
+    // bornes
     i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
-    float v00 = P[i][j];
-    float v10 = P[i + 1][j];
-    float v01 = P[i][j + 1];
-    float v11 = P[i + 1][j + 1];
+    float v00 = finite_potential(P, i, j);
+    float v10 = finite_potential(P, i + 1, j);
+    float v01 = finite_potential(P, i, j + 1);
+    float v11 = finite_potential(P, i + 1, j + 1);
 
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
@@ -426,10 +469,9 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-
-    if (norm <= SLOPE_THRESHOLD) {
+    if (norm <= SLOPE_THRESHOLD || potential_at(x, y) < 0.09) { // le robot à du mal à passer sous 0.08
         out_is_local_minimum = true;
-        out_yaw = 0.f;
+        out_yaw = current_out_yaw;
     } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
