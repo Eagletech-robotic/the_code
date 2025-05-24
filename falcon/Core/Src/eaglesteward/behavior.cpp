@@ -17,7 +17,7 @@ auto logAndFail(char const *s) {
 }
 
 bool descend(Command &command, State &state, float max_speed) {
-    constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
+    constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
     myprintf("descend");
     auto &world = state.world;
@@ -172,8 +172,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const target_y = slot.y + sin(slot.orientation) * local_x;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, .8f,
-                               WHEELBASE_M,
-                               0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
+                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
 
@@ -188,9 +187,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             auto const slot = building_area->available_slot();
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .4f,
-                               WHEELBASE_M, ROBOT_RADIUS, &command_->target_left_speed,
-                               &command_->target_right_speed)) {
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .4f, WHEELBASE_M,
+                               ROBOT_RADIUS, &command_->target_left_speed, &command_->target_right_speed)) {
                 building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
@@ -342,9 +340,9 @@ Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, inp
     myprintf("B%d\r\n", state->target_nb);
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f, // m/s Vmax 3.0 est le max
+                       2.0f,        // m/s Vmax 3.0 est le max
                        WHEELBASE_M, // m, entraxe
-                       0.08, // m, distance à l'arrivée pour être arrivé
+                       0.08,        // m, distance à l'arrivée pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         state->target_nb++;
@@ -395,9 +393,9 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
                    State *state) {
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f, // m/s Vmax 3.0 est le max
+                       2.0f,        // m/s Vmax 3.0 est le max
                        WHEELBASE_M, // m, entraxe
-                       0.08, // m, distance à l'arrivé pour être arrivé
+                       0.08,        // m, distance à l'arrivé pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         return Status::SUCCESS;
@@ -408,9 +406,7 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
-                             State *state_) {
-                              return gotoTarget2(0.75f, 0.30, 0, input_, command_, state_);
-                          },
+                             State *state_) { return gotoTarget2(0.75f, 0.30, 0, input_, command_, state_); },
                           [](input_t *input_, Command *command_, State *state_) {
                               return gotoTarget2(1.50, 0.30, 1, input_, command_, state_);
                           },
@@ -436,9 +432,7 @@ Status gotoDescend(const char *name, Command *command, State *state, TargetType 
 Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
 
     auto node = statenode([](input_t *input_, Command *command_,
-                             State *state_) {
-                              return gotoDescend("0", command_, state_, TargetType::TestPoint0);
-                          },
+                             State *state_) { return gotoDescend("0", command_, state_, TargetType::TestPoint0); },
                           [](input_t *input_, Command *command_, State *state_) {
                               return gotoDescend("1", command_, state_, TargetType::TestPoint1);
                           },

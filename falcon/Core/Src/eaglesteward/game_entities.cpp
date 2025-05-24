@@ -10,7 +10,7 @@ std::pair<float, float> GameEntity::position_in_local_frame(float robot_x, float
     float const dy = robot_y - y;
     float const cos_o = std::cos(orientation);
     float const sin_o = std::sin(orientation);
-    float const local_x = cos_o * dx + sin_o * dy; // along orthogonal axis
+    float const local_x = cos_o * dx + sin_o * dy;  // along orthogonal axis
     float const local_y = -sin_o * dx + cos_o * dy; // perpendicular axis
     return {local_x, local_y};
 }
@@ -45,9 +45,6 @@ GameEntity BuildingArea::available_slot() const {
 
 GameEntity BuildingArea::waypoint() const {
     auto [slot_x, slot_y, orientation_] = available_slot();
-    return {
-        slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
-        slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
-        orientation
-    };
+    return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
+            slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE, orientation};
 }
