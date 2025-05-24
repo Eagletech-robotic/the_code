@@ -93,7 +93,7 @@ void State::updateFromBluetooth() {
         float const camera_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
         // Walk back in odometry history to find pose nearest to camera
-        int lookback_steps = 0;
+        int lookback_steps;
         odo_history.find_nearest_pose(camera_x - robot_x, camera_y - robot_y, RollingHistory::SIZE, lookback_steps);
         // myprintf("find_nearest_pose(%.3f %.3f) => %d\n", camera_x - robot_x, camera_y - robot_y, lookback_steps);
         // odo_history.print_for_debug();
@@ -125,13 +125,18 @@ void State::updateFromBluetooth() {
         // Optionally log the error
         float const error_x = corrected_x - robot_x;
         float const error_y = corrected_y - robot_y;
-        printf("BT %d ms %.3f %.3f %.3f\n", lookback_steps * 4, error_x, error_y, to_degrees(error_theta));
 
         // Blend with current odometry
         constexpr float CAMERA_GAIN = 0.5f; // the closest tp 1, the more we trust the camera
+
+        const float old_robot_x = robot_x;
+        const float old_robot_y = robot_y;
+
         robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
         robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
         robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
+
+        printf("BT %d ms %.3f %.3f %.3f %.3f %.3f\n", lookback_steps * 4, error_x, robot_x - old_robot_x, error_y, robot_y - old_robot_y, to_degrees(error_theta));
     }
 
     if (eagle_packet.opponent_detected) {
