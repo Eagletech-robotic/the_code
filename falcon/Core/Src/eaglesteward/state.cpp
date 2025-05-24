@@ -127,7 +127,7 @@ void State::updateFromBluetooth() {
         float const error_y = corrected_y - robot_y;
 
         // Blend with current odometry
-        constexpr float CAMERA_GAIN = 0.5f; // the closest tp 1, the more we trust the camera
+        constexpr float CAMERA_GAIN = 1.0f; // the closest tp 1, the more we trust the camera
 
         const float old_robot_x = robot_x;
         const float old_robot_y = robot_y;
