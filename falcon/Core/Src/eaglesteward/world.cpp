@@ -245,10 +245,7 @@ void World::setup_obstacles_field() {
     for (const auto &bleacher : bleachers_) {
         if (!bleacher.initial_position)
             continue;
-        // mark_circle(bleacher.x, bleacher.y, 0.35f, ObstacleType::Movable);
-        if (!bleacher.uncertain) {
-            mark_circle(bleacher.x, bleacher.y, 0.20f, ObstacleType::Fixed);
-        }
+        mark_circle(bleacher.x, bleacher.y, BLEACHER_LENGTH / 2.0f /*+ ROBOT_RADIUS*/, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -469,7 +466,7 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-    if (norm <= SLOPE_THRESHOLD || potential_at(x, y) < 0.09) { // le robot à du mal à passer sous 0.08
+    if (norm <= SLOPE_THRESHOLD) {
         out_is_local_minimum = true;
         out_yaw = current_out_yaw;
     } else {
