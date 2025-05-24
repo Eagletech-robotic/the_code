@@ -18,10 +18,10 @@ auto logAndFail(char const *s) {
 
 bool descend(Command &command, State &state, float max_speed) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
-    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.6f; // Limit when we carry a bleacher. rad/s.
     myprintf("descend");
     auto &world = state.world;
-
+    float min_speed = 0.0f;
     bool is_local_minimum;
     float target_angle;
     world.potential_field_descent(state.robot_x, state.robot_y, is_local_minimum, target_angle);
@@ -32,11 +32,13 @@ bool descend(Command &command, State &state, float max_speed) {
         auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
 
         // Calculate the linear and angular speed
-        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : max_speed;
-        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
-        if (state.bleacher_lifted)
-            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
 
+        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
+        if (state.bleacher_lifted) {
+            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
+            min_speed = 0.01f;
+        }
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? min_speed : max_speed;
         // Wheel speeds
         constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
         auto speed_left = linear_speed - angular_speed * HALF_BASE;
@@ -64,11 +66,11 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    if (isBigThingClose(*state) &&
-        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
-        myprintf("BigThing\n");
-        return Status::FAILURE;
-    }
+//    if (isBigThingClose(*state) &&
+//        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
+//        myprintf("BigThing\n");
+//        return Status::FAILURE;
+//    }
 
     return Status::SUCCESS;
 }
@@ -82,12 +84,12 @@ Status evadeOpponent(input_t *, Command *command, State *) {
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
     if (state->bleacher_lifted) {
-        if (state->filtered_tof_m > 0.50f) {
+       // if (state->filtered_tof_m > 0.50f) {
+    	 if (false) {
             auto carried_bleacher = state->world.carried_bleacher();
 
             // The bleacher was dropped: update the state...
             state->bleacher_lifted = false;
-            state->target = nullptr;
             state->world.drop_carried_bleacher();
 
             // ... and mark the bleacher as uncertain.
@@ -147,41 +149,54 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
 
             if (!building_area) {
-                host_printf("No building area\n");
                 return Status::FAILURE;
             }
 
-            if (descend(*command_, *state_, .8f)) {
-                // vitesse plus lente pour ne rien lacher
+            auto const waypoint = building_area->waypoint();
+            auto const [local_x, local_y] = waypoint.position_in_local_frame(state_->robot_x, state_->robot_y);
+            if (fabsf(local_y) < 0.15f) {
                 return Status::SUCCESS;
             }
+
+            myprintf("BA-SRCH x=%.3f y=%.3f\n", local_x, local_y);
+            descend(*command_, *state_, .8f);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            // Aller en face
-            auto [building_area, distance] =
+            const auto [building_area, distance] =
                 state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
-            auto const [wp_x, wp_y] = building_area->waypoint();
-            myprintf("waypoint");
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, wp_x, wp_y, .8f, WHEELBASE_M,
-                               0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
-                return Status::SUCCESS;
+            if (!building_area) {
+                return Status::FAILURE;
             }
-            return Status::RUNNING;
-        },
-        [](input_t *, Command *command_, State *state_) {
-            // Aller en face
-            auto [building_area, distance] =
-                state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
-            auto const [target_x, target_y] = building_area->available_slot();
-            myprintf("slot");
+
+            auto const slot = building_area->available_slot();
+            auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
+            auto const target_x = slot.x + cos(slot.orientation) * local_x;
+            auto const target_y = slot.y + sin(slot.orientation) * local_x;
+
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, .8f,
                                WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BA-APP x=%.3f y=%.3f\n", target_x, target_y);
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *state_) {
+            const auto [building_area, distance] =
+                state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
+            if (!building_area) {
+                return Status::FAILURE;
+            }
+
+            auto const slot = building_area->available_slot();
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .4f, WHEELBASE_M,
+                               ROBOT_RADIUS, &command_->target_left_speed, &command_->target_right_speed)) {
                 building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
-            host_printf("Approaching building area x=%.3f y=%.3f\n", target_x, target_y);
 
+            myprintf("BA-APPCNT x=%.3f y=%.3f\n", building_area->x, building_area->y);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -190,7 +205,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
             state_->bleacher_lifted = false;
-            state_->target = nullptr;
             state_->world.drop_carried_bleacher();
 
             return Status::SUCCESS;
@@ -204,63 +218,57 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BleacherWaypoint);
     auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
-            // descente de gradient vers le plus proche
             const auto [bleacher, distance] =
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
 
-            if (!bleacher) {
-                host_printf("No bleacher\n");
-                return Status::FAILURE;
-            }
+            if (bleacher) {
+                auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
+                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                    return Status::SUCCESS;
+                }
+            };
 
-            state_->target = bleacher;
             myprintf("BL-SRCH\n");
-            if (descend(*command_, *state_, 1.0f)) {
-                host_printf("Minimum\n");
-                return Status::SUCCESS;
-            } else {
-                return Status::RUNNING;
-            }
-        },
-        [](input_t *, Command *command_, State *state_) {
-            // aller en face du gradin
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-            // const auto bleacher = state_->target;
-
-            auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-
-            float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
-            float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 0.8f,
-                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
-                return Status::SUCCESS;
-            }
+            descend(*command_, *state_, SPEED_MAX);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            // aller vers le gradin
-            // const auto bleacher = state_->target;
             const auto [bleacher, distance] =
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-
-            const bool has_arrived =
-                pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.8f,
-                               WHEELBASE_M, 0.15, &command_->target_left_speed, &command_->target_right_speed);
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            if (has_arrived) {
-                host_printf("has_arrived\n");
-                return Status::SUCCESS;
-            } else {
-                host_printf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
-                mcu_printf("BL-APPCNT\n");
-                return Status::RUNNING;
+            if (!bleacher) {
+                return Status::FAILURE;
             }
+
+            auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
+            float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
+            float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
+
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 1.0f,
+                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BL-APP x=%.3f y=%.3f\n", target_x, target_y);
+            return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            // On va ailleurs !
-            myprintf("BL-PKP\n");
+            const auto [bleacher, distance] =
+                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
+            if (!bleacher) {
+                return Status::FAILURE;
+            }
 
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.5f,
+                               WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *state_) {
             auto bleacher = state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y).first;
             state_->bleacher_lifted = true;
 
@@ -270,6 +278,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
 
+            myprintf("BL-PKP\n");
             return Status::SUCCESS;
         });
 
@@ -325,26 +334,26 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 }
 
 // DEBUG - used by infiniteRectangle
-Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
-                  State *state) {
-    if (state->target_nb != target_nb) {
-        return Status::SUCCESS;
-    }
-
-    myprintf("B%d\r\n", state->target_nb);
-    const bool has_arrived =
-        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
-                       WHEELBASE_M, // m, entraxe
-                       0.08,        // m, distance à l'arrivée pour être arrivé
-                       &command->target_left_speed, &command->target_right_speed);
-    if (has_arrived) {
-        state->target_nb++;
-        return Status::SUCCESS;
-    } else {
-        return Status::RUNNING;
-    }
-}
+//Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
+//                  State *state) {
+//    if (state->target_nb != target_nb) {
+//        return Status::SUCCESS;
+//    }
+//
+//    myprintf("B%d\r\n", state->target_nb);
+//    const bool has_arrived =
+//        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
+//                       2.0f,        // m/s Vmax 3.0 est le max
+//                       WHEELBASE_M, // m, entraxe
+//                       0.08,        // m, distance à l'arrivée pour être arrivé
+//                       &command->target_left_speed, &command->target_right_speed);
+//    if (has_arrived) {
+//        state->target_nb++;
+//        return Status::SUCCESS;
+//    } else {
+//        return Status::RUNNING;
+//    }
+//}
 
 Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
     if (state->elapsedTime(*input) > 1.5f) {
@@ -359,35 +368,11 @@ Status deployFlag(const input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-// DEBUG - move around a rectangle
-Status infiniteRectangle(const input_t *input, Command *command, State *state) {
-    auto seq = sequence(
-        //
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.6, 0.0, 0, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.6, 0.6, 1, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.0, 0.6, 2, input_, command_, state_);
-        },
-        [](input_t *input_, Command *command_, State *state_) {
-            return gotoTarget(0.0, 0.0, 3, input_, command_, state_);
-        },
-        [](input_t *, Command *, State *state_) {
-            state_->target_nb = 0;
-            return Status::SUCCESS;
-        });
-
-    return seq(const_cast<input_t *>(input), command, state);
-}
-
 Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
                    State *state) {
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
+                       0.6f,        // m/s Vmax 3.0 est le max
                        WHEELBASE_M, // m, entraxe
                        0.08,        // m, distance à l'arrivé pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
@@ -397,6 +382,18 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
         return Status::RUNNING;
     }
 }
+
+
+Status backAndForwardStateNode(const input_t *input, Command *command, State *state) {
+    auto node = statenode([](input_t *input_, Command *command_,
+                             State *state_) { return gotoTarget2(0.6f, 0.60, 0, input_, command_, state_); },
+                          [](input_t *input_, Command *command_, State *state_) {
+                              return gotoTarget2(3.0f-.60f, 0.60, 1, input_, command_, state_);
+                          });
+
+    return node(const_cast<input_t *>(input), command, state);
+}
+
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
@@ -446,12 +443,13 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+		// alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
+		alternative(logAndFail("back and forward"),backAndForwardStateNode) ,
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));

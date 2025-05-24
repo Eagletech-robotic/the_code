@@ -110,8 +110,8 @@ void World::enqueue_targets() {
         for (const auto &bleacher : bleachers_) {
             if (bleacher.in_building_area(building_areas_) || bleacher.uncertain)
                 continue;
-            for (auto [x, y] : bleacher.waypoints()) {
-                enqueue_grid_cell(x, y);
+            for (const auto waypoint : bleacher.waypoints()) {
+                enqueue_grid_cell(waypoint.x, waypoint.y);
             }
         }
     }
@@ -128,8 +128,8 @@ void World::enqueue_targets() {
         for (auto &building_area : building_areas_) {
             if (building_area.is_full() || building_area.colour != colour_)
                 continue;
-            auto [x, y] = building_area.waypoint();
-            enqueue_grid_cell(x, y);
+            const auto waypoint = building_area.waypoint();
+            enqueue_grid_cell(waypoint.x, waypoint.y);
         }
     }
 
@@ -245,10 +245,7 @@ void World::setup_obstacles_field() {
     for (const auto &bleacher : bleachers_) {
         if (!bleacher.initial_position)
             continue;
-        mark_circle(bleacher.x, bleacher.y, 0.35f, ObstacleType::Movable);
-        if (!bleacher.uncertain) {
-            mark_circle(bleacher.x, bleacher.y, 0.20f, ObstacleType::Fixed);
-        }
+        mark_circle(bleacher.x, bleacher.y, BLEACHER_LENGTH / 2.0f /*+ ROBOT_RADIUS*/, ObstacleType::Fixed);
     }
 
     // ---------------
@@ -469,7 +466,7 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-    if (norm <= SLOPE_THRESHOLD || potential_at(x, y) < 0.09) { // le robot à du mal à passer sous 0.08
+    if (norm <= SLOPE_THRESHOLD) {
         out_is_local_minimum = true;
         out_yaw = current_out_yaw;
     } else {
@@ -527,9 +524,9 @@ std::pair<BuildingArea *, float> World::closest_available_building_area(float x,
     for (auto &building_area : building_areas_) {
         if (building_area.is_full() || building_area.colour != colour_)
             continue;
-        auto const [slot_x, slot_y] = building_area.available_slot();
-        float const dx = x - slot_x;
-        float const dy = y - slot_y;
+        auto const slot = building_area.available_slot();
+        float const dx = x - slot.x;
+        float const dy = y - slot.y;
         float const distance = std::sqrt(dx * dx + dy * dy);
         if (distance < best_distance) {
             best_distance = distance;
