@@ -92,7 +92,7 @@ void World::reset_dijkstra() {
     // Add obstacles
     setup_obstacles_field();
 
-    printf("RES_DIJSKTRA(%zu)\n", pqueue_.size());
+    printf("DIJSK RST %lu\n", pqueue_.size());
 }
 
 void World::enqueue_targets() {
@@ -341,7 +341,7 @@ bool World::partial_compute_dijkstra(const std::function<bool()> &can_continue) 
         }
     }
 
-    printf("COMP_DIJSKTRA\n");
+    printf("DIJSK DONE\n");
     ready_field_ ^= 1;
     return false;
 }
@@ -426,8 +426,8 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-    host_printf("potential=%.2f n=%.2f\n", potential_at(x,y), norm);
-    if (norm <= SLOPE_THRESHOLD || potential_at(x,y) < 0.09) { // le robot à du mal à passer sous 0.08
+    host_printf("potential=%.2f n=%.2f\n", potential_at(x, y), norm);
+    if (norm <= SLOPE_THRESHOLD || potential_at(x, y) < 0.09) { // le robot à du mal à passer sous 0.08
         out_is_local_minimum = true;
         out_yaw = 0.f;
     } else {

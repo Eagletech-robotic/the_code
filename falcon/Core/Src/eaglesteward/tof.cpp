@@ -57,14 +57,14 @@ bool isPossiblyBleacherApprochMinimum(const State &state) { return state.filtere
 void updateTofStateMachine(State &state) {
     switch (state.tof_state) {
     case TofState::CLEAR_PATH: {
-        myprintf("TofState::CLEAR_PATH\n");
+        myprintf("TOF CLR\n");
         if (!isNearSpaceFree(state)) {
             state.tof_state = TofState::OBJECT_DETECTED;
             return;
         }
     }; break;
     case TofState::OBJECT_DETECTED:
-        myprintf("TofState::OBJECT_DETECTED\n");
+        myprintf("TOF DETEC\n");
         if (isNearSpaceFree(state)) {
             state.tof_state = TofState::CLEAR_PATH;
             return;
@@ -75,7 +75,7 @@ void updateTofStateMachine(State &state) {
         };
         break;
     case TofState::OBJECT_NEARBY:
-        myprintf("TofState::OBJECT_NEARBY");
+        myprintf("TOF NBY");
         if (isNearSpaceFree(state)) {
             state.tof_state = TofState::CLEAR_PATH;
             return;
@@ -86,7 +86,7 @@ void updateTofStateMachine(State &state) {
         };
         break;
     case TofState::BLEACHER_CONTACT:
-        myprintf("TofState::BLEACHER_LIFTED");
+        myprintf("TOF TOUCH");
         if (!isBleacherPossiblyAtContact(state)) {
             state.tof_state = TofState::CLEAR_PATH;
             return;

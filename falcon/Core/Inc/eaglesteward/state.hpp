@@ -4,6 +4,7 @@
 #include "iot01A/config.h"
 #include "iot01A/input.h"
 #include "robotic/pid.hpp"
+#include "rolling_history.hpp"
 
 enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTACT };
 
@@ -56,6 +57,7 @@ class State {
     // Navigation
     PID_t pid_theta{};
     PID_t pid_speed{};
+    RollingHistory odo_history{};
 
     // Bluetooth
     bool packet_received_at_this_step{false};
