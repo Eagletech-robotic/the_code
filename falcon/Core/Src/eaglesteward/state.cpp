@@ -132,9 +132,9 @@ void State::updateFromBluetooth() {
         const float old_robot_x = robot_x;
         const float old_robot_y = robot_y;
 
-        robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
-        robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
-        robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
+        // robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
+        // robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
+        // robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
 
         printf("BT %d ms %.3f %.3f %.3f %.3f %.3f\n", lookback_steps * 4, error_x, robot_x - old_robot_x, error_y, robot_y - old_robot_y, to_degrees(error_theta));
     }
