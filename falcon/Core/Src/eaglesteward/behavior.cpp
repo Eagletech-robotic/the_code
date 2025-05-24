@@ -18,10 +18,10 @@ auto logAndFail(char const *s) {
 
 bool descend(Command &command, State &state, float max_speed) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
-    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.6f; // Limit when we carry a bleacher. rad/s.
     myprintf("descend");
     auto &world = state.world;
-
+    float min_speed = 0.0f;
     bool is_local_minimum;
     float target_angle;
     world.potential_field_descent(state.robot_x, state.robot_y, is_local_minimum, target_angle);
@@ -32,11 +32,13 @@ bool descend(Command &command, State &state, float max_speed) {
         auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
 
         // Calculate the linear and angular speed
-        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? 0.0f : max_speed;
-        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
-        if (state.bleacher_lifted)
-            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
 
+        auto angular_speed = KP_ROTATION * angle_diff; // rad/s
+        if (state.bleacher_lifted) {
+            angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
+            min_speed = 0.01f;
+        }
+        auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? min_speed : max_speed;
         // Wheel speeds
         constexpr auto HALF_BASE = WHEELBASE_M * 0.5f;
         auto speed_left = linear_speed - angular_speed * HALF_BASE;
@@ -64,11 +66,11 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    if (isBigThingClose(*state) &&
-        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
-        myprintf("BigThing\n");
-        return Status::FAILURE;
-    }
+//    if (isBigThingClose(*state) &&
+//        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
+//        myprintf("BigThing\n");
+//        return Status::FAILURE;
+//    }
 
     return Status::SUCCESS;
 }
