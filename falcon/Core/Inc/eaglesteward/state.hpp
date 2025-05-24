@@ -4,6 +4,7 @@
 #include "iot01A/config.h"
 #include "iot01A/input.h"
 #include "robotic/pid.hpp"
+#include "rolling_history.hpp"
 
 enum class TofState { CLEAR_PATH, OBJECT_DETECTED, OBJECT_NEARBY, BLEACHER_CONTACT };
 
@@ -24,8 +25,6 @@ class State {
 
     [[nodiscard]] float elapsedTime(const input_t &input) const;
 
-    void getPositionAndOrientation(float &x, float &y, float &theta) const;
-
     void updateFromInput(const config_t &cfg, const input_t &in);
 
     void updateFromBluetooth();
@@ -39,10 +38,10 @@ class State {
     // packet reception. Alternatively, discard the camera position if the robot has moved too much in the last n
     // milliseconds.
 
-    // Our robot, in IMU coordinates. Use getPositionAndOrientation for field coordinates.
-    float imu_x{0.f}; // meters
-    float imu_y{0.f};
-    float imu_theta{0.f};
+    // Field coordinates.
+    float robot_x{0.f}; // meters
+    float robot_y{0.f};
+    float robot_theta{0.f};
 
     // World
     World world{colour};
@@ -58,6 +57,7 @@ class State {
     // Navigation
     PID_t pid_theta{};
     PID_t pid_speed{};
+    RollingHistory odo_history{};
 
     // Bluetooth
     bool packet_received_at_this_step{false};
@@ -88,14 +88,7 @@ class State {
 
   private:
     /* PRIVATE DATA ---------------------------------- */
-    // IMU-to-field transformation
-    float transformation_x{0.f};     // X translation offset after rotation (meters)
-    float transformation_y{0.f};     // Y translation offset after rotation
-    float transformation_theta{0.f}; // Rotation offset between IMU and field
-
     // Time management
     int32_t start_time_ms{-1}; // The input's clock_ms at the start of the game. -1 means game has not started.
     /* END PRIVATE DATA --------------------- */
-
-    void saveImuToFieldTransform(float x_field, float y_field, float theta_field);
 };

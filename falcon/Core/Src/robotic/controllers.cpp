@@ -193,7 +193,7 @@ bool pid_controller_1(float robot_x, float robot_y, float robot_theta, float x_t
     // Ajustez ces gains au besoin
     //----------------------------------------------------------------------
     const float Kp_dist = 5.0f;  // Gain proportionnel distance
-    const float Kp_angle = 3.0f; // Gain proportionnel angle
+    const float Kp_angle = 2.0f; // Gain proportionnel angle
 
     float v = Kp_dist * distance;     // m/s
     float w = Kp_angle * error_angle; // rad/s
