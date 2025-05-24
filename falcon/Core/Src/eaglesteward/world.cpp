@@ -399,7 +399,9 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     reset_dijkstra();
 }
 
-static inline float resolved_potential(const auto &P, int i, int j) {
+// Returns the potential value at the given grid cell (i, j).
+// If the value is infinite, return the potential of the best neighbour + distance to it.
+static inline float finite_potential(const auto &P, int i, int j) {
     float const v = P[i][j];
     if (v != FLT_MAX)
         return v;
@@ -450,10 +452,10 @@ float World::potential_at(float px, float py) const {
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
-    float v00 = resolved_potential(P, i, j);
-    float v10 = resolved_potential(P, i + 1, j);
-    float v01 = resolved_potential(P, i, j + 1);
-    float v11 = resolved_potential(P, i + 1, j + 1);
+    float v00 = finite_potential(P, i, j);
+    float v10 = finite_potential(P, i + 1, j);
+    float v01 = finite_potential(P, i, j + 1);
+    float v11 = finite_potential(P, i + 1, j + 1);
 
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
@@ -467,10 +469,8 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
     float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
 
     float norm = std::hypot(dx, dy);
-    host_printf("potential=%.2f n=%.2f\n", potential_at(x, y), norm);
     if (norm <= SLOPE_THRESHOLD || potential_at(x, y) < 0.09) { // le robot à du mal à passer sous 0.08
         out_is_local_minimum = true;
-        myprintf("Local minimum %.3f\n", norm);
         out_yaw = current_out_yaw;
     } else {
         out_is_local_minimum = false;
