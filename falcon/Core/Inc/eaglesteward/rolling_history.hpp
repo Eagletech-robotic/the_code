@@ -1,33 +1,34 @@
 #pragma once
 #include <array>
-#include <cstdint>
+#include <cfloat>
+
+#include "utils/myprintf.hpp"
 
 struct RollingHistory {
-    static constexpr int SIZE = 125;
-    std::array<float, SIZE> dx{}, dy{}, dtheta{};
+    static constexpr int SIZE = 250;
+    std::array<float, SIZE> deltas_x{}, deltas_y{}, deltas_theta{};
     int idx{0};
 
-    void clear() {
-        dx.fill(0.f);
-        dy.fill(0.f);
-        dtheta.fill(0.f);
-        idx = 0;
-    }
+    void clear();
 
-    void push(float delta_x, float delta_y, float delta_theta) {
-        dx[idx] = delta_x;
-        dy[idx] = delta_y;
-        dtheta[idx] = delta_theta;
-        idx = (idx + 1) % SIZE;
-    }
+    void push(float delta_x, float delta_y, float delta_theta);
 
-    void integrateLastSteps(int n, float &out_dx, float &out_dy, float &out_dtheta) const {
-        out_dx = out_dy = out_dtheta = 0.f;
-        for (int k = 1; k <= n && k <= SIZE; ++k) {
-            int j = (idx - k + SIZE) % SIZE;
-            out_dx += dx[j];
-            out_dy += dy[j];
-            out_dtheta += dtheta[j];
-        }
-    }
+    /**
+     * Integrate the last steps and return the cumulated relative position.
+     */
+    void integrate_last_steps(int nb_steps, float &out_relative_x, float &out_relative_y,
+                              float &out_relative_theta) const;
+
+    /**
+     * Find the nearest pose in the history that matches the given relative position.
+     */
+    void find_nearest_pose(float relative_x, float relative_y, int max_steps, int &out_nb_steps) const;
+
+    /**
+     * Calculate the rotation amplitude in the rectangle defined by relative coordinates.
+     */
+    void rotation_span_in_area(float min_x, float min_y, float max_x, float max_y, int max_steps,
+                               float &out_rotation_span) const;
+
+    void print_for_debug() const;
 };

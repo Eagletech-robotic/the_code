@@ -87,110 +87,52 @@ void State::updateFromBluetooth() {
     // Read the colour
     colour = eagle_packet.robot_colour;
 
-    /* --------- discard packet if robot spun >5° in last 100 steps ------- */
-    constexpr int ROT_CHECK_STEPS = 100; // 100 × 4 ms = 400 ms
-    const float ROT_THRESH_RAD = to_radians(5.0f);
-
-    float orient = 0.0f; // unwrapped orientation diff (rad)
-    float min_o = 0.0f, max_o = 0.0f;
-    int valid_steps = 0;
-
-    for (int k = 0; k < ROT_CHECK_STEPS && k < RollingHistory::SIZE; ++k) {
-        int idx = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
-        if (odo_history.dx[idx] == 0.0f && odo_history.dy[idx] == 0.0f && odo_history.dtheta[idx] == 0.0f)
-            break; // history not yet primed
-
-        orient -= odo_history.dtheta[idx]; // accumulate backwards
-        min_o = std::min(min_o, orient);
-        max_o = std::max(max_o, orient);
-        ++valid_steps;
-    }
-
-    const float rot_span = max_o - min_o; // always ≥ 0
-
-    if (rot_span > ROT_THRESH_RAD && eagle_packet.robot_detected) {
-        printf("BT ignored rot span %.2f\n", rot_span * 180.0f / M_PI);
-        /* we still use the packet for opponent & world updates below */
-        eagle_packet.robot_detected = false; // suppress self-pose use
-    }
-
     if (eagle_packet.robot_detected) {
-        constexpr int MAX_AGE = 100; // nb steps
+        constexpr int LOOKBACK_WINDOW_SIZE = 200; // nb steps. Keep lower than RollingHistory::SIZE
+        float const camera_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
+        float const camera_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
+        float const camera_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
-        const float odom_x = robot_x;
-        const float odom_y = robot_y;
-        const float odom_theta = robot_theta;
+        // Walk back in odometry history to find pose nearest to camera
+        int lookback_steps = 0;
+        odo_history.find_nearest_pose(camera_x - robot_x, camera_y - robot_y, LOOKBACK_WINDOW_SIZE, lookback_steps);
+        // myprintf("find_nearest_pose(%.3f %.3f) => %d\n", camera_x - robot_x, camera_y - robot_y, lookback_steps);
+        // odo_history.print_for_debug();
 
-        /* 1. Camera pose (at capture time) */
-        const float cam_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
-        const float cam_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
-        const float cam_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
+        // Calculate the relative path since the camera pose
+        float relative_x, relative_y, relative_theta;
+        odo_history.integrate_last_steps(lookback_steps, relative_x, relative_y, relative_theta);
 
-        /* 2. Walk back in odometry history to find pose nearest to camera */
-        float test_x = robot_x, test_y = robot_y, test_theta = robot_theta;
-        float best_x = test_x, best_y = test_y, best_theta = test_theta;
-        float min_d2 = FLT_MAX;
-        int best_k = 0;
+        // Calculate the amplitude of our rotations around the camera pose
+        float rotation_span;
+        odo_history.rotation_span_in_area(-relative_x - 0.05f, -relative_y - 0.05f, -relative_x + 0.05f,
+                                          -relative_y + 0.05f, LOOKBACK_WINDOW_SIZE, rotation_span);
 
-        for (int k = 0; k < MAX_AGE; ++k) {
-            float dx = test_x - cam_x;
-            float dy = test_y - cam_y;
-            float d2 = dx * dx + dy * dy;
-
-            if (d2 < min_d2) {
-                min_d2 = d2;
-                best_k = k;
-                best_x = test_x;
-                best_y = test_y;
-                best_theta = test_theta;
-            }
-
-            int idx_back = (odo_history.idx - 1 - k + RollingHistory::SIZE) % RollingHistory::SIZE;
-            if (odo_history.dx[idx_back] == 0.0f && odo_history.dy[idx_back] == 0.0f &&
-                odo_history.dtheta[idx_back] == 0.0f)
-                break; // history not yet filled
-
-            test_x -= odo_history.dx[idx_back];
-            test_y -= odo_history.dy[idx_back];
-            test_theta = angle_normalize(test_theta - odo_history.dtheta[idx_back]);
+        // Only trust the camera orientation for limited rotation amplitudes
+        float corrected_theta = robot_theta;
+        if (rotation_span <= to_radians(2.0f)) {
+            corrected_theta = angle_normalize(camera_theta + relative_theta);
+        } else {
+            printf("BT TH-IGN span=%.3f)\n", to_degrees(rotation_span));
         }
+        float const error_theta = angle_normalize(corrected_theta - robot_theta);
 
-        /* 3. Orientation error between best historic pose and camera pose */
-        const float dtheta_err = angle_normalize(cam_theta - best_theta);
-        constexpr int STEP_MS = 4;
-        const int32_t latency_ms = best_k * STEP_MS;
-        printf("BT latency %d ms dx=%.3f dy=%.3f dth=%.3f\n", latency_ms, cam_x - best_x, cam_y - best_y,
-               to_degrees(dtheta_err));
+        // Re-integrate deltas from capture time up to now, rotating the cumulative trajectory by orientation error
+        float const cos_err = std::cos(error_theta);
+        float const sin_err = std::sin(error_theta);
+        float const corrected_x = camera_x + cos_err * relative_x - sin_err * relative_y;
+        float const corrected_y = camera_y + sin_err * relative_x + cos_err * relative_y;
 
-        const float cos_err = std::cos(dtheta_err);
-        const float sin_err = std::sin(dtheta_err);
+        // Optionally log the error
+        float const error_x = corrected_x - robot_x;
+        float const error_y = corrected_y - robot_y;
+        printf("BT %d ms %.3f %.3f %.3f\n", lookback_steps * 4, error_x, error_y, to_degrees(error_theta));
 
-        /* 4. Re-integrate deltas from capture time up to now,
-              rotating each delta by orientation error                     */
-        float corr_x = cam_x;
-        float corr_y = cam_y;
-        float corr_theta = cam_theta;
-
-        for (int k = best_k; k > 0; --k) {
-            int idx_fwd = (odo_history.idx - k + RollingHistory::SIZE) % RollingHistory::SIZE;
-            float dx = odo_history.dx[idx_fwd];
-            float dy = odo_history.dy[idx_fwd];
-
-            /* rotate delta to camera frame */
-            float rdx = cos_err * dx - sin_err * dy;
-            float rdy = sin_err * dx + cos_err * dy;
-
-            corr_x += rdx;
-            corr_y += rdy;
-            corr_theta = angle_normalize(corr_theta + odo_history.dtheta[idx_fwd]);
-        }
-
-        /* 5. Complementary-filter blend with current odometry */
-        constexpr float ALPHA = 1.0f; // tune 0-1
-        robot_x = odom_x * (1.0f - ALPHA) + corr_x * ALPHA;
-        robot_y = odom_y * (1.0f - ALPHA) + corr_y * ALPHA;
-        float dtheta_blend = angle_normalize(corr_theta - odom_theta);
-        robot_theta = angle_normalize(odom_theta + ALPHA * dtheta_blend);
+        // Blend with current odometry
+        constexpr float CAMERA_GAIN = 0.5f; // the closest tp 1, the more we trust the camera
+        robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
+        robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
+        robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
     }
 
     if (eagle_packet.opponent_detected) {
