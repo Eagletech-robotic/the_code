@@ -18,7 +18,7 @@ auto logAndFail(char const *s) {
 
 bool descend(Command &command, State &state, float max_speed, float arrival_distance = 0.01f) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
-    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.2f; // Limit when we carry a bleacher. rad/s.
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.4f; // Limit when we carry a bleacher. rad/s.
 
     auto &world = state.world;
     float min_speed = 0.0f;
@@ -35,7 +35,7 @@ bool descend(Command &command, State &state, float max_speed, float arrival_dist
         // Calculate the linear and angular speed
 
         auto angular_speed = KP_ROTATION * angle_diff; // rad/s
-        myprintf("bleacher_lifted %hhd\n", state.bleacher_lifted);
+        myprintf("bleacher_lifted %d\n", state.bleacher_lifted);
         if (state.bleacher_lifted) {
             angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
             min_speed = 0.01f;
@@ -137,7 +137,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.20f && fabsf(local_y) < 0.10f) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
