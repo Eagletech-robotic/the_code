@@ -137,12 +137,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                printf("bl pos %.3f %.3f %.3f %.3f\n", bleacher->x, bleacher->y, local_x, local_y);
+                myprintf("bl pos %.3f %.3f %.3f %.3f\n", bleacher->x, bleacher->y, local_x, local_y);
                 if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
-            };
+            } else {
+                myprintf("no bl fnd %d\n", static_cast<int>(state_->world.bleachers_.size()));
+            }
 
             myprintf("BL-SRCH\n");
             descend(*command_, *state_, 1.0f);
