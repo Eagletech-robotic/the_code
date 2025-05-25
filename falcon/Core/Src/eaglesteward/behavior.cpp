@@ -16,7 +16,7 @@ auto logAndFail(char const *s) {
     };
 }
 
-bool descend(Command &command, State &state, float max_speed, float *potential) {
+bool descend(Command &command, State &state, float max_speed, float arrival_distance = 0.05f) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
@@ -25,10 +25,10 @@ bool descend(Command &command, State &state, float max_speed, float *potential) 
     bool is_local_minimum;
     float target_angle;
 
-    *potential = world.potential_field_descent(state.robot_x, state.robot_y, is_local_minimum, target_angle);
-    myprintf("descend %.3f %.3f", *potential, to_degrees(target_angle));
+    bool has_arrived = world.potential_field_descent(state.robot_x, state.robot_y, arrival_distance, target_angle);
+    myprintf("descend %.3f", to_degrees(target_angle));
 
-    if (is_local_minimum) {
+    if (has_arrived) {
         return true;
     } else {
         auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
@@ -146,8 +146,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             state_->release_target();
             myprintf("BL-SRCH\n");
-            float potential;
-            descend(*command_, *state_, MAX_SPEED, &potential);
+            descend(*command_, *state_, MAX_SPEED);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -212,8 +211,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
-            float potential;
-            descend(*command_, *state_, .8f, &potential);
+            descend(*command_, *state_, .8f);
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
@@ -312,9 +310,8 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
 Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
-    float potential;
-    bool ret = descend(*command, *state, MAX_SPEED, &potential);
-    if (ret || (potential < 0.13)) {
+    bool ret = descend(*command, *state, MAX_SPEED, 0.10f);
+    if (ret) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
@@ -447,8 +444,7 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
 Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
     state->world.set_target(target);
     myprintf("%s\n", name);
-    float potential;
-    if (descend(*command, *state, 2.0, &potential)) {
+    if (descend(*command, *state, MAX_SPEED)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;

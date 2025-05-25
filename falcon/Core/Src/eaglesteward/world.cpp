@@ -379,7 +379,9 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
 // Returns the potential value at the given grid cell (i, j).
 // If the value is infinite, return the potential of the best neighbour + distance to it.
-static inline float finite_potential(const auto &P, int i, int j) {
+float World::finite_potential(int i, int j) const {
+    const auto &P = potential_ready();
+
     float const v = P[i][j];
     if (v != FLT_MAX)
         return v;
@@ -430,34 +432,73 @@ float World::potential_at(float px, float py) const {
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
-    float v00 = finite_potential(P, i, j);
-    float v10 = finite_potential(P, i + 1, j);
-    float v01 = finite_potential(P, i, j + 1);
-    float v11 = finite_potential(P, i + 1, j + 1);
+    float v00 = finite_potential(i, j);
+    float v10 = finite_potential(i + 1, j);
+    float v01 = finite_potential(i, j + 1);
+    float v11 = finite_potential(i + 1, j + 1);
 
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
 
-float World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
-    constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
+// Analytic gradient of a bilinear patch; returns {∂U/∂x , ∂U/∂y}
+std::pair<float, float>
+World::bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &P, float px,
+                         float py) const {
+    float gx = px / SQUARE_SIZE_M;
+    float gy = py / SQUARE_SIZE_M;
+
+    int i = static_cast<int>(std::floor(gx));
+    int j = static_cast<int>(std::floor(gy));
+
+    i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
+    j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
+
+    float tx = gx - i; // 0..1
+    float ty = gy - j;
+
+    float v00 = finite_potential(i, j);
+    float v10 = finite_potential(i + 1, j);
+    float v01 = finite_potential(i, j + 1);
+    float v11 = finite_potential(i + 1, j + 1);
+
+    /* U(tx,ty) = a + b tx + c ty + d tx ty  */
+    float a = v00;
+    float b = v10 - v00;
+    float c = v01 - v00;
+    float d = v11 - v10 - v01 + v00;
+
+    float dU_dtx = b + d * ty;
+    float dU_dty = c + d * tx;
+
+    float k = 1.0f / SQUARE_SIZE_M; // chain rule
+    return {dU_dtx * k, dU_dty * k};
+}
+
+bool World::potential_field_descent(float x, float y, float arrival_distance, float &out_yaw) const {
+    constexpr float SMOOTHING_FACTOR = 0.8f; // The closer to 1, the smoother
     constexpr float SLOPE_THRESHOLD = 0.01f;
     static float current_out_yaw = 0.0f;
 
-    float dx = (potential_at(x + DELTA, y) - potential_at(x - DELTA, y)) / (2.f * DELTA);
-    float dy = (potential_at(x, y + DELTA) - potential_at(x, y - DELTA)) / (2.f * DELTA);
+    out_yaw = current_out_yaw;
 
-    float norm = std::hypot(dx, dy);
-    if (norm <= SLOPE_THRESHOLD) {
-        out_is_local_minimum = true;
-        out_yaw = current_out_yaw;
-    } else {
-        out_is_local_minimum = false;
-        out_yaw = std::atan2(-dy, -dx);
-        constexpr float SMOOTHING_FACTOR = 0.99f; // The closer to 1, the smoother
-        current_out_yaw = SMOOTHING_FACTOR * current_out_yaw + (1 - SMOOTHING_FACTOR) * out_yaw;
-        out_yaw = current_out_yaw;
-    }
-    return potential_at(x, y);
+    if (potential_at(x, y) <= arrival_distance)
+        return true; // Already arrived
+
+    const auto &P = potential_ready();
+    auto [dx, dy] = bilinear_gradient(P, x, y);
+
+    const float norm = std::hypot(dx, dy);
+    if (norm <= SLOPE_THRESHOLD)
+        return true;
+
+    const float calculated_yaw = std::atan2(-dy, -dx);
+
+    // Smooth the angle difference
+    const float angle_diff = angle_normalize(calculated_yaw - current_out_yaw);
+    current_out_yaw = angle_normalize(current_out_yaw + (1 - SMOOTHING_FACTOR) * angle_diff);
+
+    out_yaw = current_out_yaw;
+    return false;
 }
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
