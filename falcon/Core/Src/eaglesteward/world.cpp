@@ -457,7 +457,7 @@ float World::potential_at(float px, float py) const {
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
 
-void World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
+float World::potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const {
     constexpr float DELTA = 0.25f * SQUARE_SIZE_M; // pas sous-cellule
     constexpr float SLOPE_THRESHOLD = 0.01f;
     static float current_out_yaw = 0.0f;
@@ -475,6 +475,7 @@ void World::potential_field_descent(float x, float y, bool &out_is_local_minimum
         current_out_yaw = 0.99f * current_out_yaw + 0.01f * out_yaw;
         out_yaw = current_out_yaw;
     }
+    return potential_at(x, y);
 }
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {

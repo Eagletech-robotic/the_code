@@ -87,8 +87,7 @@ template <typename... Fs> struct StaticStateNode {
     template <std::size_t... Is> Status dispatch(input_t *in, Command *c, State *s, std::index_sequence<Is...>) {
         Status r = Status::FAILURE;
 
-        [[maybe_unused]]
-        bool matched = ((cursor == Is && (static_cast<void>(r = call<Is>(in, c, s)), true)) || ...);
+        [[maybe_unused]] bool matched = ((cursor == Is && (static_cast<void>(r = call<Is>(in, c, s)), true)) || ...);
 
         switch (r) {
         case Status::SUCCESS:
