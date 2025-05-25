@@ -226,7 +226,7 @@ void World::setup_obstacles_field() {
     for (const auto &bleacher : bleachers_) {
         if (!bleacher.initial_position)
             continue;
-        mark_circle(bleacher.x, bleacher.y, BLEACHER_LENGTH / 2.0f /*+ ROBOT_RADIUS*/, ObstacleType::Fixed);
+        mark_circle(bleacher.x, bleacher.y, 0.30f /*+ ROBOT_RADIUS*/, ObstacleType::Fixed);
     }
 
     // ---------------

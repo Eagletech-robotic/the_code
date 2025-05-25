@@ -307,6 +307,7 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_tar
     *out_speed_right = v_right;
     return false; /* encore en route */
 }
+
 /**
  * @brief  Contrôleur différentiel utilisant 2 PID externes :
  *         - pid_speed  : distance  → vitesse linéaire  v  (m/s)
