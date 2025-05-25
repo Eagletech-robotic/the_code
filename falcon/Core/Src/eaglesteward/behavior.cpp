@@ -84,16 +84,78 @@ Status evadeOpponent(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-Status checkLostBleacher(input_t *, Command *, State *state) {
-    if (state->bleacher_lifted && state->filtered_tof_m > 0.50f) {
-        // The bleacher was dropped: update the state...
-        state->bleacher_lifted = false;
-    }
-    return Status::SUCCESS;
-}
-
 Status hasBleacherAttached(input_t *, Command *, State *state) {
     return state->bleacher_lifted ? Status::SUCCESS : Status::FAILURE;
+}
+
+Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
+    state->world.set_target(TargetType::BleacherWaypoint);
+    auto seq = statenode(
+        [](input_t *, Command *command_, State *state_) {
+            const auto [bleacher, distance] =
+                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
+
+            if (bleacher) {
+                auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
+                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                    return Status::SUCCESS;
+                }
+            };
+
+            myprintf("BL-SRCH\n");
+            float potential;
+            descend(*command_, *state_, SPEED_MAX, &potential);
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *state_) {
+            const auto [bleacher, distance] =
+                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
+            if (!bleacher) {
+                return Status::FAILURE;
+            }
+
+            auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
+            float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
+            float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
+
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 1.0f,
+                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BL-APP x=%.3f y=%.3f\n", target_x, target_y);
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *state_) {
+            const auto [bleacher, distance] =
+                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
+            if (!bleacher) {
+                return Status::FAILURE;
+            }
+
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.5f,
+                               WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
+                state_->bleacher_lifted = true;
+                state_->world.bleachers_.remove(*bleacher);
+                return Status::SUCCESS;
+            }
+
+            myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
+            return Status::RUNNING;
+        },
+        [](input_t *, Command *command_, State *) {
+            myprintf("gotoClosestBleacher - bleacher_lifted = true\n");
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            command_->target_left_speed = 0.f;
+            command_->target_right_speed = 0.f;
+
+            myprintf("BL-PKP\n");
+            return Status::SUCCESS;
+        });
+
+    return seq(const_cast<input_t *>(input), command, state);
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
@@ -189,76 +251,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         });
 
     return sequence(check_lost_bleacher, go_to_building_area)(const_cast<input_t *>(input), command, state);
-}
-
-Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BleacherWaypoint);
-    auto seq = statenode(
-        [](input_t *, Command *command_, State *state_) {
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-
-            if (bleacher) {
-                auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
-                    return Status::SUCCESS;
-                }
-            };
-
-            myprintf("BL-SRCH\n");
-            float potential;
-            descend(*command_, *state_, SPEED_MAX, &potential);
-            return Status::RUNNING;
-        },
-        [](input_t *, Command *command_, State *state_) {
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-            if (!bleacher) {
-                return Status::FAILURE;
-            }
-
-            auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
-            float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
-
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 1.0f,
-                               WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
-                return Status::SUCCESS;
-            }
-
-            myprintf("BL-APP x=%.3f y=%.3f\n", target_x, target_y);
-            return Status::RUNNING;
-        },
-        [](input_t *, Command *command_, State *state_) {
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-            if (!bleacher) {
-                return Status::FAILURE;
-            }
-
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.5f,
-                               WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
-                state_->bleacher_lifted = true;
-                state_->world.bleachers_.remove(*bleacher);
-                return Status::SUCCESS;
-            }
-
-            myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
-            return Status::RUNNING;
-        },
-        [](input_t *, Command *command_, State *) {
-            myprintf("gotoClosestBleacher - bleacher_lifted = true\n");
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            command_->target_left_speed = 0.f;
-            command_->target_right_speed = 0.f;
-
-            myprintf("BL-PKP\n");
-            return Status::SUCCESS;
-        });
-
-    return seq(const_cast<input_t *>(input), command, state);
 }
 
 Status isJackRemoved(input_t *input, Command *, State *state) {
