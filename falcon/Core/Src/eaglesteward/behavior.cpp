@@ -66,11 +66,11 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-//    if (isBigThingClose(*state) &&
-//        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
-//        myprintf("BigThing\n");
-//        return Status::FAILURE;
-//    }
+    //    if (isBigThingClose(*state) &&
+    //        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
+    //        myprintf("BigThing\n");
+    //        return Status::FAILURE;
+    //    }
 
     return Status::SUCCESS;
 }
@@ -84,8 +84,8 @@ Status evadeOpponent(input_t *, Command *command, State *) {
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
     if (state->bleacher_lifted) {
-       // if (state->filtered_tof_m > 0.50f) {
-    	 if (false) {
+        // if (state->filtered_tof_m > 0.50f) {
+        if (false) {
             auto carried_bleacher = state->world.carried_bleacher();
 
             // The bleacher was dropped: update the state...
@@ -158,7 +158,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 return Status::SUCCESS;
             }
 
-            myprintf("BA-SRCH x=%.3f y=%.3f\n", local_x, local_y);
+            myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
             descend(*command_, *state_, .8f);
             return Status::RUNNING;
         },
@@ -334,7 +334,7 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 }
 
 // DEBUG - used by infiniteRectangle
-//Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
+// Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
 //                  State *state) {
 //    if (state->target_nb != target_nb) {
 //        return Status::SUCCESS;
@@ -383,17 +383,15 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, in
     }
 }
 
-
 Status backAndForwardStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
                              State *state_) { return gotoTarget2(0.6f, 0.60, 0, input_, command_, state_); },
                           [](input_t *input_, Command *command_, State *state_) {
-                              return gotoTarget2(3.0f-.60f, 0.60, 1, input_, command_, state_);
+                              return gotoTarget2(3.0f - .60f, 0.60, 1, input_, command_, state_);
                           });
 
     return node(const_cast<input_t *>(input), command, state);
 }
-
 
 Status infiniteRectangleStateNode(const input_t *input, Command *command, State *state) {
     auto node = statenode([](input_t *input_, Command *command_,
@@ -443,13 +441,13 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
-		// alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
         carryBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
-		alternative(logAndFail("back and forward"),backAndForwardStateNode) ,
+        // alternative(logAndFail("back and forward"), backAndForwardStateNode),
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));
