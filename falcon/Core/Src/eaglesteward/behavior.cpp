@@ -16,7 +16,7 @@ auto logAndFail(char const *s) {
     };
 }
 
-float descend(Command &command, State &state, float max_speed, float *potential) {
+bool descend(Command &command, State &state, float max_speed, float *potential) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
@@ -161,7 +161,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
-            descend(*command_, *state_, .8f);
+            float potential;
+            descend(*command_, *state_, .8f, &potential);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -231,7 +232,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             };
 
             myprintf("BL-SRCH\n");
-            descend(*command_, *state_, SPEED_MAX);
+            float potential;
+            descend(*command_, *state_, SPEED_MAX, &potential);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -402,28 +404,6 @@ Status waitBeforeGame(input_t *input, Command *command, State *state) {
     return Status::RUNNING;
 }
 
-// DEBUG - used by infiniteRectangle
-Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
-                  State *state) {
-    if (state->target_nb != target_nb) {
-        return Status::SUCCESS;
-    }
-
-    myprintf("B%d\r\n", state->target_nb);
-    const bool has_arrived =
-        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
-                       2.0f,        // m/s Vmax 3.0 est le max
-                       WHEELBASE_M, // m, entraxe
-                       0.08,        // m, distance à l'arrivée pour être arrivé
-                       &command->target_left_speed, &command->target_right_speed);
-    if (has_arrived) {
-        state->target_nb++;
-        return Status::SUCCESS;
-    } else {
-        return Status::RUNNING;
-    }
-}
-
 Status isFlagPhaseCompleted(const input_t *input, Command *, State *state) {
     if (state->elapsedTime(*input) > 1.5f) {
         return Status::SUCCESS;
@@ -481,8 +461,8 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
 Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
     state->world.set_target(target);
     myprintf("%s\n", name);
-    float p;
-    if (descend(*command, *state, 2.0, &p)) {
+    float potential;
+    if (descend(*command, *state, 2.0, &potential)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
