@@ -453,7 +453,8 @@ float World::potential_field_descent(float x, float y, bool &out_is_local_minimu
     } else {
         out_is_local_minimum = false;
         out_yaw = std::atan2(-dy, -dx);
-        current_out_yaw = 0.99f * current_out_yaw + 0.01f * out_yaw;
+        constexpr float SMOOTHING_FACTOR = 0.99f; // The closer to 1, the smoother
+        current_out_yaw = SMOOTHING_FACTOR * current_out_yaw + (1 - SMOOTHING_FACTOR) * out_yaw;
         out_yaw = current_out_yaw;
     }
     return potential_at(x, y);

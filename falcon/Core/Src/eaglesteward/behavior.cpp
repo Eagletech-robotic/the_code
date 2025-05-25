@@ -26,7 +26,7 @@ bool descend(Command &command, State &state, float max_speed, float *potential) 
     float target_angle;
 
     *potential = world.potential_field_descent(state.robot_x, state.robot_y, is_local_minimum, target_angle);
-    myprintf("descend %.3f", *potential);
+    myprintf("descend %.3f %.3f", *potential, to_degrees(target_angle));
 
     if (is_local_minimum) {
         return true;
@@ -98,7 +98,19 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
-    auto seq = statenode(
+
+    auto check_lost_bleacher = [](input_t *, Command *command_, State *state_) {
+        if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
+            // The bleacher was dropped: update the state...
+            state_->bleacher_lifted = false;
+            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
+            return Status::FAILURE;
+        }
+        command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+        return Status::SUCCESS;
+    };
+
+    auto go_to_building_area = statenode(
         //
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
@@ -176,7 +188,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         });
 
-    return seq(const_cast<input_t *>(input), command, state);
+    return sequence(check_lost_bleacher, go_to_building_area)(const_cast<input_t *>(input), command, state);
 }
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
@@ -287,7 +299,7 @@ Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
     float potential;
-    bool ret = descend(*command, *state, 2.0f, &potential);
+    bool ret = descend(*command, *state, SPEED_MAX, &potential);
     if (ret || (potential < 0.13)) {
         return Status::SUCCESS;
     }
@@ -348,7 +360,7 @@ Status gotoBackstageLine(input_t *, Command *command, State *state) {
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
-    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(97), gotoBackstageLine, holdAfterEnd);
+    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(96), gotoBackstageLine, holdAfterEnd);
 
     return node(const_cast<input_t *>(input), command, state);
 }
@@ -453,7 +465,6 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
-        checkLostBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),
