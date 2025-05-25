@@ -40,26 +40,26 @@ bool decode_eagle_packet(const uint8_t *payload, size_t payload_len, EaglePacket
     out.opponent_y_cm = br.get(8);
     out.opponent_theta_deg = static_cast<int16_t>(br.get(9));
 
-    for (bool &initial_bleacher : out.initial_bleachers) {
-        initial_bleacher = static_cast<bool>(br.get(1));
-    }
-
-    out.object_count = static_cast<uint8_t>(br.get(6));
-    if (out.object_count > 40)
-        return false;
-
-    br.get(1); // padding bit (71)
-
-    for (uint8_t i = 0; i < out.object_count; ++i) {
-        auto &object = out.objects[i];
-        object.type = static_cast<ObjectType>(br.get(2));
-
-        auto const raw_x = static_cast<float>(br.get(8)); // 0‑255
-        auto const raw_y = static_cast<float>(br.get(7)); // 0‑127
-
-        object.x_cm = static_cast<uint16_t>(std::round(raw_x * 300.0f / 255.0f)); // 0‑300 cm
-        object.y_cm = static_cast<uint16_t>(std::round(raw_y * 200.0f / 127.0f)); // 0‑200 cm
-        object.orientation_deg = static_cast<uint8_t>(br.get(3) * 30);
-    }
-    return true;
+    // for (bool &initial_bleacher : out.initial_bleachers) {
+    //     initial_bleacher = static_cast<bool>(br.get(1));
+    // }
+    //
+    // out.object_count = static_cast<uint8_t>(br.get(6));
+    // if (out.object_count > 40)
+    //     return false;
+    //
+    // br.get(1); // padding bit (71)
+    //
+    // for (uint8_t i = 0; i < out.object_count; ++i) {
+    //     auto &object = out.objects[i];
+    //     object.type = static_cast<ObjectType>(br.get(2));
+    //
+    //     auto const raw_x = static_cast<float>(br.get(8)); // 0‑255
+    //     auto const raw_y = static_cast<float>(br.get(7)); // 0‑127
+    //
+    //     object.x_cm = static_cast<uint16_t>(std::round(raw_x * 300.0f / 255.0f)); // 0‑300 cm
+    //     object.y_cm = static_cast<uint16_t>(std::round(raw_y * 200.0f / 127.0f)); // 0‑200 cm
+    //     object.orientation_deg = static_cast<uint8_t>(br.get(3) * 30);
+    // }
+    // return true;
 }
