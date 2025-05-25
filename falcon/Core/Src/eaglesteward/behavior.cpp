@@ -60,7 +60,7 @@ bool descend(Command &command, State &state, float max_speed, float arrival_dist
 }
 
 Status isSafe(input_t *, Command *, State *state) {
-    if (state->filtered_tof_m < 0.20f) {
+    if (state->filtered_tof_m < 0.18f) {
         // failsafe si tout à merdé avant
         myprintf("Failsafe\n");
         return Status::FAILURE;
@@ -135,13 +135,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
 
             if (bleacher) {
-                myprintf("!!! bl fd %.3f\n", distance);
-            } else {
-                myprintf("!!! no bl found %lu\n", state_->world.bleachers_.size());
-            }
-            if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                myprintf("!!!!!! %.3f %.3f %.3f\n", distance, local_x, local_y);
                 if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
