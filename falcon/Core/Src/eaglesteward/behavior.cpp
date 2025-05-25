@@ -22,7 +22,6 @@ bool descend(Command &command, State &state, float max_speed, float arrival_dist
 
     auto &world = state.world;
     float min_speed = 0.0f;
-    bool is_local_minimum;
     float target_angle;
 
     bool has_arrived = world.potential_field_descent(state.robot_x, state.robot_y, arrival_distance, target_angle);
@@ -111,8 +110,7 @@ struct Safe {
 
         auto evasion = [this](input_t *, Command *command, State *state) {
             myprintf("evasion");
-            float p;
-            descend(*command, *state, .6f, &p);
+            descend(*command, *state, .6f);
             return Status::RUNNING;
         };
 
@@ -310,8 +308,7 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
 Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
-    bool ret = descend(*command, *state, MAX_SPEED, 0.10f);
-    if (ret) {
+    if (descend(*command, *state, MAX_SPEED, 0.10f)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;

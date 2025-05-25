@@ -416,8 +416,6 @@ float World::finite_potential(int i, int j) const {
 
 // Renvoie V(x,y) pour des coordonnées réelles (en mètres)
 float World::potential_at(float px, float py) const {
-    const auto &P = potential_ready();
-
     // indices fractionnaires
     float gx = px / SQUARE_SIZE_M;
     float gy = py / SQUARE_SIZE_M;
@@ -441,9 +439,7 @@ float World::potential_at(float px, float py) const {
 }
 
 // Analytic gradient of a bilinear patch; returns {∂U/∂x , ∂U/∂y}
-std::pair<float, float>
-World::bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &P, float px,
-                         float py) const {
+std::pair<float, float> World::bilinear_gradient(float px, float py) const {
     float gx = px / SQUARE_SIZE_M;
     float gy = py / SQUARE_SIZE_M;
 
@@ -462,7 +458,7 @@ World::bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FI
     float v11 = finite_potential(i + 1, j + 1);
 
     /* U(tx,ty) = a + b tx + c ty + d tx ty  */
-    float a = v00;
+    // float a = v00;
     float b = v10 - v00;
     float c = v01 - v00;
     float d = v11 - v10 - v01 + v00;
@@ -484,8 +480,7 @@ bool World::potential_field_descent(float x, float y, float arrival_distance, fl
     if (potential_at(x, y) <= arrival_distance)
         return true; // Already arrived
 
-    const auto &P = potential_ready();
-    auto [dx, dy] = bilinear_gradient(P, x, y);
+    auto [dx, dy] = bilinear_gradient(x, y);
 
     const float norm = std::hypot(dx, dy);
     if (norm <= SLOPE_THRESHOLD)

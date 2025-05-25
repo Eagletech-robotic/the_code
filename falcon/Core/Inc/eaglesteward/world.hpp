@@ -101,9 +101,7 @@ class World {
 
     [[nodiscard]] float potential_at(float x, float y) const;
 
-    [[nodiscard]] std::pair<float, float>
-    bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &P, float px,
-                      float py) const;
+    [[nodiscard]] std::pair<float, float> bilinear_gradient(float px, float py) const;
 
     void enqueue_targets();
 
