@@ -16,7 +16,7 @@ auto logAndFail(char const *s) {
     };
 }
 
-float descend(Command &command, State &state, float max_speed, float * potential) {
+float descend(Command &command, State &state, float max_speed, float *potential) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
     constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
 
@@ -151,7 +151,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 return Status::FAILURE;
             }
             float p;
-            if (descend(*command_, *state_, .8f,&p)) {
+            if (descend(*command_, *state_, .8f, &p)) {
                 // vitesse plus lente pour ne rien lacher
                 return Status::SUCCESS;
             }
@@ -317,75 +317,68 @@ Status goToBackstageDescend(input_t *, Command *command, State *state) {
     float potential;
     bool ret = descend(*command, *state, 2.0f, &potential);
     if (ret || (potential < 0.13)) {
-    	return Status::SUCCESS;
+        return Status::SUCCESS;
     }
     return Status::RUNNING;
 }
 
 auto dontMoveUntil = [](float s) {
-    return [=](const input_t* input, Command* command, State* state) {
-    	myprintf("dont move");
-    	command->target_left_speed = 0.f;
-    	command->target_right_speed = 0.f;
-    	return state->elapsedTime(*input) < s ? Status::RUNNING : Status::SUCCESS;
+    return [=](const input_t *input, Command *command, State *state) {
+        myprintf("dont move");
+        command->target_left_speed = 0.f;
+        command->target_right_speed = 0.f;
+        return state->elapsedTime(*input) < s ? Status::RUNNING : Status::SUCCESS;
     };
 };
 
 auto rotate = [](float a) {
-    return [=](const input_t* input, Command* command, State* state) {
-    	myprintf("rotate %.f",a);
-    	float desired_angle = a * DEG_TO_RAD;
-    	float error_angle = angle_normalize(desired_angle - state->robot_theta);
+    return [=](const input_t *input, Command *command, State *state) {
+        myprintf("rotate %.f", a);
+        float desired_angle = a * DEG_TO_RAD;
+        float error_angle = angle_normalize(desired_angle - state->robot_theta);
 
-    	if(fabsf(error_angle) < 1*DEG_TO_RAD) {
-    		return Status::SUCCESS;
-    	}
+        if (fabsf(error_angle) < 1 * DEG_TO_RAD) {
+            return Status::SUCCESS;
+        }
 
-        const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
+        const float Kp_angle = 250.0f;    /* angle    → vitesse angulaire  */
         float w = Kp_angle * error_angle; /* rad/s */
         float halfBase = WHEELBASE_M * 0.5f;
-        float v_left  =  - w * halfBase;
-        float v_right =  + w * halfBase;
+        float v_left = -w * halfBase;
+        float v_right = +w * halfBase;
 
-    	command->target_left_speed = v_left;
-    	command->target_right_speed = v_right;
-    	return Status::RUNNING ;
+        command->target_left_speed = v_left;
+        command->target_right_speed = v_right;
+        return Status::RUNNING;
     };
 };
 
 Status gotoBackstageLine(input_t *, Command *command, State *state) {
-	float target_x, target_y;
-	if (state->colour == RobotColour::Blue) {
-		target_x = 3.0-.45;
-		target_y = 2.0-.3;
-	} else {
-		target_x = .45;
-		target_y = 2.0-.3;
-	}
-	 const bool has_arrived =
-	        pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
-	                       1.0f,        // m/s Vmax 3.0 est le max
-	                       WHEELBASE_M, // m, entraxe
-	                       0.1,        // m, distance à l'arrivé pour être arrivé
-	                       &command->target_left_speed, &command->target_right_speed);
-	    if (has_arrived) {
-	        return Status::SUCCESS;
-	    } else {
-	        return Status::RUNNING;
-	    }
+    float target_x, target_y;
+    if (state->colour == RobotColour::Blue) {
+        target_x = 3.0 - .45;
+        target_y = 2.0 - .3;
+    } else {
+        target_x = .45;
+        target_y = 2.0 - .3;
+    }
+    const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
+                                            1.0f,        // m/s Vmax 3.0 est le max
+                                            WHEELBASE_M, // m, entraxe
+                                            0.1,         // m, distance à l'arrivé pour être arrivé
+                                            &command->target_left_speed, &command->target_right_speed);
+    if (has_arrived) {
+        return Status::SUCCESS;
+    } else {
+        return Status::RUNNING;
+    }
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
-	command->shovel = ShovelCommand::SHOVEL_RETRACTED;
-	auto node = statenode(
-			goToBackstageDescend,
-			rotate(90.0f),
-			dontMoveUntil(87),
-			gotoBackstageLine,
-			holdAfterEnd
-	);
+    command->shovel = ShovelCommand::SHOVEL_RETRACTED;
+    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(87), gotoBackstageLine, holdAfterEnd);
 
-	return node(const_cast<input_t *>(input), command, state);
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 Status waitBeforeGame(input_t *input, Command *command, State *state) {
@@ -398,7 +391,6 @@ Status waitBeforeGame(input_t *input, Command *command, State *state) {
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
     return Status::RUNNING;
 }
-
 
 // DEBUG - used by infiniteRectangle
 Status gotoTarget(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
@@ -494,7 +486,7 @@ Status gotoDescend(const char *name, Command *command, State *state, TargetType 
     state->world.set_target(target);
     myprintf("%s\n", name);
     float p;
-    if (descend(*command, *state, 2.0,&p)) {
+    if (descend(*command, *state, 2.0, &p)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
