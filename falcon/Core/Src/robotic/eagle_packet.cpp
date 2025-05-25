@@ -61,5 +61,5 @@ bool decode_eagle_packet(const uint8_t *payload, size_t payload_len, EaglePacket
     //     object.y_cm = static_cast<uint16_t>(std::round(raw_y * 200.0f / 127.0f)); // 0‑200 cm
     //     object.orientation_deg = static_cast<uint8_t>(br.get(3) * 30);
     // }
-    // return true;
+    return true;
 }
