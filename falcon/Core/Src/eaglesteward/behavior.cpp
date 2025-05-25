@@ -135,6 +135,11 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
 
             if (bleacher) {
+                myprintf("!!! bl fd %.3f\n", distance);
+            } else {
+                myprintf("!!! no bl found\n");
+            }
+            if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
                 myprintf("!!!!!! %.3f %.3f %.3f\n", distance, local_x, local_y);
                 if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
