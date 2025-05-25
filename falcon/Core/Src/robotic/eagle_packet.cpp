@@ -40,10 +40,10 @@ bool decode_eagle_packet(const uint8_t *payload, size_t payload_len, EaglePacket
     out.opponent_y_cm = br.get(8);
     out.opponent_theta_deg = static_cast<int16_t>(br.get(9));
 
-    // for (bool &initial_bleacher : out.initial_bleachers) {
-    //     initial_bleacher = static_cast<bool>(br.get(1));
-    // }
-    //
+    for (bool &initial_bleacher : out.initial_bleachers) {
+        initial_bleacher = static_cast<bool>(br.get(1));
+    }
+
     // out.object_count = static_cast<uint8_t>(br.get(6));
     // if (out.object_count > 40)
     //     return false;
