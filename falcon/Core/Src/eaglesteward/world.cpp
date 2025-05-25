@@ -336,16 +336,16 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     colour_ = packet.robot_colour;
 
     // Reset objects
-    bleachers_.clear();
+    // bleachers_.clear();
     cans_.clear();
     planks_.clear();
 
     // 1) Insert initial bleachers from  the header
-    for (size_t i = 0; i < 10; ++i) {
-        if (packet.initial_bleachers[i]) {
-            bleachers_.push_back(default_bleachers_[i]);
-        }
-    }
+    // for (size_t i = 0; i < 10; ++i) {
+    // if (packet.initial_bleachers[i]) {
+    // bleachers_.push_back(default_bleachers_[i]);
+    // }
+    // }
 
     // 2) Insert objects from the object list
     for (uint8_t i = 0; i < packet.object_count; ++i) {

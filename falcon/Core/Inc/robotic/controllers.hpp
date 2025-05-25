@@ -6,5 +6,6 @@ bool stanley_controller(float robot_x, float robot_y, float robot_theta, float x
                         float *out_speed_right);
 
 bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
-                    float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right);
+                    float w_max, float wheelBase, float arrivalThreshold, float *out_speed_left,
+                    float *out_speed_right);
 void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_);

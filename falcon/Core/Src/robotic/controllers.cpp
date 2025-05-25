@@ -1,5 +1,6 @@
 #include "robotic/controllers.hpp"
 
+#include <algorithm>
 #include <math.h>
 #include <stdio.h>
 
@@ -254,7 +255,8 @@ void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_) {
  * @return true si le robot est arrivé, sinon false
  */
 bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_target, float y_target, float Vmax,
-                    float wheelBase, float arrivalThreshold, float *out_speed_left, float *out_speed_right) {
+                    float w_max, float wheelBase, float arrivalThreshold, float *out_speed_left,
+                    float *out_speed_right) {
     /* 1) Distance à la cible ------------------------------------------------*/
     float dx = x_target - robot_x;
     float dy = y_target - robot_y;
@@ -274,7 +276,7 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_tar
     const float Kp_dist = 10.0f;   /* distance → vitesse linéaire   */
     const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
 
-    /* Option : si l’angle est trop grand, on réduit v pour tourner vite (>45°)*/
+    /* Option : si l'angle est trop grand, on réduit v pour tourner vite (>45°)*/
     float v;
     if (fabsf(error_angle) > (M_PI / 4.f)) {
         v = 0.0f;
@@ -283,6 +285,9 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_tar
     }
 
     float w = Kp_angle * error_angle; /* rad/s */
+
+    /* Limitation de la vitesse angulaire ------------------------------------*/
+    w = std::clamp(w, -w_max, w_max);
 
     /* 4) (v, w) → vitesses roues -------------------------------------------*/
     float halfBase = wheelBase * 0.5f;
