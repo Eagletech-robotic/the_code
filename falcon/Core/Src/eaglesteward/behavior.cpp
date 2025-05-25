@@ -243,7 +243,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             auto const slot = building_area->available_slot();
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .4f, WHEELBASE_M,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .25f, WHEELBASE_M,
                                ROBOT_RADIUS, &command_->target_left_speed, &command_->target_right_speed)) {
                 myprintf("goToClosestBuildingArea - bleacher_lifted = false\n");
                 state_->bleacher_lifted = false;
