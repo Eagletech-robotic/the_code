@@ -79,10 +79,22 @@ class State {
     // Bleacher carrying
     bool bleacher_lifted{false};
 
-    GameEntity *target{nullptr};
+    // Target coordinates for PID approach
+    GameEntity target{0.0f, 0.0f, 0.0f};
 
-    // Rectangle test
-    int target_nb{0};
+    [[nodiscard]] bool is_target_set() const { return target.x != 0.f || target.y != 0.f; }
+
+    void lock_target(float x, float y, float orientation = 0.f) {
+        target.x = x;
+        target.y = y;
+        target.orientation = orientation;
+    }
+
+    void release_target() {
+        target.x = 0.f;
+        target.y = 0.f;
+        target.orientation = 0.f;
+    }
 
     /* END PUBLIC DATA ------------------------------------ */
 

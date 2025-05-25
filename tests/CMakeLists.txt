@@ -14,6 +14,7 @@ set(PROGRAM_SOURCES
     ${CMAKE_SOURCE_DIR}/falcon/Core/Src/robotic/eagle_packet.cpp
     ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/world.cpp
     ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/game_entities.cpp
+    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/utils/angles.cpp
     # ${CMAKE_SOURCE_DIR}/falcon/Core/Src/utils/myprintf.cpp
 )
 

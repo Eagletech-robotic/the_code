@@ -92,43 +92,13 @@ void State::updateFromBluetooth() {
         float const camera_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
         float const camera_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
 
-        // Walk back in odometry history to find pose nearest to camera
-        int lookback_steps = 0;
-        odo_history.find_nearest_pose(camera_x - robot_x, camera_y - robot_y, RollingHistory::SIZE, lookback_steps);
-        // myprintf("find_nearest_pose(%.3f %.3f) => %d\n", camera_x - robot_x, camera_y - robot_y, lookback_steps);
-        // odo_history.print_for_debug();
-
-        // Calculate the relative path since the camera pose
-        float relative_x, relative_y, relative_theta;
-        odo_history.integrate_last_steps(lookback_steps, relative_x, relative_y, relative_theta);
-
-        // Calculate the amplitude of our rotations around the camera pose
-        float rotation_span;
-        odo_history.rotation_span_in_area(-relative_x - 0.05f, -relative_y - 0.05f, -relative_x + 0.05f,
-                                          -relative_y + 0.05f, RollingHistory::SIZE, rotation_span);
-
-        // Only trust the camera orientation for limited rotation amplitudes
-        float corrected_theta = robot_theta;
-        if (rotation_span <= to_radians(2.0f)) {
-            corrected_theta = angle_normalize(camera_theta + relative_theta);
-        } else {
-            printf("BT TH-IGN span=%.3f)\n", to_degrees(rotation_span));
-        }
-        float const error_theta = angle_normalize(corrected_theta - robot_theta);
-
-        // Re-integrate deltas from capture time up to now, rotating the cumulative trajectory by orientation error
-        float const cos_err = std::cos(error_theta);
-        float const sin_err = std::sin(error_theta);
-        float const corrected_x = camera_x + cos_err * relative_x - sin_err * relative_y;
-        float const corrected_y = camera_y + sin_err * relative_x + cos_err * relative_y;
-
-        // Optionally log the error
-        float const error_x = corrected_x - robot_x;
-        float const error_y = corrected_y - robot_y;
-        printf("BT %d ms %.3f %.3f %.3f\n", lookback_steps * 4, error_x, error_y, to_degrees(error_theta));
+        float corrected_x, corrected_y, corrected_theta;
+        odo_history.rectify_odometry_from_camera_position(camera_x, camera_y, camera_theta, robot_x, robot_y,
+                                                          robot_theta, corrected_x, corrected_y, corrected_theta);
 
         // Blend with current odometry
         constexpr float CAMERA_GAIN = 0.5f; // the closest tp 1, the more we trust the camera
+
         robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
         robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
         robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
