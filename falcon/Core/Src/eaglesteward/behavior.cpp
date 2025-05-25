@@ -18,7 +18,7 @@ auto logAndFail(char const *s) {
 
 bool descend(Command &command, State &state, float max_speed, float arrival_distance = 0.01f) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
-    constexpr float MAX_ANGULAR_SPEED_LOADED = 2.0f; // Limit when we carry a bleacher. rad/s.
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.5f; // Limit when we carry a bleacher. rad/s.
 
     auto &world = state.world;
     float min_speed = 0.0f;
@@ -171,8 +171,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.5f,
-                               WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
+                               WHEELBASE_M, 0.10f, &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->release_target();
                 state_->bleacher_lifted = true;
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
@@ -190,12 +190,12 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
 
     auto check_lost_bleacher = [](input_t *, Command *command_, State *state_) {
-        if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
-            // The bleacher was dropped: update the state...
-            state_->bleacher_lifted = false;
-            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
-            return Status::FAILURE;
-        }
+        // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
+        //     // The bleacher was dropped: update the state...
+        //     state_->bleacher_lifted = false;
+        //     command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
+        //     return Status::FAILURE;
+        // }
         command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
         return Status::SUCCESS;
     };
