@@ -98,25 +98,22 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
                 if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                    state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
             };
 
+            state_->release_target();
             myprintf("BL-SRCH\n");
             float potential;
-            descend(*command_, *state_, SPEED_MAX, &potential);
+            descend(*command_, *state_, MAX_SPEED, &potential);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-            if (!bleacher) {
-                return Status::FAILURE;
-            }
-
-            auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const target_x = bleacher->x + cos(bleacher->orientation) * local_x;
-            float const target_y = bleacher->y + sin(bleacher->orientation) * local_x;
+            auto const &bleacher = state_->target;
+            auto [local_x, local_y] = bleacher.position_in_local_frame(state_->robot_x, state_->robot_y);
+            float const target_x = bleacher.x + cos(bleacher.orientation) * local_x;
+            float const target_y = bleacher.y + sin(bleacher.orientation) * local_x;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 1.0f,
                                WHEELBASE_M, 0.04f, &command_->target_left_speed, &command_->target_right_speed)) {
@@ -127,32 +124,19 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto [bleacher, distance] =
-                state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
-            if (!bleacher) {
-                return Status::FAILURE;
-            }
-
+            auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.5f,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.5f,
                                WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
+                state_->release_target();
                 state_->bleacher_lifted = true;
-                state_->world.bleachers_.remove(*bleacher);
+                state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 return Status::SUCCESS;
             }
 
-            myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
+            myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
-        },
-        [](input_t *, Command *command_, State *) {
-            myprintf("gotoClosestBleacher - bleacher_lifted = true\n");
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            command_->target_left_speed = 0.f;
-            command_->target_right_speed = 0.f;
-
-            myprintf("BL-PKP\n");
-            return Status::SUCCESS;
         });
 
     return seq(const_cast<input_t *>(input), command, state);
@@ -239,7 +223,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             auto const slot = building_area->available_slot();
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
-            if (fabsf(local_y) <= 0.15f) {
+            if (fabsf(local_x) <= 0.15f) {
                 return Status::SUCCESS;
             }
 
@@ -278,12 +262,9 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-// --- Backstage 10 pts
-//  85 s PAMI démarre
-//  90 s le robot ne peux plus bouger
-// 100 s les PAMI stop
-
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
+    // 85s PAMIs start
+    // 100s End of game
     return state->elapsedTime(*input) > 87.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
