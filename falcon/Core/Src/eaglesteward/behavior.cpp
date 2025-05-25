@@ -195,7 +195,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         //     command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
         //     return Status::FAILURE;
         // }
-        command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
         return Status::SUCCESS;
     };
 
@@ -210,6 +209,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const waypoint = building_area->waypoint();
             auto const [local_x, local_y] = waypoint.position_in_local_frame(state_->robot_x, state_->robot_y);
             if (fabsf(local_x) < BUILDING_AREA_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.15f) {
+                auto const slot = building_area->available_slot();
+                state_->lock_target(slot.x, slot.y, slot.orientation);
                 return Status::SUCCESS;
             }
 
@@ -219,12 +220,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
-            if (!building_area) {
-                return Status::FAILURE;
-            }
-
-            auto const slot = building_area->available_slot();
+            auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
             auto const target_x = slot.x + cos(slot.orientation) * local_x;
             auto const target_y = slot.y + sin(slot.orientation) * local_x;
@@ -240,41 +236,34 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
-            if (!building_area) {
-                return Status::FAILURE;
-            }
+            auto const &slot = state_->target;
 
-            auto const slot = building_area->available_slot();
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .25f,
                                MAX_ROTATION_SPEED * 0.5f, WHEELBASE_M, ROBOT_RADIUS, &command_->target_left_speed,
                                &command_->target_right_speed)) {
-                myprintf("goToClosestBuildingArea - bleacher_lifted = false\n");
-                state_->bleacher_lifted = false;
-                building_area->first_available_slot++;
+                const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
+                if (building_area)
+                    building_area->first_available_slot++;
+
                 return Status::SUCCESS;
             }
 
-            myprintf("BA-APPCNT x=%.3f y=%.3f\n", building_area->x, building_area->y);
+            myprintf("BA-APPCNT x=%.3f y=%.3f\n", slot.x, slot.y);
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, false);
-            if (!building_area) {
-                return Status::SUCCESS;
-            }
-
-            auto const slot = building_area->available_slot();
+            auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
-            if (fabsf(local_x) <= 0.15f) {
+
+            if (fabsf(local_x) >= ROBOT_RADIUS + 0.10) {
+                state_->bleacher_lifted = false;
                 return Status::SUCCESS;
             }
 
             myprintf("BA-DROP %.3f %.3f\n", local_x, local_y);
-            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
-            command_->target_left_speed = -0.3f;
-            command_->target_right_speed = -0.3f;
+            command_->target_left_speed = -0.5f;
+            command_->target_right_speed = -0.5f;
             return Status::RUNNING;
         });
 
