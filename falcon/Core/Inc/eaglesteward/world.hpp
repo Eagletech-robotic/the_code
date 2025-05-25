@@ -55,7 +55,7 @@ class World {
     float potential_at(float x, float y) const;
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
-    void potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const;
+    float potential_field_descent(float x, float y, bool &out_is_local_minimum, float &out_yaw) const;
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
     bool do_some_calculations(const std::function<bool()> &can_continue);
