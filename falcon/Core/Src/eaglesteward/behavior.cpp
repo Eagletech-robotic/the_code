@@ -84,11 +84,56 @@ Status isSafe(input_t *, Command *, State *state) {
     return Status::SUCCESS;
 }
 
+
+// --- Gestion isSafe
+
+struct Safe {
+    inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
+
+    Status operator()(const input_t* input, Command* command, State* state) {
+
+    	// 1️⃣ lambdas locales, lisibles, sans piège
+    	auto detection = [this](input_t* input, Command* command, State* state) {
+    		startTime = state->elapsedTime(*input);
+    		myprintf("detection");
+    		command->target_left_speed = 0.f;
+    		command->target_right_speed = 0.f;
+    		return Status::SUCCESS;
+    	};
+
+    	auto threeSecond = [this](input_t* input, Command* command, State* state) {
+    		myprintf("three second");
+    		command->target_left_speed = 0.f;
+    		command->target_right_speed = 0.f;
+
+    		if(state->elapsedTime(*input) - startTime > 3.0) {
+    			return Status::SUCCESS;
+    		}
+    		return Status::RUNNING;
+
+    	};
+
+    	auto evasion = [this](input_t* input, Command* command, State* state) {
+    		myprintf("evasion");
+    		float p;
+    		descend(*command, *state, .8f, &p);
+    		return Status::RUNNING;
+
+    	};
+
+    	 auto node = statenode(
+    			 detection,
+				 threeSecond,
+				 evasion
+    	 );
+
+    	 return node(const_cast<input_t *>(input), command, state);
+    }
+};
+
 // Trop proche de l'adversaire, il faut se dérouter
-Status evadeOpponent(input_t *, Command *command, State *) {
-    command->target_left_speed = 0.5;
-    command->target_right_speed = -0.5;
-    return Status::RUNNING;
+Status evadeOpponent(input_t *input, Command *command, State *state) {
+    return Safe{}(input, command, state);
 }
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
