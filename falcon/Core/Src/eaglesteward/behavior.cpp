@@ -3,10 +3,10 @@
 #include "eaglesteward/constants.hpp"
 #include "eaglesteward/state.hpp"
 #include "eaglesteward/tof.hpp"
-#include "math.h"
 #include "robotic/controllers.hpp"
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
+#include <cmath>
 
 // For use in an alternative node, thus returning Status::FAILURE
 auto logAndFail(char const *s) {
@@ -84,7 +84,7 @@ Status evadeOpponent(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-Status checkLostBleacher(input_t *input, Command *command, State *state) {
+Status checkLostBleacher(input_t *, Command *, State *state) {
     if (state->bleacher_lifted && state->filtered_tof_m > 0.50f) {
         // The bleacher was dropped: update the state...
         state->bleacher_lifted = false;
@@ -236,7 +236,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             myprintf("BL-APPCNT x=%.3f y=%.3f\n", bleacher->x, bleacher->y);
             return Status::RUNNING;
         },
-        [](input_t *, Command *command_, State *state_) {
+        [](input_t *, Command *command_, State *) {
             myprintf("gotoClosestBleacher - bleacher_lifted = true\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
@@ -304,7 +304,7 @@ auto dontMoveUntil = [](float s) {
 };
 
 auto rotate = [](float a) {
-    return [=](const input_t *input, Command *command, State *state) {
+    return [=](const input_t *, Command *command, State *state) {
         myprintf("rotate %.f", a);
         float desired_angle = a * DEG_TO_RAD;
         float error_angle = angle_normalize(desired_angle - state->robot_theta);
@@ -337,7 +337,7 @@ Status gotoBackstageLine(input_t *, Command *command, State *state) {
     const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
                                             1.0f,        // m/s Vmax 3.0 est le max
                                             WHEELBASE_M, // m, entraxe
-                                            0.05f,         // m, distance à l'arrivé pour être arrivé
+                                            0.05f,       // m, distance à l'arrivé pour être arrivé
                                             &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         return Status::SUCCESS;
@@ -377,7 +377,7 @@ Status deployFlag(const input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-Status gotoTarget2(float target_robot_x, float target_robot_y, int target_nb, input_t *, Command *command,
+Status gotoTarget2(float target_robot_x, float target_robot_y, int /*target_nb*/, input_t *, Command *command,
                    State *state) {
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
@@ -429,15 +429,15 @@ Status gotoDescend(const char *name, Command *command, State *state, TargetType 
 }
 
 Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
-    auto node = statenode([](input_t *input_, Command *command_,
+    auto node = statenode([](input_t *, Command *command_,
                              State *state_) { return gotoDescend("0", command_, state_, TargetType::TestPoint0); },
-                          [](input_t *input_, Command *command_, State *state_) {
+                          [](input_t *, Command *command_, State *state_) {
                               return gotoDescend("1", command_, state_, TargetType::TestPoint1);
                           },
-                          [](input_t *input_, Command *command_, State *state_) {
+                          [](input_t *, Command *command_, State *state_) {
                               return gotoDescend("2", command_, state_, TargetType::TestPoint2);
                           },
-                          [](input_t *input_, Command *command_, State *state_) {
+                          [](input_t *, Command *command_, State *state_) {
                               return gotoDescend("3", command_, state_, TargetType::TestPoint3);
                           });
 

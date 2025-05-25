@@ -73,7 +73,7 @@ void World::reset_dijkstra() {
     // Add obstacles
     setup_obstacles_field();
 
-    printf("DIJSK RST %lu\n", pqueue_.size());
+    printf("DIJSK RST %zu\n", pqueue_.size());
 }
 
 void World::enqueue_targets() {
