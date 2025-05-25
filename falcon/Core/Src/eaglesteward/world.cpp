@@ -379,7 +379,9 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
 
 // Returns the potential value at the given grid cell (i, j).
 // If the value is infinite, return the potential of the best neighbour + distance to it.
-static inline float finite_potential(const auto &P, int i, int j) {
+float World::finite_potential(int i, int j) const {
+    const auto &P = potential_ready();
+
     float const v = P[i][j];
     if (v != FLT_MAX)
         return v;
@@ -430,17 +432,18 @@ float World::potential_at(float px, float py) const {
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
     // bilinéaire
-    float v00 = finite_potential(P, i, j);
-    float v10 = finite_potential(P, i + 1, j);
-    float v01 = finite_potential(P, i, j + 1);
-    float v11 = finite_potential(P, i + 1, j + 1);
+    float v00 = finite_potential(i, j);
+    float v10 = finite_potential(i + 1, j);
+    float v01 = finite_potential(i, j + 1);
+    float v11 = finite_potential(i + 1, j + 1);
 
     return (1 - tx) * (1 - ty) * v00 + (tx) * (1 - ty) * v10 + (1 - tx) * (ty)*v01 + (tx) * (ty)*v11;
 }
 
 // Analytic gradient of a bilinear patch; returns {∂U/∂x , ∂U/∂y}
-inline std::pair<float, float>
-bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &P, float px, float py) {
+std::pair<float, float>
+World::bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> &P, float px,
+                         float py) const {
     float gx = px / SQUARE_SIZE_M;
     float gy = py / SQUARE_SIZE_M;
 
@@ -453,10 +456,10 @@ bilinear_gradient(const std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WID
     float tx = gx - i; // 0..1
     float ty = gy - j;
 
-    float v00 = finite_potential(P, i, j);
-    float v10 = finite_potential(P, i + 1, j);
-    float v01 = finite_potential(P, i, j + 1);
-    float v11 = finite_potential(P, i + 1, j + 1);
+    float v00 = finite_potential(i, j);
+    float v10 = finite_potential(i + 1, j);
+    float v01 = finite_potential(i, j + 1);
+    float v11 = finite_potential(i + 1, j + 1);
 
     /* U(tx,ty) = a + b tx + c ty + d tx ty  */
     float a = v00;
