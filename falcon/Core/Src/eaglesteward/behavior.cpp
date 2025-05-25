@@ -56,10 +56,10 @@ float descend(Command &command, State &state, float max_speed, float *potential)
     }
 }
 
-float opponentDistance (State * state) {
-	float x = state->robot_x - state->world.opponent_x;
-	float y = state->robot_y - state->world.opponent_y;
-	return sqrtf(x*x + y*y);
+float opponentDistance(State *state) {
+    float x = state->robot_x - state->world.opponent_x;
+    float y = state->robot_y - state->world.opponent_y;
+    return sqrtf(x * x + y * y);
 }
 
 // On n'utilise pas la présence du robot adverse, pour être robuste sur ce sujet
@@ -70,71 +70,62 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
     float d = opponentDistance(state);
-    if ( d < 0.40) {
-    	myprintf("opp at %.2f\n",d);
-    	return Status::FAILURE;
+    if (d < 0.40) {
+        myprintf("opp at %.2f\n", d);
+        return Status::FAILURE;
     }
 
-//    if (isBigThingClose(*state) &&
-//        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
-//        myprintf("BigThing\n");
-//        return Status::FAILURE;
-//    }
+    //    if (isBigThingClose(*state) &&
+    //        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
+    //        myprintf("BigThing\n");
+    //        return Status::FAILURE;
+    //    }
 
     return Status::SUCCESS;
 }
-
 
 // --- Gestion isSafe
 
 struct Safe {
     inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
 
-    Status operator()(const input_t* input, Command* command, State* state) {
+    Status operator()(const input_t *input, Command *command, State *state) {
 
-    	// 1️⃣ lambdas locales, lisibles, sans piège
-    	auto detection = [this](input_t* input, Command* command, State* state) {
-    		startTime = state->elapsedTime(*input);
-    		myprintf("detection");
-    		command->target_left_speed = 0.f;
-    		command->target_right_speed = 0.f;
-    		return Status::SUCCESS;
-    	};
+        // 1️⃣ lambdas locales, lisibles, sans piège
+        auto detection = [this](input_t *input, Command *command, State *state) {
+            startTime = state->elapsedTime(*input);
+            myprintf("detection");
+            command->target_left_speed = 0.f;
+            command->target_right_speed = 0.f;
+            return Status::SUCCESS;
+        };
 
-    	auto threeSecond = [this](input_t* input, Command* command, State* state) {
-    		myprintf("three second");
-    		command->target_left_speed = 0.f;
-    		command->target_right_speed = 0.f;
+        auto threeSecond = [this](input_t *input, Command *command, State *state) {
+            myprintf("three second");
+            command->target_left_speed = 0.f;
+            command->target_right_speed = 0.f;
 
-    		if(state->elapsedTime(*input) - startTime > 3.0) {
-    			return Status::SUCCESS;
-    		}
-    		return Status::RUNNING;
+            if (state->elapsedTime(*input) - startTime > 3.0) {
+                return Status::SUCCESS;
+            }
+            return Status::RUNNING;
+        };
 
-    	};
+        auto evasion = [this](input_t *input, Command *command, State *state) {
+            myprintf("evasion");
+            float p;
+            descend(*command, *state, .6f, &p);
+            return Status::RUNNING;
+        };
 
-    	auto evasion = [this](input_t* input, Command* command, State* state) {
-    		myprintf("evasion");
-    		float p;
-    		descend(*command, *state, .8f, &p);
-    		return Status::RUNNING;
+        auto node = statenode(detection, threeSecond, evasion);
 
-    	};
-
-    	 auto node = statenode(
-    			 detection,
-				 threeSecond,
-				 evasion
-    	 );
-
-    	 return node(const_cast<input_t *>(input), command, state);
+        return node(const_cast<input_t *>(input), command, state);
     }
 };
 
 // Trop proche de l'adversaire, il faut se dérouter
-Status evadeOpponent(input_t *input, Command *command, State *state) {
-    return Safe{}(input, command, state);
-}
+Status evadeOpponent(input_t *input, Command *command, State *state) { return Safe{}(input, command, state); }
 
 Status carryBleacher(input_t *input, Command *command, State *state) {
     if (state->bleacher_lifted) {
@@ -577,7 +568,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
-		//alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
