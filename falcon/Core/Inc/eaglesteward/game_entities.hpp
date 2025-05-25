@@ -28,8 +28,6 @@ struct GameEntity {
 // Bleacher class
 class Bleacher : public GameEntity {
   public:
-    bool uncertain = false;  // Previous failed pick-up attempt
-    bool is_carried = false; // Is our robot currently carrying it?
     bool initial_position = false;
 
     Bleacher() = default;

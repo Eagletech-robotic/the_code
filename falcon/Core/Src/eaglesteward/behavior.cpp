@@ -84,38 +84,11 @@ Status evadeOpponent(input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
-Status carryBleacher(input_t *input, Command *command, State *state) {
-    if (state->bleacher_lifted) {
-        // if (state->filtered_tof_m > 0.50f) {
-        if (false) {
-            auto carried_bleacher = state->world.carried_bleacher();
-
-            // The bleacher was dropped: update the state...
-            state->bleacher_lifted = false;
-            state->world.drop_carried_bleacher();
-
-            // ... and mark the bleacher as uncertain.
-            if (carried_bleacher) {
-                carried_bleacher->uncertain = true;
-                state->world.reset_dijkstra();
-            }
-        } else {
-            // Keep the shovel extended
-            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
-
-            // Move the bleacher along with the robot
-            if (auto carried_bleacher = state->world.carried_bleacher()) {
-                float const shovel_x =
-                    state->robot_x + cosf(state->robot_theta) * (SHOVEL_TO_CENTER + BLEACHER_WIDTH / 2);
-                float const shovel_y =
-                    state->robot_y + sinf(state->robot_theta) * (SHOVEL_TO_CENTER + BLEACHER_WIDTH / 2);
-                carried_bleacher->x = shovel_x;
-                carried_bleacher->y = shovel_y;
-                carried_bleacher->orientation = state->robot_theta;
-            }
-        }
+Status checkLostBleacher(input_t *input, Command *command, State *state) {
+    if (state->bleacher_lifted && state->filtered_tof_m > 0.50f) {
+        // The bleacher was dropped: update the state...
+        state->bleacher_lifted = false;
     }
-
     return Status::SUCCESS;
 }
 
@@ -123,33 +96,12 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
     return state->bleacher_lifted ? Status::SUCCESS : Status::FAILURE;
 }
 
-Status isClearOfDroppedBleacher(input_t *, Command *, State *state) {
-    const auto [bleacher, distance] = state->world.closest_bleacher_in_building_area(state->robot_x, state->robot_y);
-
-    if (!bleacher || distance >= 0.4f || state->bleacher_lifted // Do not escape the bleacher we are carrying
-    ) {
-        return Status::SUCCESS;
-    }
-
-    float bearing = std::atan2(bleacher->y - state->robot_y, bleacher->x - state->robot_x);
-    bool is_facing_bleacher = std::abs(angle_normalize(state->robot_theta - bearing)) <= to_radians(20);
-    return is_facing_bleacher ? Status::FAILURE : Status::SUCCESS;
-}
-
-Status escapeBleacher(input_t *, Command *command, State *) {
-    command->target_left_speed = -0.3f;
-    command->target_right_speed = -0.3f;
-    return Status::RUNNING;
-}
-
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
     auto seq = statenode(
         //
         [](input_t *, Command *command_, State *state_) {
-            const auto [building_area, distance] =
-                state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
-
+            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {
                 return Status::FAILURE;
             }
@@ -163,11 +115,11 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
             float potential;
             descend(*command_, *state_, .8f, &potential);
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto [building_area, distance] =
-                state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
+            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {
                 return Status::FAILURE;
             }
@@ -183,11 +135,11 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-APP x=%.3f y=%.3f\n", target_x, target_y);
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            const auto [building_area, distance] =
-                state_->world.closest_available_building_area(state_->robot_x, state_->robot_y);
+            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {
                 return Status::FAILURE;
             }
@@ -195,24 +147,34 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const slot = building_area->available_slot();
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, .4f, WHEELBASE_M,
                                ROBOT_RADIUS, &command_->target_left_speed, &command_->target_right_speed)) {
+                myprintf("goToClosestBuildingArea - bleacher_lifted = false\n");
+                state_->bleacher_lifted = false;
                 building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
 
             myprintf("BA-APPCNT x=%.3f y=%.3f\n", building_area->x, building_area->y);
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            myprintf("BA-DROP\n");
-            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
-            command_->target_left_speed = 0.f;
-            command_->target_right_speed = 0.f;
-            state_->bleacher_lifted = false;
-            state_->world.drop_carried_bleacher();
+            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, false);
+            if (!building_area) {
+                return Status::SUCCESS;
+            }
 
-            return Status::SUCCESS;
-        },
-        alternative(isClearOfDroppedBleacher, logAndFail("escape-bleacher"), escapeBleacher));
+            auto const slot = building_area->available_slot();
+            auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
+            if (fabsf(local_y) <= 0.15f) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BA-DROP %.3f %.3f\n", local_x, local_y);
+            command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
+            command_->target_left_speed = -0.3f;
+            command_->target_right_speed = -0.3f;
+            return Status::RUNNING;
+        });
 
     return seq(const_cast<input_t *>(input), command, state);
 }
@@ -266,6 +228,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher->x, bleacher->y, 0.5f,
                                WHEELBASE_M, 0.15f, &command_->target_left_speed, &command_->target_right_speed)) {
+                state_->bleacher_lifted = true;
+                state_->world.bleachers_.remove(*bleacher);
                 return Status::SUCCESS;
             }
 
@@ -273,11 +237,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            auto bleacher = state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y).first;
-            state_->bleacher_lifted = true;
-
-            state_->world.carry_bleacher(*bleacher);
-
+            myprintf("gotoClosestBleacher - bleacher_lifted = true\n");
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             command_->target_left_speed = 0.f;
             command_->target_right_speed = 0.f;
@@ -469,7 +429,6 @@ Status gotoDescend(const char *name, Command *command, State *state, TargetType 
 }
 
 Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
-
     auto node = statenode([](input_t *input_, Command *command_,
                              State *state_) { return gotoDescend("0", command_, state_, TargetType::TestPoint0); },
                           [](input_t *input_, Command *command_, State *state_) {
@@ -494,7 +453,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
-        carryBleacher, // Keep this action before evasive maneuvers
+        checkLostBleacher, // Keep this action before evasive maneuvers
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),
