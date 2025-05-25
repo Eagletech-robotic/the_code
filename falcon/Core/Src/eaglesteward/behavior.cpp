@@ -262,7 +262,7 @@ Status isJackRemoved(input_t *input, Command *, State *state) {
 }
 
 Status isGameActive(input_t *input, Command *, State *state) {
-    return state->elapsedTime(*input) < 90.0f ? Status::SUCCESS : Status::FAILURE;
+    return state->elapsedTime(*input) < 100.0f ? Status::SUCCESS : Status::FAILURE;
 }
 
 // Attente indéfinie
@@ -280,7 +280,7 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 // 100 s les PAMI stop
 
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
-    return state->elapsedTime(*input) > 80.0f ? Status::FAILURE : Status::SUCCESS;
+    return state->elapsedTime(*input) > 87.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status goToBackstageDescend(input_t *, Command *command, State *state) {
@@ -328,16 +328,16 @@ auto rotate = [](float a) {
 Status gotoBackstageLine(input_t *, Command *command, State *state) {
     float target_x, target_y;
     if (state->colour == RobotColour::Blue) {
-        target_x = 3.0 - .45;
-        target_y = 2.0 - .3;
+        target_x = 3.00f - 0.375f;
+        target_y = 2.00f - 0.15f;
     } else {
-        target_x = .45;
-        target_y = 2.0 - .3;
+        target_x = 0.375f;
+        target_y = 2.00f - 0.15f;
     }
     const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
                                             1.0f,        // m/s Vmax 3.0 est le max
                                             WHEELBASE_M, // m, entraxe
-                                            0.1,         // m, distance à l'arrivé pour être arrivé
+                                            0.05f,         // m, distance à l'arrivé pour être arrivé
                                             &command->target_left_speed, &command->target_right_speed);
     if (has_arrived) {
         return Status::SUCCESS;
@@ -348,7 +348,7 @@ Status gotoBackstageLine(input_t *, Command *command, State *state) {
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
-    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(87), gotoBackstageLine, holdAfterEnd);
+    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(97), gotoBackstageLine, holdAfterEnd);
 
     return node(const_cast<input_t *>(input), command, state);
 }
