@@ -137,7 +137,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (bleacher) {
                 myprintf("!!! bl fd %.3f\n", distance);
             } else {
-                myprintf("!!! no bl found\n");
+                myprintf("!!! no bl found %lu\n", state_->world.bleachers_.size());
             }
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
