@@ -57,6 +57,8 @@ class World {
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher *, float> closest_available_bleacher(float x, float y);
 
+    void remove_bleacher(float x, float y);
+
     [[nodiscard]] BuildingArea *closest_building_area(float x, float y, bool only_available);
 
     [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }

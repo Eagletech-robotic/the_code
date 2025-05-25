@@ -482,6 +482,18 @@ std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y)
     return {nullptr, std::numeric_limits<float>::max()};
 }
 
+void World::remove_bleacher(float x, float y) {
+    Bleacher *bleacher = nullptr;
+    for (auto &it : bleachers_) {
+        if (std::abs(it.x - x) < 0.05f && std::abs(it.y - y) < 0.05f) {
+            bleacher = &it;
+            break;
+        }
+    }
+    if (bleacher)
+        bleachers_.remove(*bleacher);
+}
+
 BuildingArea *World::closest_building_area(float x, float y, bool only_available) {
     BuildingArea *best = nullptr;
     float best_distance = std::numeric_limits<float>::max();
