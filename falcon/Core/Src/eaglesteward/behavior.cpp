@@ -18,7 +18,7 @@ auto logAndFail(char const *s) {
 
 bool descend(Command &command, State &state, float max_speed, float arrival_distance = 0.01f) {
     constexpr float KP_ROTATION = 50.0f;             // Rotation PID's P gain
-    constexpr float MAX_ANGULAR_SPEED_LOADED = 0.4f; // Limit when we carry a bleacher. rad/s.
+    constexpr float MAX_ANGULAR_SPEED_LOADED = 1.0f; // Limit when we carry a bleacher. rad/s.
 
     auto &world = state.world;
     float min_speed = 0.0f;
@@ -207,7 +207,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             auto const waypoint = building_area->waypoint();
             auto const [local_x, local_y] = waypoint.position_in_local_frame(state_->robot_x, state_->robot_y);
-            if (fabsf(local_y) < 0.15f) {
+            if (fabsf(local_x) < BUILDING_AREA_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.15f) {
                 return Status::SUCCESS;
             }
 
