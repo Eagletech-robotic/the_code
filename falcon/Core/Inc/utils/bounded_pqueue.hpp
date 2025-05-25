@@ -3,7 +3,6 @@
 #include <concepts>
 #include <functional>
 #include <limits>
-#include <stdexcept>
 #include <utility>
 
 template <typename T, std::size_t Capacity, typename Compare = std::less<T>>
