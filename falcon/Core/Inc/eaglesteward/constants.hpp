@@ -7,7 +7,7 @@ static constexpr float WHEEL_CIRCUMFERENCE_M = .069f * M_PI;
 static constexpr int TICKS_PER_REV = 72000;        // Encoder ticks per revolution of the wheel
 static constexpr float ROBOT_RADIUS = 0.19f;       // Radius of the robot
 static constexpr float SHOVEL_TO_CENTER = 0.10;    // Distance between the shovel and the center of the robot
-static constexpr float MAX_SPEED = 2.0f;           // Maximum speed of the robot
+static constexpr float MAX_SPEED = 1.5f;           // Maximum speed of the robot
 static constexpr float MAX_ROTATION_SPEED = 50.0f; // Maximum rotation speed of the robot
 
 // Potential field for gradient descent

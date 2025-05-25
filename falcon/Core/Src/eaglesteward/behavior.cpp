@@ -38,7 +38,7 @@ bool descend(Command &command, State &state, float max_speed, float arrival_dist
         myprintf("bleacher_lifted %d\n", state.bleacher_lifted);
         if (state.bleacher_lifted) {
             angular_speed = std::clamp(angular_speed, -MAX_ANGULAR_SPEED_LOADED, MAX_ANGULAR_SPEED_LOADED);
-            min_speed = 0.01f;
+            min_speed = 0.02f;
         }
         auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? min_speed : max_speed;
         // Wheel speeds
@@ -137,7 +137,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                if (fabsf(local_x) < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
@@ -208,7 +208,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             auto const waypoint = building_area->waypoint();
             auto const [local_x, local_y] = waypoint.position_in_local_frame(state_->robot_x, state_->robot_y);
-            if (fabsf(local_x) < BUILDING_AREA_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.15f) {
+            if (fabsf(local_x) < 0.10f && fabsf(local_y) < 0.15f) {
                 auto const slot = building_area->available_slot();
                 state_->lock_target(slot.x, slot.y, slot.orientation);
                 return Status::SUCCESS;
