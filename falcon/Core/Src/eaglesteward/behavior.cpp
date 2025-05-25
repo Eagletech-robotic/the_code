@@ -137,13 +137,10 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                myprintf("bl pos %.3f %.3f %.3f %.3f %.3f\n", bleacher->x, bleacher->y, local_x, local_y, distance);
                 if (distance < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
-            } else {
-                myprintf("no bl fnd %d\n", static_cast<int>(state_->world.bleachers_.size()));
             }
 
             myprintf("BL-SRCH\n");
@@ -170,9 +167,12 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                WHEELBASE_M, 0.10f, &command_->target_left_speed, &command_->target_right_speed)) {
+                const int nb_bleachers_before = state_->world.bleachers_.size();
+                state_->world.remove_bleacher(state_->target.x, state_->target.y);
+                printf("remove bl %d %d\n", nb_bleachers_before, static_cast<int>(state_->world.bleachers_.size()));
+
                 state_->release_target();
                 state_->bleacher_lifted = true;
-                state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 return Status::SUCCESS;
             }
 

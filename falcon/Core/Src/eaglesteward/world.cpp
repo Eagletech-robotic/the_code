@@ -521,7 +521,8 @@ std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y)
 void World::remove_bleacher(float x, float y) {
     Bleacher *bleacher = nullptr;
     for (auto &it : bleachers_) {
-        if (std::abs(it.x - x) < 0.05f && std::abs(it.y - y) < 0.05f) {
+        constexpr float TOLERANCE = 0.15f; // In simulation, bleachers move when the robot pushes them during pickup.
+        if (std::abs(it.x - x) < TOLERANCE && std::abs(it.y - y) < TOLERANCE) {
             bleacher = &it;
             break;
         }
