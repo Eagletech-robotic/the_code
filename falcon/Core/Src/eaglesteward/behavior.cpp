@@ -272,7 +272,7 @@ Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
     float potential;
-    bool ret = descend(*command, *state, SPEED_MAX, &potential);
+    bool ret = descend(*command, *state, MAX_SPEED, &potential);
     if (ret || (potential < 0.13)) {
         return Status::SUCCESS;
     }
