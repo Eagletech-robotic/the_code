@@ -90,8 +90,6 @@ struct Safe {
     inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
 
     Status operator()(const input_t *input, Command *command, State *state) {
-
-        // 1️⃣ lambdas locales, lisibles, sans piège
         auto detection = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
             myprintf("detection");
@@ -111,7 +109,7 @@ struct Safe {
             return Status::RUNNING;
         };
 
-        auto evasion = [this](input_t *input, Command *command, State *state) {
+        auto evasion = [this](input_t *, Command *command, State *state) {
             myprintf("evasion");
             float p;
             descend(*command, *state, .6f, &p);
