@@ -16,8 +16,7 @@ auto logAndFail(char const *s) {
     };
 }
 
-bool descend(Command &command, State &state, float v_min, float v_max, float w_max, float r_max,
-             float arrival_distance = 0.01f) {
+bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f) {
     constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
 
     auto &world = state.world;
@@ -110,7 +109,7 @@ struct Safe {
 
         auto evasion = [this](input_t *, Command *command, State *state) {
             myprintf("evasion");
-            descend(*command, *state, 0.0f, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         };
 
@@ -143,17 +142,18 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BL-SRCH\n");
-            descend(*command_, *state_, 0.0f, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            descend(*command_, *state_, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
             auto [local_x, local_y] = bleacher.position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const target_x = bleacher.x + cos(bleacher.orientation) * local_x;
-            float const target_y = bleacher.y + sin(bleacher.orientation) * local_x;
+            float const distance = std::copysign(std::max(std::fabs(local_x / 2.0f), 0.28f), local_x);
+            float const target_x = bleacher.x + cos(bleacher.orientation) * distance;
+            float const target_y = bleacher.y + sin(bleacher.orientation) * distance;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, MAX_SPEED,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.12f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
@@ -163,7 +163,6 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         },
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, MAX_SPEED,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.25f,
@@ -178,8 +177,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 1.50f,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.10f,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 state_->release_target();
@@ -254,6 +253,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             if (!building_area) {
                 return Status::FAILURE;
             }
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             auto const waypoint = building_area->waypoint();
             auto const [local_x, local_y] = waypoint.position_in_local_frame(state_->robot_x, state_->robot_y);
@@ -264,29 +264,31 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
-            descend(*command_, *state_, 0.05f, 0.8f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            descend(*command_, *state_, 0.8f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
             auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
-            auto const target_x = slot.x + cos(slot.orientation) * local_x / 2.0f;
-            auto const target_y = slot.y + sin(slot.orientation) * local_x / 2.0f;
+            float const distance = std::copysign(std::max(std::fabs(local_x / 2.0f), 0.28f), local_x);
+            auto const target_x = slot.x + cos(slot.orientation) * distance;
+            auto const target_y = slot.y + sin(slot.orientation) * distance;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 0.8f,
-                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.12f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
 
             myprintf("BA-APP x=%.3f y=%.3f\n", target_x, target_y);
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
-            auto const &slot = state_->target;
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
+            auto const &slot = state_->target;
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, 0.25f,
                                MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, ROBOT_RADIUS,
                                &command_->target_left_speed, &command_->target_right_speed)) {
@@ -298,7 +300,6 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-APPCNT x=%.3f y=%.3f\n", slot.x, slot.y);
-            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -353,7 +354,7 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
 Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
-    if (descend(*command, *state, 0.0, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
+    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
@@ -487,7 +488,7 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
 Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
     state->world.set_target(target);
     myprintf("%s\n", name);
-    if (descend(*command, *state, 0.0f, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
+    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;

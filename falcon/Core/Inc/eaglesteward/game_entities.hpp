@@ -42,6 +42,12 @@ class Bleacher : public GameEntity {
     [[nodiscard]] std::array<GameEntity, 2> waypoints() const;
 
     [[nodiscard]] bool in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const;
+
+    bool is_easy_central() const;
+
+    bool is_easy_side(RobotColour colour) const;
+
+    bool is_next_to_backstage() const;
 };
 
 // Can class
