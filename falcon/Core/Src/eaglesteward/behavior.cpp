@@ -207,14 +207,21 @@ struct Back {
 
         auto back = [this](input_t *input, Command *command, State *state) {
             myprintf("back");
-            command->target_left_speed = -0.4f;
+            command->target_left_speed = .0f;
             command->target_right_speed = -0.5f;
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
             if (state->elapsedTime(*input) - startTime > 3.0) {
                 return Status::SUCCESS;
             }
+            float arrival_distance, target_angle;
+            state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
+            auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
+            myprintf(" diff=%.2f", angle_diff);
+            if(angle_diff < M_PI_4) {
+            	return Status::SUCCESS;
+            }
 
-            // isEdge
+            // isEdge<
             if (state->robot_x < 0.2 || state->robot_x < 3.0-0.2 || state->robot_y < 0.2 || state->robot_y < 3.0-0.2) {
             	return Status::RUNNING;
             }
