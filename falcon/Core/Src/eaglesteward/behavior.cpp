@@ -34,9 +34,6 @@ bool descend(Command &command, State &state, float v_min, float v_max, float w_m
         // Calculate the linear and angular speed
 
         float angular_speed = KP_ROTATION * angle_diff; // rad/s
-
-        // angular_speed = std::clamp(angular_speed, -w_max, w_max);
-        // auto const linear_speed = fabsf(angle_diff) > M_PI_4 ? v_min : v_max;
         float linear_speed = v_max;
         /* Limitation de la vitesse angulaire ------------------------------------*/
         limit_vw(&linear_speed, &angular_speed, w_max, r_max);
