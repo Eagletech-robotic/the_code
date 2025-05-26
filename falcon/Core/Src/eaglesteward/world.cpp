@@ -90,7 +90,12 @@ void World::enqueue_targets() {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
                 continue;
-            float const value = bleacher.is_easy_side(colour_) ? 0.00f : bleacher.is_easy_central() ? 0.50f : 1.50f;
+            float value = 1.50f;
+            if (bleacher.is_easy_side(colour_)) {
+                value = 0.00f;
+            } else if (bleacher.is_easy_central()) {
+                value = 0.50f;
+            }
             for (const auto waypoint : bleacher.waypoints()) {
                 enqueue_grid_cell(waypoint.x, waypoint.y, value);
             }
