@@ -148,8 +148,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
             auto [local_x, local_y] = bleacher.position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const target_x = bleacher.x + cos(bleacher.orientation) * local_x;
-            float const target_y = bleacher.y + sin(bleacher.orientation) * local_x;
+            float const target_x = bleacher.x + cos(bleacher.orientation) * local_x / 2.0f;
+            float const target_y = bleacher.y + sin(bleacher.orientation) * local_x / 2.0f;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, MAX_SPEED,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
@@ -178,7 +178,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.10f,
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 state_->release_target();
