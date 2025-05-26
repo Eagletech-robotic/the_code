@@ -1,7 +1,7 @@
 #include "eaglesteward/game_entities.hpp"
 
 #include "utils/angles.hpp"
-
+#include "utils/myprintf.hpp"
 /**
  * Return the coordinates of the robot in the frame of the given entity.
  */
@@ -15,9 +15,20 @@ std::pair<float, float> GameEntity::position_in_local_frame(float robot_x, float
     return {local_x, local_y};
 }
 
+inline bool floatEqual(float a, float b) { return fabs(a - b) < 0.01; }
+
 std::array<GameEntity, 2> Bleacher::waypoints() const {
     const float nx = std::cos(orientation);
     const float ny = std::sin(orientation);
+
+    // élimination d'un waypoint central pour favoriser le gradin facile + controuner le gradin central pour le pousser
+    if (floatEqual(y, 0.950f)) {
+        if (floatEqual(x, FIELD_WIDTH_M - 1.1f) || floatEqual(x, 1.1f)) {
+            return {{{x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
+                     {-1.0, -1.0, 0.0}}};
+        }
+    }
+
     return {{
         {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
         {x - BLEACHER_WAYPOINT_DISTANCE * nx, y - BLEACHER_WAYPOINT_DISTANCE * ny, angle_normalize(M_PI + orientation)},
