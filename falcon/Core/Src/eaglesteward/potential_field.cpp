@@ -154,7 +154,7 @@ std::pair<float, float> PotentialField::bilinear_gradient(float px, float py) co
     float v11 = finite_potential(i + 1, j + 1);
 
     /* U(tx,ty) = a + b tx + c ty + d tx ty  */
-    float a = v00;
+    // float a = v00;
     float b = v10 - v00;
     float c = v01 - v00;
     float d = v11 - v10 - v01 + v00;
