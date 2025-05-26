@@ -27,35 +27,35 @@ std::array<GameEntity, 2> Bleacher::waypoints() const {
             return {{{x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
                      {-1.0, -1.0, 0.0}}};
         }
-
-        return {{
-            {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
-            {x - BLEACHER_WAYPOINT_DISTANCE * nx, y - BLEACHER_WAYPOINT_DISTANCE * ny,
-             angle_normalize(M_PI + orientation)},
-        }};
     }
 
-    bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const {
-        for (const auto &building_area : building_areas) {
-            if (std::abs(x - building_area.x) < (building_area.span_x() + BLEACHER_WIDTH) / 2 &&
-                std::abs(y - building_area.y) < (building_area.span_y() + BLEACHER_WIDTH) / 2) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return {{
+        {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
+        {x - BLEACHER_WAYPOINT_DISTANCE * nx, y - BLEACHER_WAYPOINT_DISTANCE * ny, angle_normalize(M_PI + orientation)},
+    }};
+}
 
-    GameEntity BuildingArea::available_slot() const {
-        if (type == Type::Small) {
-            return {x, y, orientation};
-        } else {
-            const float from_center = static_cast<float>(first_available_slot - 1) * 0.15f + 0.05f;
-            return {x + std::cos(orientation) * from_center, y + std::sin(orientation) * from_center, orientation};
+bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const {
+    for (const auto &building_area : building_areas) {
+        if (std::abs(x - building_area.x) < (building_area.span_x() + BLEACHER_WIDTH) / 2 &&
+            std::abs(y - building_area.y) < (building_area.span_y() + BLEACHER_WIDTH) / 2) {
+            return true;
         }
     }
+    return false;
+}
 
-    GameEntity BuildingArea::waypoint() const {
-        auto [slot_x, slot_y, orientation_] = available_slot();
-        return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
-                slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE, orientation};
+GameEntity BuildingArea::available_slot() const {
+    if (type == Type::Small) {
+        return {x, y, orientation};
+    } else {
+        const float from_center = static_cast<float>(first_available_slot - 1) * 0.15f + 0.05f;
+        return {x + std::cos(orientation) * from_center, y + std::sin(orientation) * from_center, orientation};
     }
+}
+
+GameEntity BuildingArea::waypoint() const {
+    auto [slot_x, slot_y, orientation_] = available_slot();
+    return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
+            slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE, orientation};
+}
