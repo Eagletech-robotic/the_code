@@ -1,26 +1,13 @@
 #pragma once
 
 #include "eaglesteward/game_entities.hpp"
+#include "eaglesteward/potential_field.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/bounded_pqueue.hpp"
 #include "utils/sized_array.hpp"
 
 #include <array>
 #include <utility>
-
-struct PQueueNode {
-    float distance;
-    uint8_t x;
-    uint8_t y;
-
-    bool operator<(const PQueueNode &other) const { return distance > other.distance; }
-};
-
-enum class ObstacleType {
-    None,    // Keep the order: each status has prevalence over previous ones
-    Movable, // Movable > None
-    Fixed    // Fixed > Movable
-};
 
 enum class TargetType {
     None,
@@ -44,7 +31,9 @@ class World {
     void update_from_eagle_packet(const EaglePacket &packet);
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
-    bool potential_field_descent(float x, float y, float arrival_distance, float &out_yaw) const;
+    bool potential_field_descent(float x, float y, float arrival_distance, float &out_yaw) const {
+        return potential_fields_[ready_field_].gradient_descent(x, y, arrival_distance, out_yaw);
+    }
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
     bool do_some_calculations(const std::function<bool()> &can_continue);
@@ -59,7 +48,8 @@ class World {
 
     [[nodiscard]] BuildingArea *closest_building_area(float x, float y, bool only_available);
 
-    [[nodiscard]] const auto &potential_ready() const { return potential_field_[ready_field_]; }
+    /** Get the ready potential field (for debugging/visualization) */
+    [[nodiscard]] const auto &potential_ready() const { return potential_fields_[ready_field_].get_field(); }
 
     RobotColour colour_;
 
@@ -79,31 +69,24 @@ class World {
 
     // Potential field
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
-    uint8_t ready_field_ = 1;
-    std::array<std::array<float, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> potential_field_[2]{};
 
+  private:
+    // Double buffered potential fields
+    uint8_t ready_field_ = 1;
+    PotentialField potential_fields_[2]{};
+
+    // Shared resources for pathfinding
     std::array<std::array<ObstacleType, FIELD_HEIGHT_SQ>, FIELD_WIDTH_SQ> obstacles_field_{};
 
     BoundedPriorityQueue<PQueueNode, 5'000> pqueue_; // No upper limit, but should be enough for the field size
 
-    [[nodiscard]] auto &potential_calculating() { return potential_field_[1 - ready_field_]; }
+    [[nodiscard]] auto &potential_calculating() { return potential_fields_[1 - ready_field_]; }
 
     void reset_dijkstra();
 
-    bool partial_compute_dijkstra(const std::function<bool()> &can_continue);
-
     static bool is_in_field(float x, float y);
-
     static bool is_in_field_square(int i, int j);
 
-  private:
-    [[nodiscard]] float finite_potential(int i, int j) const;
-
-    [[nodiscard]] float potential_at(float x, float y) const;
-
-    [[nodiscard]] std::pair<float, float> bilinear_gradient(float px, float py) const;
-
     void enqueue_targets();
-
     void setup_obstacles_field();
 };
