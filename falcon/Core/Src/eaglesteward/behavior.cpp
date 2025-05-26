@@ -194,6 +194,39 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     return seq(const_cast<input_t *>(input), command, state);
 }
 
+struct Back {
+    inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
+
+    Status operator()(const input_t *input, Command *command, State *state) {
+        auto start = [this](input_t *input, Command *command, State *state) {
+            startTime = state->elapsedTime(*input);
+            myprintf("start");
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            return Status::SUCCESS;
+        };
+
+        auto back = [this](input_t *input, Command *command, State *state) {
+            myprintf("back");
+            command->target_left_speed = -0.4f;
+            command->target_right_speed = -0.5f;
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            if (state->elapsedTime(*input) - startTime > 3.0) {
+                return Status::SUCCESS;
+            }
+
+            // isEdge
+            if (state->robot_x < 0.2 || state->robot_x < 3.0-0.2 || state->robot_y < 0.2 || state->robot_y < 3.0-0.2) {
+            	return Status::RUNNING;
+            }
+            return Status::SUCCESS;
+        };
+
+        auto node = statenode(start,back);
+        return node(const_cast<input_t *>(input), command, state);
+    }
+};
+
+
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
 
@@ -208,7 +241,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     };
 
     auto go_to_building_area = statenode(
-        //
+    	Back{},
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {
