@@ -166,6 +166,51 @@ std::pair<float, float> PotentialField::bilinear_gradient(float px, float py) co
     return {dU_dtx * k, dU_dty * k};
 }
 
+std::pair<float, float> PotentialField::interpolated_gradient(float px, float py) const {
+    // Convert to grid coordinates
+    float gx = px / SQUARE_SIZE_M;
+    float gy = py / SQUARE_SIZE_M;
+
+    int i = static_cast<int>(std::floor(gx));
+    int j = static_cast<int>(std::floor(gy));
+
+    // Clamp to valid range
+    i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
+    j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
+
+    // Fractional part
+    float fx = gx - i;
+    float fy = gy - j;
+
+    // Compute gradients at the 4 cell centers
+    float cx00 = (i + 0.5f) * SQUARE_SIZE_M;
+    float cy00 = (j + 0.5f) * SQUARE_SIZE_M;
+    auto [gx00, gy00] = bilinear_gradient(cx00, cy00);
+
+    float cx10 = (i + 1.5f) * SQUARE_SIZE_M;
+    float cy10 = (j + 0.5f) * SQUARE_SIZE_M;
+    auto [gx10, gy10] = bilinear_gradient(cx10, cy10);
+
+    float cx01 = (i + 0.5f) * SQUARE_SIZE_M;
+    float cy01 = (j + 1.5f) * SQUARE_SIZE_M;
+    auto [gx01, gy01] = bilinear_gradient(cx01, cy01);
+
+    float cx11 = (i + 1.5f) * SQUARE_SIZE_M;
+    float cy11 = (j + 1.5f) * SQUARE_SIZE_M;
+    auto [gx11, gy11] = bilinear_gradient(cx11, cy11);
+
+    // Bilinear interpolation of gradients
+    float w00 = (1 - fx) * (1 - fy);
+    float w10 = fx * (1 - fy);
+    float w01 = (1 - fx) * fy;
+    float w11 = fx * fy;
+
+    float dx = w00 * gx00 + w10 * gx10 + w01 * gx01 + w11 * gx11;
+    float dy = w00 * gy00 + w10 * gy10 + w01 * gy01 + w11 * gy11;
+
+    return {dx, dy};
+}
+
 bool PotentialField::gradient_descent(float x, float y, float arrival_distance, float &out_yaw) const {
     constexpr float SMOOTHING_FACTOR = 0.8f; // The closer to 1, the smoother
     constexpr float SLOPE_THRESHOLD = 0.01f;
@@ -188,8 +233,7 @@ bool PotentialField::gradient_descent(float x, float y, float arrival_distance, 
 
         calculated_yaw = std::atan2(target_y - y, target_x - x);
     } else {
-        // Normal gradient descent for finite potential
-        auto [dx, dy] = bilinear_gradient(x, y);
+        auto [dx, dy] = interpolated_gradient(x, y);
 
         const float norm = std::hypot(dx, dy);
         if (norm <= SLOPE_THRESHOLD)
