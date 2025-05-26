@@ -76,12 +76,12 @@ void World::reset_dijkstra() {
 }
 
 void World::enqueue_targets() {
-    auto enqueue_grid_cell = [this](float x, float y) {
+    auto enqueue_grid_cell = [this](float x, float y, float value = 0.0f) {
         if (is_in_field(x, y)) {
             auto i = static_cast<uint8_t>(std::round(x / SQUARE_SIZE_M));
             auto j = static_cast<uint8_t>(std::round(y / SQUARE_SIZE_M));
-            pqueue_.emplace(0, i, j);
-            potential_calculating().set_cell(i, j, 0);
+            pqueue_.emplace(value, i, j);
+            potential_calculating().set_cell(i, j, value);
         }
     };
 
@@ -90,8 +90,14 @@ void World::enqueue_targets() {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
                 continue;
+            float value = 1.50f;
+            if (bleacher.is_easy_side(colour_)) {
+                value = 0.00f;
+            } else if (bleacher.is_easy_central()) {
+                value = 0.50f;
+            }
             for (const auto waypoint : bleacher.waypoints()) {
-                enqueue_grid_cell(waypoint.x, waypoint.y);
+                enqueue_grid_cell(waypoint.x, waypoint.y, value);
             }
         }
     }
