@@ -49,8 +49,8 @@ bool Bleacher::is_easy_central() const {
 }
 
 bool Bleacher::is_easy_side(const RobotColour colour) const {
-    return floatEqual(y, 0.400f) &&
-           (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.075f) : floatEqual(x, 0.075f));
+    return floatEqual(y, 0.250f) &&
+           (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.775f) : floatEqual(x, 0.775f));
 }
 
 GameEntity BuildingArea::available_slot() const {
