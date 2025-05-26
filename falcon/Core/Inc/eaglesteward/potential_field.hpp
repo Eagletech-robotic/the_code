@@ -45,6 +45,8 @@ class PotentialField {
     /** Perform gradient descent from position. Returns true if arrived (potential <= arrival_distance) */
     bool gradient_descent(float x, float y, float arrival_distance, float &out_yaw) const;
 
+    std::pair<float, float> find_nearest_finite_potential(float x, float y) const;
+
     /** Get the potential field (for debugging/visualization) */
     [[nodiscard]] const auto &get_field() const { return potential_; }
 

@@ -32,7 +32,6 @@ bool descend(Command &command, State &state, float v_min, float v_max, float w_m
         auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
 
         // Calculate the linear and angular speed
-
         float angular_speed = KP_ROTATION * angle_diff; // rad/s
         float linear_speed = v_max;
         /* Limitation de la vitesse angulaire ------------------------------------*/
@@ -64,13 +63,16 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    float const x = state->robot_x - state->world.opponent_x;
-    float const y = state->robot_y - state->world.opponent_y;
-    float const opponent_distance = sqrtf(x * x + y * y);
+    // If the opponent position is known, check the distance
+    if (state->world.opponent_x != 0.0f && state->world.opponent_y != 0.0f) {
+        float const x = state->robot_x - state->world.opponent_x;
+        float const y = state->robot_y - state->world.opponent_y;
+        float const opponent_distance = sqrtf(x * x + y * y);
 
-    if (opponent_distance < 0.40f) {
-        myprintf("opp at %.2f\n", opponent_distance);
-        return Status::FAILURE;
+        if (opponent_distance < 0.40f) {
+            myprintf("opp at %.2f\n", opponent_distance);
+            return Status::FAILURE;
+        }
     }
 
     //    if (isBigThingClose(*state) &&
