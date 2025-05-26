@@ -402,8 +402,8 @@ Status deployFlag(const input_t *, Command *command, State *) {
 }
 
 Status BACK(const input_t *, Command *command, State *) {
-    command->target_left_speed = -0.5f;
-    command->target_right_speed = -0.4f;
+    command->target_left_speed = -1.5f;
+    command->target_right_speed = 0.1f;
     return Status::RUNNING;
 }
 
