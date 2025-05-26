@@ -46,6 +46,8 @@ class Bleacher : public GameEntity {
     bool is_easy_central() const;
 
     bool is_easy_side(RobotColour colour) const;
+
+    bool is_next_to_backstage() const;
 };
 
 // Can class
