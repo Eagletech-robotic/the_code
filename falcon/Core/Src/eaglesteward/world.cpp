@@ -263,7 +263,7 @@ void World::setup_obstacles_field() {
     // ---------------
     // Opponent robot
     // ---------------
-    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 3, ObstacleType::Movable);
+    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4, ObstacleType::Movable);
     mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
 
     // ---------------

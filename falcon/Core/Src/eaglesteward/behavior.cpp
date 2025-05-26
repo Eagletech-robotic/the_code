@@ -16,8 +16,7 @@ auto logAndFail(char const *s) {
     };
 }
 
-bool descend(Command &command, State &state, float v_min, float v_max, float w_max, float r_max,
-             float arrival_distance = 0.01f) {
+bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f) {
     constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
 
     auto &world = state.world;
@@ -110,7 +109,7 @@ struct Safe {
 
         auto evasion = [this](input_t *, Command *command, State *state) {
             myprintf("evasion");
-            descend(*command, *state, 0.0f, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         };
 
@@ -143,7 +142,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BL-SRCH\n");
-            descend(*command_, *state_, 0.0f, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            descend(*command_, *state_, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -178,7 +177,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 1.50f,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.10f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
@@ -224,7 +223,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
-            descend(*command_, *state_, 0.05f, 0.8f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
+            descend(*command_, *state_, 0.8f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return Status::RUNNING;
         },
@@ -313,7 +312,7 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
 Status goToBackstageDescend(input_t *, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint);
-    if (descend(*command, *state, 0.0, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
+    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
@@ -447,7 +446,7 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
 Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
     state->world.set_target(target);
     myprintf("%s\n", name);
-    if (descend(*command, *state, 0.0f, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
+    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
