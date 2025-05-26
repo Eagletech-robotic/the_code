@@ -53,6 +53,8 @@ bool Bleacher::is_easy_side(const RobotColour colour) const {
            (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.775f) : floatEqual(x, 0.775f));
 }
 
+bool Bleacher::is_next_to_backstage() const { return y >= 1.0f; }
+
 GameEntity BuildingArea::available_slot() const {
     if (type == Type::Small) {
         return {x, y, orientation};

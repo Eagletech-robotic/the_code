@@ -95,6 +95,8 @@ void World::enqueue_targets() {
                 value = 0.00f;
             } else if (bleacher.is_easy_central()) {
                 value = 0.50f;
+            } else if (bleacher.is_next_to_backstage()) {
+                value = 2.50f;
             }
             for (const auto waypoint : bleacher.waypoints()) {
                 enqueue_grid_cell(waypoint.x, waypoint.y, value);

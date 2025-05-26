@@ -19,10 +19,10 @@ void RollingHistory::rectify_odometry_from_camera_position(float camera_x, float
     find_nearest_pose(camera_x - robot_x, camera_y - robot_y, lookback_steps);
 
     // No local minimum found in the history, the camera coordinates are too far back in time. Skip.
-    if (lookback_steps == SIZE - 1) {
-        printf("BT LKB-IGN\n");
-        return;
-    }
+    // if (lookback_steps == SIZE - 1) {
+    //     printf("BT LKB-IGN\n");
+    //     return;
+    // }
 
     // Calculate the relative path since the camera pose
     float relative_x, relative_y, relative_theta;

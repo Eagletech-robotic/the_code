@@ -16,7 +16,7 @@ class RollingHistory {
     // - Too small: we are going to throw away packets if the camera pose is further away in the past.
     // - Too large: we are going to under-correct by using positions of the robot unrelated to the camera shot.
     // => Keep it slightly above the average number of lookback steps.
-    static constexpr int SIZE = 100;
+    static constexpr int SIZE = 250;
 
     std::array<float, SIZE> deltas_x{}, deltas_y{}, deltas_theta{};
 
