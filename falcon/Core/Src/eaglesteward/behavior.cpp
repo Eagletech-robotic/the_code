@@ -401,6 +401,13 @@ Status deployFlag(const input_t *, Command *command, State *) {
     return Status::RUNNING;
 }
 
+Status BACK(const input_t *, Command *command, State *) {
+    command->target_left_speed = -0.5f;
+    command->target_right_speed = -0.4f;
+    return Status::RUNNING;
+}
+
+
 Status gotoTarget2(float target_robot_x, float target_robot_y, int /*target_nb*/, input_t *, Command *command,
                    State *state) {
     const bool has_arrived =
@@ -474,6 +481,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     state->bt_tick++;
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
+		BACK,
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),
         // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
