@@ -304,20 +304,12 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_tar
     const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
 
     /* Option : si l'angle est trop grand, on réduit v pour tourner vite (>45°)*/
-    //    float v;
-    //    if (fabsf(error_angle) > (M_PI / 4.f)) {
-    //        v = 0.0f;
-    //    } else {
-    //        v = Kp_dist * distance;
-    //    }
+
     float v = Kp_dist * distance;
     float w = Kp_angle * error_angle; /* rad/s */
 
     /* Limitation de la vitesse angulaire ------------------------------------*/
-    //    w = std::clamp(w, -w_max, w_max);
-    myprintf("pid %.2f %.2f (%.2f %.2f)\n", v, w, w_max, r_max);
     limit_vw(&v, &w, w_max, r_max);
-    myprintf("pid %.2f %.2f\n", v, w);
 
     /* 4) (v, w) → vitesses roues -------------------------------------------*/
     float halfBase = wheelBase * 0.5f;
