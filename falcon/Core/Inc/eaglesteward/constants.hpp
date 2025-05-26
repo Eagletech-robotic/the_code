@@ -10,8 +10,7 @@ static constexpr float SHOVEL_TO_CENTER = 0.10;            // Distance between t
 static constexpr float MAX_SPEED = 1.5f;                   // Maximum speed of the robot
 static constexpr float MAX_ROTATION_SPEED = 50.0f;         // Maximum rotation speed of the robot
 static constexpr float MAX_ROTATION_SPEED_BLEACHER = 1.5f; // Maximum rotation speed when carrying a bleacher
-static constexpr float MAX_ROTATION_RADIUS = 0.1f; // Radius used for trajectory
-
+static constexpr float MAX_ROTATION_RADIUS = 0.1f;         // Radius used for trajectory
 
 // Potential field for gradient descent
 static constexpr int SQUARE_SIZE_CM = 4;

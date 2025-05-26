@@ -257,24 +257,21 @@ void controllers_pid_init(PID_t *pid_theta_, PID_t *pid_speed_) {
  *
  *   Les deux paramètres peuvent donc être réglés indépendamment.
  */
-void limit_vw(float *v, float *w,
-                            float w_max,
-                            float r_max /* m, mettre <0 pour désactiver */)
-{
+void limit_vw(float *v, float *w, float w_max, float r_max /* m, mettre <0 pour désactiver */) {
 
-	/* ----- 1) Pincer w sur w_max -------------------------------------- */
-	float absw = fabsf(*w);
-	if (absw <= w_max) return;                 /* rien à faire, radius OK ! */
+    /* ----- 1) Pincer w sur w_max -------------------------------------- */
+    float absw = fabsf(*w);
+    if (absw <= w_max)
+        return; /* rien à faire, radius OK ! */
 
-	*w = copysignf(w_max, *w);                 /* clamp → déclenche r test */
+    *w = copysignf(w_max, *w); /* clamp → déclenche r test */
 
-	/* ----- 2) Ajuster v pour rayon ≤ r_max ----------------------------- */
-	if (r_max > 0.f) {
-		float vmax = w_max * r_max;            /* v autorisée après clamp  */
-		if (fabsf(*v) > vmax)
-			*v = copysignf(vmax, *v);
-	}
-
+    /* ----- 2) Ajuster v pour rayon ≤ r_max ----------------------------- */
+    if (r_max > 0.f) {
+        float vmax = w_max * r_max; /* v autorisée après clamp  */
+        if (fabsf(*v) > vmax)
+            *v = copysignf(vmax, *v);
+    }
 }
 
 /**
@@ -307,21 +304,20 @@ bool pid_controller(float robot_x, float robot_y, float robot_theta, float x_tar
     const float Kp_angle = 250.0f; /* angle    → vitesse angulaire  */
 
     /* Option : si l'angle est trop grand, on réduit v pour tourner vite (>45°)*/
-//    float v;
-//    if (fabsf(error_angle) > (M_PI / 4.f)) {
-//        v = 0.0f;
-//    } else {
-//        v = Kp_dist * distance;
-//    }
+    //    float v;
+    //    if (fabsf(error_angle) > (M_PI / 4.f)) {
+    //        v = 0.0f;
+    //    } else {
+    //        v = Kp_dist * distance;
+    //    }
     float v = Kp_dist * distance;
     float w = Kp_angle * error_angle; /* rad/s */
 
     /* Limitation de la vitesse angulaire ------------------------------------*/
-//    w = std::clamp(w, -w_max, w_max);
+    //    w = std::clamp(w, -w_max, w_max);
     myprintf("pid %.2f %.2f (%.2f %.2f)\n", v, w, w_max, r_max);
     limit_vw(&v, &w, w_max, r_max);
     myprintf("pid %.2f %.2f\n", v, w);
-
 
     /* 4) (v, w) → vitesses roues -------------------------------------------*/
     float halfBase = wheelBase * 0.5f;

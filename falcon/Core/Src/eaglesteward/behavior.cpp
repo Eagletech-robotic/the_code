@@ -148,8 +148,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             float const target_y = bleacher.y + sin(bleacher.orientation) * local_x;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, MAX_SPEED,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f, &command_->target_left_speed,
-                               &command_->target_right_speed)) {
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
 
@@ -161,8 +161,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, MAX_SPEED,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.25f, &command_->target_left_speed,
-                               &command_->target_right_speed)) {
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.25f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
 
@@ -174,8 +174,8 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 1.50f,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.10f, &command_->target_left_speed,
-                               &command_->target_right_speed)) {
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.10f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 state_->release_target();
                 state_->bleacher_lifted = true;
@@ -230,8 +230,8 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const target_y = slot.y + sin(slot.orientation) * local_x / 2.0f;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 0.8f,
-                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f, &command_->target_left_speed,
-                               &command_->target_right_speed)) {
+                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
 
@@ -242,9 +242,9 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
         [](input_t *, Command *command_, State *state_) {
             auto const &slot = state_->target;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y,
-            		0.25f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS,
-					WHEELBASE_M, ROBOT_RADIUS, &command_->target_left_speed, &command_->target_right_speed)) {
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, 0.25f,
+                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, ROBOT_RADIUS,
+                               &command_->target_left_speed, &command_->target_right_speed)) {
                 const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
                 if (building_area)
                     building_area->first_available_slot++;
@@ -402,8 +402,7 @@ Status gotoTarget2(float target_robot_x, float target_robot_y, int /*target_nb*/
     const bool has_arrived =
         pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_robot_x, target_robot_y,
                        0.6f, // m/s Vmax 3.0 est le max
-                       MAX_ROTATION_SPEED,
-					   MAX_ROTATION_RADIUS,
+                       MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS,
                        WHEELBASE_M, // m, entraxe
                        0.08,        // m, distance à l'arrivé pour être arrivé
                        &command->target_left_speed, &command->target_right_speed);
