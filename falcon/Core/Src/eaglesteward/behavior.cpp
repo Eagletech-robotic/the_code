@@ -148,12 +148,12 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
             auto [local_x, local_y] = bleacher.position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const distance = std::clamp(local_x / 2.0f, -0.28f, 0.28f);
+            float const distance = std::copysign(std::max(std::fabs(local_x / 2.0f), 0.28f), local_x);
             float const target_x = bleacher.x + cos(bleacher.orientation) * distance;
             float const target_y = bleacher.y + sin(bleacher.orientation) * distance;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, MAX_SPEED,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.12f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
@@ -232,12 +232,12 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
-            float const distance = std::clamp(local_x / 2.0f, -0.28f, 0.28f);
+            float const distance = std::copysign(std::max(std::fabs(local_x / 2.0f), 0.28f), local_x);
             auto const target_x = slot.x + cos(slot.orientation) * distance;
             auto const target_y = slot.y + sin(slot.orientation) * distance;
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 0.8f,
-                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.04f,
+                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.12f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
             }
