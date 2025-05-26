@@ -217,7 +217,7 @@ struct Back {
             state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
             auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
             myprintf(" diff=%.2f", angle_diff);
-            if(angle_diff < M_PI_4) {
+            if(fabs(angle_diff) < 0.5) {
             	return Status::SUCCESS;
             }
 
