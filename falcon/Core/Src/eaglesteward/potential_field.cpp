@@ -213,9 +213,9 @@ std::pair<float, float> PotentialField::interpolated_gradient(float px, float py
 
 bool PotentialField::gradient_descent(float x, float y, float arrival_distance, float &out_yaw) const {
     constexpr float SMOOTHING_FACTOR = 0.8f; // The closer to 1, the smoother
-    constexpr float SLOPE_THRESHOLD = 0.01f;
-    static float current_out_yaw = 0.0f;
+    constexpr float EPSILON = 1e-4f;
 
+    static float current_out_yaw = 0.0f;
     out_yaw = current_out_yaw;
 
     float current_potential = potential_at(x, y);
@@ -228,15 +228,14 @@ bool PotentialField::gradient_descent(float x, float y, float arrival_distance, 
         // We are at an infinite potential point
         auto [target_x, target_y] = find_nearest_finite_potential(x, y);
 
-        if (target_x == x && target_y == y)
+        if (std::fabs(target_x - x) < EPSILON && std::fabs(target_y - y) < EPSILON)
             return true; // No finite potential found anywhere
 
         calculated_yaw = std::atan2(target_y - y, target_x - x);
     } else {
         auto [dx, dy] = interpolated_gradient(x, y);
 
-        const float norm = std::hypot(dx, dy);
-        if (norm <= SLOPE_THRESHOLD)
+        if (std::fabs(dx) < EPSILON && std::fabs(dy) < EPSILON)
             return true;
 
         calculated_yaw = std::atan2(-dy, -dx);
