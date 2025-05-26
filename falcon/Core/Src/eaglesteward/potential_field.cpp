@@ -173,16 +173,30 @@ bool PotentialField::gradient_descent(float x, float y, float arrival_distance, 
 
     out_yaw = current_out_yaw;
 
-    if (potential_at(x, y) <= arrival_distance)
+    float current_potential = potential_at(x, y);
+
+    if (current_potential <= arrival_distance)
         return true; // Already arrived
 
-    auto [dx, dy] = bilinear_gradient(x, y);
+    float calculated_yaw;
+    if (current_potential >= FLT_MAX * 0.5f) { // Interpolated potential may not be strictly equal to FLT_MAX
+        // We are at an infinite potential point
+        auto [target_x, target_y] = find_nearest_finite_potential(x, y);
 
-    const float norm = std::hypot(dx, dy);
-    if (norm <= SLOPE_THRESHOLD)
-        return true;
+        if (target_x == x && target_y == y)
+            return true; // No finite potential found anywhere
 
-    const float calculated_yaw = std::atan2(-dy, -dx);
+        calculated_yaw = std::atan2(target_y - y, target_x - x);
+    } else {
+        // Normal gradient descent for finite potential
+        auto [dx, dy] = bilinear_gradient(x, y);
+
+        const float norm = std::hypot(dx, dy);
+        if (norm <= SLOPE_THRESHOLD)
+            return true;
+
+        calculated_yaw = std::atan2(-dy, -dx);
+    }
 
     // Smooth the angle difference
     const float angle_diff = angle_normalize(calculated_yaw - current_out_yaw);
@@ -190,4 +204,78 @@ bool PotentialField::gradient_descent(float x, float y, float arrival_distance, 
 
     out_yaw = current_out_yaw;
     return false;
+}
+
+std::pair<float, float> PotentialField::find_nearest_finite_potential(float x, float y) const {
+    // Convert to grid coordinates
+    int center_i = static_cast<int>(x / SQUARE_SIZE_M);
+    int center_j = static_cast<int>(y / SQUARE_SIZE_M);
+
+    // Clamp to grid bounds
+    center_i = std::clamp(center_i, 0, FIELD_WIDTH_SQ - 1);
+    center_j = std::clamp(center_j, 0, FIELD_HEIGHT_SQ - 1);
+
+    // If current cell is finite, return current position
+    if (potential_[center_i][center_j] != FLT_MAX) {
+        return {x, y};
+    }
+
+    // Search in expanding squares
+    float best_potential = FLT_MAX;
+    float best_x = x;
+    float best_y = y;
+    float best_dist_sq = FLT_MAX;
+
+    // Maximum search radius (in grid cells)
+    const int max_radius = std::max(FIELD_WIDTH_SQ, FIELD_HEIGHT_SQ);
+
+    for (int radius = 1; radius < max_radius; ++radius) {
+        bool found_finite = false;
+
+        // Check all cells at this radius
+        for (int di = -radius; di <= radius; ++di) {
+            for (int dj = -radius; dj <= radius; ++dj) {
+                // Only check cells on the perimeter of the square
+                if (std::abs(di) != radius && std::abs(dj) != radius)
+                    continue;
+
+                int i = center_i + di;
+                int j = center_j + dj;
+
+                // Check bounds
+                if (i < 0 || i >= FIELD_WIDTH_SQ || j < 0 || j >= FIELD_HEIGHT_SQ)
+                    continue;
+
+                float pot = potential_[i][j];
+                if (pot != FLT_MAX) {
+                    found_finite = true;
+
+                    // Calculate actual position of this cell center
+                    float cell_x = (i + 0.5f) * SQUARE_SIZE_M;
+                    float cell_y = (j + 0.5f) * SQUARE_SIZE_M;
+
+                    // Calculate squared distance
+                    float dx = cell_x - x;
+                    float dy = cell_y - y;
+                    float dist_sq = dx * dx + dy * dy;
+
+                    // Update best if this is closer or same distance with lower potential
+                    if (dist_sq < best_dist_sq || (std::abs(dist_sq - best_dist_sq) < 1e-6f && pot < best_potential)) {
+                        best_potential = pot;
+                        best_x = cell_x;
+                        best_y = cell_y;
+                        best_dist_sq = dist_sq;
+                    }
+                }
+            }
+        }
+
+        // If we found any finite potential at this radius, we're done
+        if (found_finite) {
+            return {best_x, best_y};
+        }
+    }
+
+    // No finite potential found - return original position
+    return {x, y};
 }
