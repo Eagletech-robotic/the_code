@@ -21,12 +21,11 @@ std::array<GameEntity, 2> Bleacher::waypoints() const {
     const float nx = std::cos(orientation);
     const float ny = std::sin(orientation);
 
-    // élimination d'un waypoint central pour favoriser le gradin facile + controuner le gradin central pour le pousser
-    if (floatEqual(y, 0.950f)) {
-        if (floatEqual(x, FIELD_WIDTH_M - 1.1f) || floatEqual(x, 1.1f)) {
-            return {{{x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
-                     {-1.0, -1.0, 0.0}}};
-        }
+    // The central bleacher should be pushed
+    if (is_easy_central()) {
+        return {{//
+                 {x + BLEACHER_WAYPOINT_DISTANCE * nx, y + BLEACHER_WAYPOINT_DISTANCE * ny, orientation},
+                 {-1.0, -1.0, 0.0}}};
     }
 
     return {{
@@ -43,6 +42,15 @@ bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_area
         }
     }
     return false;
+}
+
+bool Bleacher::is_easy_central() const {
+    return floatEqual(y, 0.950f) && (floatEqual(x, FIELD_WIDTH_M - 1.100f) || floatEqual(x, 1.100f));
+}
+
+bool Bleacher::is_easy_side(const RobotColour colour) const {
+    return floatEqual(y, 0.400f) &&
+           (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.075f) : floatEqual(x, 0.075f));
 }
 
 GameEntity BuildingArea::available_slot() const {
