@@ -4,6 +4,7 @@
 #include "utils/bounded_pqueue.hpp"
 #include <array>
 #include <cfloat>
+#include <cmath>
 #include <cstdint>
 #include <functional>
 
@@ -61,4 +62,5 @@ class PotentialField {
 
     [[nodiscard]] float finite_potential(int i, int j) const;
     [[nodiscard]] std::pair<float, float> bilinear_gradient(float px, float py) const;
+    [[nodiscard]] std::pair<float, float> interpolated_gradient(float px, float py) const;
 };
