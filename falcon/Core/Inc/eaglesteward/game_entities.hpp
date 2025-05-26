@@ -23,6 +23,8 @@ struct GameEntity {
     bool operator==(const GameEntity &game_entity) const = default;
 
     [[nodiscard]] std::pair<float, float> position_in_local_frame(float robot_x, float robot_y) const;
+
+    [[nodiscard]] bool is_horizontal() const { return std::abs(fmodf(orientation, M_PI)) < 0.1f; }
 };
 
 // Bleacher class
@@ -93,7 +95,4 @@ class BuildingArea : public GameEntity {
         return is_horizontal() ? BUILDING_AREA_WIDTH
                                : (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE);
     }
-
-  private:
-    [[nodiscard]] bool is_horizontal() const { return std::abs(fmodf(orientation, M_PI)) < 0.1f; }
 };

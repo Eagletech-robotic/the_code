@@ -192,7 +192,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
 
-    auto check_lost_bleacher = [](input_t *, Command *command_, State *state_) {
+    auto check_lost_bleacher = [](input_t *, Command *, State *) {
         // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
         //     // The bleacher was dropped: update the state...
         //     state_->bleacher_lifted = false;
