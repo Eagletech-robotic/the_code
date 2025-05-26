@@ -6,7 +6,7 @@
 #include <utility>
 
 template <typename T, std::size_t Capacity, typename Compare = std::less<T>>
-	requires(Capacity > 0) && std::strict_weak_order<Compare, T, T>
+    requires(Capacity > 0) && std::strict_weak_order<Compare, T, T>
 class BoundedPriorityQueue : Compare {
   public:
     using value_type = T;
