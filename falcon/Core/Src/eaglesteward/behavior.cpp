@@ -260,7 +260,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
 
-            if (fabsf(local_x) >= ROBOT_RADIUS + 0.10) {
+            if (fabsf(local_x) >= ROBOT_RADIUS + 0.15) {
                 state_->bleacher_lifted = false;
                 return Status::SUCCESS;
             }
