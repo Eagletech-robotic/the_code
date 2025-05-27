@@ -265,21 +265,16 @@ void World::setup_obstacles_field(GamePhase phase) {
     // PAMI exclusion zone
     // ---------------
     if (phase == GamePhase::PamiStarted) {
-        if (colour_ == RobotColour::Blue) {
-            mark_rectangle_with_padding(0.65f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed);
-        } else {
-            mark_rectangle_with_padding(3.00f - 2.05f, 3.00f - 0.65f, 1.20f, 1.55f, ObstacleType::Fixed);
-        }
+        mark_rectangle_with_padding(0.95f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed);
     }
 
     // ---------------
-    // Opponent's building areas
+    // Building areas
     // ---------------
     for (const auto &building_area : building_areas_) {
-        if (building_area.colour == colour_)
-            continue;
-        float const half_width = building_area.span_x() / 2;
-        float const half_height = building_area.span_y() / 2;
+        auto const occupied_space_only = building_area.colour == colour_;
+        float const half_width = building_area.span_x(occupied_space_only) / 2;
+        float const half_height = building_area.span_y(occupied_space_only) / 2;
         mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
                                     building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
