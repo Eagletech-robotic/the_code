@@ -73,6 +73,8 @@ class World {
     // Potential field
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
 
+    bool anticollision{false};
+
   private:
     // Double buffered potential fields
     uint8_t ready_field_ = 1;
