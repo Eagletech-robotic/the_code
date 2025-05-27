@@ -242,13 +242,18 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
             auto const &slot = state_->target;
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, 0.25f,
-                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, ROBOT_RADIUS - 0.05f,
-                               &command_->target_left_speed, &command_->target_right_speed)) {
-                const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
-                if (building_area)
-                    building_area->first_available_slot++;
+            const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
+            if (!building_area) {
+                return Status::FAILURE;
+            }
 
+            auto const flag_clearance = building_area->is_starting() && building_area->first_available_slot == 0;
+
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, 0.25f,
+                               MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M,
+                               ROBOT_RADIUS - (flag_clearance ? 0.00f : 0.05f), &command_->target_left_speed,
+                               &command_->target_right_speed)) {
+                building_area->first_available_slot++;
                 return Status::SUCCESS;
             }
 
@@ -470,7 +475,9 @@ Status infiniteRectangleDescend(const input_t *input, Command *command, State *s
 // Top level node
 Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
-    state->bt_tick++;
+    state->bt_tick++; // gestion des statenode
+    state->world.dead_opponent.tick(state->world.opponent_x, state->world.opponent_y, state->elapsedTime(*input));
+
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),

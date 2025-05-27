@@ -82,6 +82,8 @@ class State {
     // Target coordinates for PID approach
     GameEntity target{0.0f, 0.0f, 0.0f};
 
+    // --- Method ---
+
     [[nodiscard]] bool is_target_set() const { return target.x != 0.f || target.y != 0.f; }
 
     void lock_target(float x, float y, float orientation = 0.f) {

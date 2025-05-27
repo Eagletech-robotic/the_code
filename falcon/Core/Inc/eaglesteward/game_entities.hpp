@@ -86,19 +86,11 @@ class BuildingArea : public GameEntity {
     }
 
     [[nodiscard]] GameEntity available_slot() const;
-
     [[nodiscard]] GameEntity waypoint() const;
-
     [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 3; }
     [[nodiscard]] bool is_full() const { return first_available_slot >= nb_slots(); }
-
-    [[nodiscard]] float span_x() const {
-        return is_horizontal() ? (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE)
-                               : BUILDING_AREA_WIDTH;
-    }
-
-    [[nodiscard]] float span_y() const {
-        return is_horizontal() ? BUILDING_AREA_WIDTH
-                               : (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE);
-    }
+    [[nodiscard]] bool is_starting() const;
+    [[nodiscard]] float span_x(bool occupied_space_only) const;
+    [[nodiscard]] float span_y(bool occupied_space_only) const;
+    [[nodiscard]] float get_length_span(bool occupied_space_only) const;
 };

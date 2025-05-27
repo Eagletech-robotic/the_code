@@ -36,8 +36,8 @@ std::array<GameEntity, 2> Bleacher::waypoints() const {
 
 bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const {
     for (const auto &building_area : building_areas) {
-        if (std::abs(x - building_area.x) < (building_area.span_x() + BLEACHER_WIDTH) / 2 &&
-            std::abs(y - building_area.y) < (building_area.span_y() + BLEACHER_WIDTH) / 2) {
+        if (std::abs(x - building_area.x) < (building_area.span_x(false) + BLEACHER_WIDTH) / 2 &&
+            std::abs(y - building_area.y) < (building_area.span_y(false) + BLEACHER_WIDTH) / 2) {
             return true;
         }
     }
@@ -68,4 +68,22 @@ GameEntity BuildingArea::waypoint() const {
     auto [slot_x, slot_y, orientation_] = available_slot();
     return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
             slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE, orientation};
+}
+
+bool BuildingArea::is_starting() const { return floatEqual(y, 0.225f); }
+
+float BuildingArea::span_x(bool occupied_space_only) const {
+    return is_horizontal() ? get_length_span(occupied_space_only) : BUILDING_AREA_WIDTH;
+}
+
+float BuildingArea::span_y(bool occupied_space_only) const {
+    return is_horizontal() ? BUILDING_AREA_WIDTH : get_length_span(occupied_space_only);
+}
+
+float BuildingArea::get_length_span(bool occupied_space_only) const {
+    if (occupied_space_only) {
+        return static_cast<float>(first_available_slot) * BUILDING_AREA_LENGTH_SMALL;
+    }
+
+    return (type == Type::Small) ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE;
 }
