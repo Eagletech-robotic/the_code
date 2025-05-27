@@ -69,3 +69,5 @@ GameEntity BuildingArea::waypoint() const {
     return {slot_x + std::cos(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE,
             slot_y + std::sin(orientation) * BUILDING_AREA_WAYPOINT_DISTANCE, orientation};
 }
+
+bool BuildingArea::is_starting() const { return floatEqual(y, 0.225f); }

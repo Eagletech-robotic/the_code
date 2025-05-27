@@ -91,6 +91,7 @@ class BuildingArea : public GameEntity {
 
     [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 3; }
     [[nodiscard]] bool is_full() const { return first_available_slot >= nb_slots(); }
+    [[nodiscard]] bool is_starting() const;
 
     [[nodiscard]] float span_x() const {
         return is_horizontal() ? (type == Type::Small ? BUILDING_AREA_LENGTH_SMALL : BUILDING_AREA_LENGTH_LARGE)
