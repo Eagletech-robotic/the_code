@@ -5,6 +5,7 @@
 #include "robotic/eagle_packet.hpp"
 #include "utils/bounded_pqueue.hpp"
 #include "utils/sized_array.hpp"
+#include "eaglesteward/DeadOpponent.hpp"
 
 #include <array>
 #include <utility>
@@ -69,6 +70,8 @@ class World {
 
     // Potential field
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
+
+    DeadOpponent deadOpponent{};
 
   private:
     // Double buffered potential fields
