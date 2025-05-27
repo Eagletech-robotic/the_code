@@ -287,10 +287,10 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Opponent robot
     // ---------------
-    if (!deadOpponent.isReallyDead()) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4, ObstacleType::Movable);
+    if (!dead_opponent.is_dead()) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
     }
-    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
 
     // ---------------
     // Bleachers in their initial position
