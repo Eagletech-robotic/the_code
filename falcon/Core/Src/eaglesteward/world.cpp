@@ -288,10 +288,17 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Opponent robot
     // ---------------
+    // Short range interdiction
+    if (target_ == TargetType::Evade) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.0f, ObstacleType::Fixed);
+    } else {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
+    }
+
+    // Long range repelling
     if (dead_opponent.is_alive()) {
         mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
     }
-    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
 
     // ---------------
     // Bleachers in their initial position
