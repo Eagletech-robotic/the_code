@@ -1,11 +1,11 @@
 #pragma once
 
+#include "eaglesteward/DeadOpponent.hpp"
 #include "eaglesteward/game_entities.hpp"
 #include "eaglesteward/potential_field.hpp"
 #include "robotic/eagle_packet.hpp"
 #include "utils/bounded_pqueue.hpp"
 #include "utils/sized_array.hpp"
-#include "eaglesteward/DeadOpponent.hpp"
 
 #include <array>
 #include <utility>

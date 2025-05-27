@@ -474,7 +474,8 @@ Status infiniteRectangleDescend(const input_t *input, Command *command, State *s
 Status top_behavior(const input_t *input, Command *command, State *state) {
     updateTofStateMachine(*state);
     state->bt_tick++; // gestion des statenode
-    state->world.deadOpponent.tick(state->world.opponent_x, state->world.opponent_y, state->world.opponent_theta, state->elapsedTime(*input));
+    state->world.deadOpponent.tick(state->world.opponent_x, state->world.opponent_y, state->world.opponent_theta,
+                                   state->elapsedTime(*input));
 
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
