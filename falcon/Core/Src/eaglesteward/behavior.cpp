@@ -216,22 +216,22 @@ struct Back {
             state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
             auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
             myprintf(" diff=%.2f", angle_diff);
-            if(fabs(angle_diff) < 0.5) {
-            	return Status::SUCCESS;
+            if (fabs(angle_diff) < 0.5) {
+                return Status::SUCCESS;
             }
 
             // isEdge<
-            if (state->robot_x < 0.2 || state->robot_x < 3.0-0.2 || state->robot_y < 0.2 || state->robot_y < 3.0-0.2) {
-            	return Status::RUNNING;
+            if (state->robot_x < 0.2 || state->robot_x < 3.0 - 0.2 || state->robot_y < 0.2 ||
+                state->robot_y < 3.0 - 0.2) {
+                return Status::RUNNING;
             }
             return Status::SUCCESS;
         };
 
-        auto node = statenode(start,back);
+        auto node = statenode(start, back);
         return node(const_cast<input_t *>(input), command, state);
     }
 };
-
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint);
@@ -247,7 +247,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     };
 
     auto go_to_building_area = statenode(
-    	Back{},
+        Back{},
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {
