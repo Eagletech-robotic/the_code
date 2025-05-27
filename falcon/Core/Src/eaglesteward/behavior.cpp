@@ -172,7 +172,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (state_->filtered_tof_m > 0.50f) {
+            if (state_->filtered_tof_m > 0.40f) {
                 // No bleacher is here: remove from the world and move on.
                 printf("BL-NONE\n");
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
