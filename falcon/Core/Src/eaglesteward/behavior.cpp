@@ -57,8 +57,7 @@ bool descend(Command &command, State &state, float v_max, float w_max, float r_m
 
 Status isSafe(input_t *, Command *, State *state) {
     if (state->filtered_tof_m < 0.18f) {
-        // failsafe si tout à merdé avant
-        myprintf("Failsafe\n");
+        myprintf("FLSAFE\n");
         return Status::FAILURE;
     }
 
@@ -69,17 +68,10 @@ Status isSafe(input_t *, Command *, State *state) {
         float const opponent_distance = sqrtf(x * x + y * y);
 
         if (opponent_distance < 0.40f) {
-            myprintf("opp at %.2f\n", opponent_distance);
+            myprintf("SFE-DETECT %.2f\n", opponent_distance);
             return Status::FAILURE;
         }
     }
-
-    //    if (isBigThingClose(*state) &&
-    //        !isLookingOutwards(3.0f, 2.0f, 0.3f, state->robot_x, state->robot_y, state->robot_theta, 0.01f)) {
-    //        myprintf("BigThing\n");
-    //        return Status::FAILURE;
-    //    }
-
     return Status::SUCCESS;
 }
 
@@ -88,16 +80,18 @@ struct Safe {
     inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
 
     Status operator()(const input_t *input, Command *command, State *state) {
-        auto detection = [this](input_t *input, Command *command, State *state) {
+        if (state->bleacher_lifted)
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+        auto saveTime = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
-            myprintf("detection");
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
             return Status::SUCCESS;
         };
 
-        auto threeSecond = [this](input_t *input, Command *command, State *state) {
-            myprintf("three second");
+        auto hold = [this](input_t *input, Command *command, State *state) {
+            myprintf("SFE-HOLD\n");
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
 
@@ -107,13 +101,13 @@ struct Safe {
             return Status::RUNNING;
         };
 
-        auto evasion = [this](input_t *, Command *command, State *state) {
-            myprintf("evasion");
+        auto evade = [this](input_t *, Command *command, State *state) {
+            myprintf("SFE-EVADE\n");
             descend(*command, *state, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         };
 
-        auto node = statenode(detection, threeSecond, evasion);
+        auto node = statenode(saveTime, hold, evade);
 
         return node(const_cast<input_t *>(input), command, state);
     }
@@ -129,7 +123,7 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BleacherWaypoint, state->elapsedTime(*input));
 
-    auto seq = statenode(
+    auto node = statenode(
         [](input_t *, Command *command_, State *state_) {
             const auto [bleacher, distance] =
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
@@ -178,6 +172,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
+            if (state_->filtered_tof_m > 0.40f) {
+                // No bleacher is here: remove from the world and move on.
+                printf("BL-NONE\n");
+                state_->world.remove_bleacher(state_->target.x, state_->target.y);
+                state_->release_target();
+                return Status::FAILURE;
+            }
+
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
@@ -191,23 +193,13 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         });
 
-    return seq(const_cast<input_t *>(input), command, state);
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
-    auto check_lost_bleacher = [](input_t *, Command *, State *) {
-        // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
-        //     // The bleacher was dropped: update the state...
-        //     state_->bleacher_lifted = false;
-        //     command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
-        //     return Status::FAILURE;
-        // }
-        return Status::SUCCESS;
-    };
-
-    auto go_to_building_area = statenode(
+    auto node = statenode(
         //
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
@@ -283,7 +275,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         });
 
-    return sequence(check_lost_bleacher, go_to_building_area)(const_cast<input_t *>(input), command, state);
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 Status isJackRemoved(input_t *input, Command *, State *state) {
