@@ -292,8 +292,10 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4, ObstacleType::Movable);
 
-    if (!anticollision) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+    if (anticollision) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS, ObstacleType::Fixed);
+    } else {
+    	mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
     }
 
     // ---------------
