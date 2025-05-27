@@ -101,6 +101,7 @@ struct Safe {
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
 
+            // Precompute the potential field
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
             if (state->elapsedTime(*input) - startTime > 3.0) {

@@ -86,8 +86,6 @@ void World::enqueue_targets() {
         }
     };
 
-    anticollision = false;
-
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
@@ -124,7 +122,6 @@ void World::enqueue_targets() {
     }
 
     if (target_ == TargetType::Evade) {
-        anticollision = true;
         enqueue_grid_cell(0.75, 1.00f, 0.0f);
         enqueue_grid_cell(FIELD_WIDTH_M - 0.75f, 1.00f, 0.0f);
     }
@@ -285,13 +282,16 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Opponent robot
     // ---------------
-    if (dead_opponent.is_alive()) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
-    }
-    if (anticollision) {
+    // Short range interdiction. Decrease the radius in evade mode to allow our robot to find an escape route.
+    if (target_ == TargetType::Evade) {
         mark_circle(opponent_x, opponent_y, ROBOT_RADIUS, ObstacleType::Fixed);
     } else {
         mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+    }
+
+    // Long range repelling
+    if (dead_opponent.is_alive()) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
     }
 
     // ---------------

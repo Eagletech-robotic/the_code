@@ -75,7 +75,6 @@ class World {
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
 
     DeadOpponent dead_opponent{};
-    bool anticollision{false};
 
   private:
     // Double buffered potential fields
