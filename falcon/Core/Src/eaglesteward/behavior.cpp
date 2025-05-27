@@ -129,7 +129,7 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BleacherWaypoint, state->elapsedTime(*input));
 
-    auto seq = statenode(
+    auto node = statenode(
         [](input_t *, Command *command_, State *state_) {
             const auto [bleacher, distance] =
                 state_->world.closest_available_bleacher(state_->robot_x, state_->robot_y);
@@ -178,6 +178,14 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
+            if (state_->filtered_tof_m > 0.50f) {
+                // No bleacher is here: remove from the world and move on.
+                printf("BL-NONE\n");
+                state_->world.remove_bleacher(state_->target.x, state_->target.y);
+                state_->release_target();
+                return Status::FAILURE;
+            }
+
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
@@ -191,23 +199,13 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         });
 
-    return seq(const_cast<input_t *>(input), command, state);
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
-    auto check_lost_bleacher = [](input_t *, Command *, State *) {
-        // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
-        //     // The bleacher was dropped: update the state...
-        //     state_->bleacher_lifted = false;
-        //     command_->shovel = ShovelCommand::SHOVEL_RETRACTED;
-        //     return Status::FAILURE;
-        // }
-        return Status::SUCCESS;
-    };
-
-    auto go_to_building_area = statenode(
+    auto node = statenode(
         //
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
@@ -278,7 +276,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             return Status::RUNNING;
         });
 
-    return sequence(check_lost_bleacher, go_to_building_area)(const_cast<input_t *>(input), command, state);
+    return node(const_cast<input_t *>(input), command, state);
 }
 
 Status isJackRemoved(input_t *input, Command *, State *state) {
