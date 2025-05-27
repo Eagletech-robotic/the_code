@@ -322,16 +322,14 @@ Status goToBackstageDescend(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
 
     auto const backstage = state->world.backstage();
-    float const x = state->robot_x - backstage->x;
-    float const y = state->robot_y - backstage->y;
-    float const distance = sqrtf(x * x + y * y);
-    printf("distance %.2f\n", distance);
+    float const dx = state->robot_x - backstage->x;
+    float const dy = state->robot_y - backstage->y;
 
-    if (distance < 0.50f) {
+    if (std::abs(dx) < 0.06f && std::abs(dy) < 0.5f) {
         return Status::SUCCESS;
     }
 
-    descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f);
+    descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
     return Status::RUNNING;
 }
 
