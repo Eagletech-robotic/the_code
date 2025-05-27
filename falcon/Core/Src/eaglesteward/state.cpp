@@ -66,7 +66,7 @@ void State::updateFromInput(const config_t &config, const input_t &input) {
     print();
 }
 
-void State::updateFromBluetooth(uint32_t clock_ms) {
+void State::updateFromBluetooth(float elapsed_time) {
     // Read until the last available packet
     const uint8_t *packet, *last_packet = nullptr;
     while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)
@@ -112,7 +112,7 @@ void State::updateFromBluetooth(uint32_t clock_ms) {
     }
 
     // Update the world from the packet
-    world.update_from_eagle_packet(eagle_packet, clock_ms);
+    world.update_from_eagle_packet(eagle_packet, elapsed_time);
 
     packet_received_at_this_step = true;
     myprintf("Packet received, state updated");

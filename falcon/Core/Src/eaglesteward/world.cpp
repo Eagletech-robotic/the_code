@@ -49,15 +49,15 @@ World::World(RobotColour colour) {
         ;
 }
 
-void World::set_target(TargetType new_target, uint32_t clock_ms) {
+void World::set_target(TargetType new_target, float elapsed_time) {
     if (new_target == target_)
         return;
 
     target_ = new_target;
-    reset_dijkstra(clock_ms);
+    reset_dijkstra(elapsed_time);
 }
 
-void World::reset_dijkstra(uint32_t clock_ms) {
+void World::reset_dijkstra(float elapsed_time) {
     // Clear previous calculations
     potential_calculating().clear();
 
@@ -70,7 +70,7 @@ void World::reset_dijkstra(uint32_t clock_ms) {
     enqueue_targets();
 
     // Add obstacles
-    GamePhase const phase = current_phase(clock_ms);
+    GamePhase const phase = current_phase(elapsed_time);
     setup_obstacles_field(phase);
 
     printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
@@ -347,7 +347,7 @@ void World::do_all_calculations_LONG() {
         ;
 }
 
-void World::update_from_eagle_packet(const EaglePacket &packet, uint32_t clock_ms) {
+void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_time) {
     colour_ = packet.robot_colour;
 
     // Reset objects
@@ -389,7 +389,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet, uint32_t clock_m
     }
 
     // Force the recalculation of the potential field
-    reset_dijkstra(clock_ms);
+    reset_dijkstra(elapsed_time);
 }
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
@@ -451,6 +451,6 @@ bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M &
 
 bool World::is_in_field_square(int i, int j) { return i >= 0 && i < FIELD_WIDTH_SQ && j >= 0 && j < FIELD_HEIGHT_SQ; }
 
-GamePhase World::current_phase(uint32_t clock_ms) {
-    return (clock_ms >= 85000) ? GamePhase::PamiStarted : GamePhase::Default;
+GamePhase World::current_phase(float elapsed_time) {
+    return (elapsed_time >= 85.0f) ? GamePhase::PamiStarted : GamePhase::Default;
 }

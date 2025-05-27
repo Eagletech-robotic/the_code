@@ -127,7 +127,7 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 }
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BleacherWaypoint, input->clock_ms);
+    state->world.set_target(TargetType::BleacherWaypoint, state->elapsedTime(*input));
 
     auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
@@ -195,7 +195,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BuildingAreaWaypoint, input->clock_ms);
+    state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
     auto check_lost_bleacher = [](input_t *, Command *, State *) {
         // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
@@ -314,7 +314,7 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
 
 Status goToBackstageDescend(input_t *input, Command *command, State *state) {
     myprintf("BCKSTG\n");
-    state->world.set_target(TargetType::BackstageWaypoint, input->clock_ms);
+    state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
 
     if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
         return Status::SUCCESS;
@@ -448,7 +448,7 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
 }
 
 Status gotoDescend(const char *name, const input_t *input, Command *command, State *state, TargetType target) {
-    state->world.set_target(target, input->clock_ms);
+    state->world.set_target(target, state->elapsedTime(*input));
     myprintf("%s\n", name);
 
     if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {

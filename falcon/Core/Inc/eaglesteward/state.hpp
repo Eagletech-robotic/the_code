@@ -27,7 +27,7 @@ class State {
 
     void updateFromInput(const config_t &cfg, const input_t &in);
 
-    void updateFromBluetooth(uint32_t clock_ms);
+    void updateFromBluetooth(float elapsed_time);
 
     /* PUBLIC DATA ---------------------------------------------------- */
     RobotColour colour{RobotColour::Yellow};
