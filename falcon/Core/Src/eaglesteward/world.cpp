@@ -282,11 +282,11 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Opponent robot
     // ---------------
-    // Short range interdiction. Decrease the radius in evade mode to allow our robot to find an escape route.
+    // Short range interdiction
     if (target_ == TargetType::Evade) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS, ObstacleType::Fixed);
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.0f, ObstacleType::Fixed);
     } else {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
     }
 
     // Long range repelling
