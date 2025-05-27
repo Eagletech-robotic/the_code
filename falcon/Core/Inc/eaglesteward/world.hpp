@@ -55,6 +55,8 @@ class World {
     /** Get the ready potential field (for debugging/visualization) */
     [[nodiscard]] const auto &potential_ready() const { return potential_fields_[ready_field_].get_field(); }
 
+    [[nodiscard]] const Backstage *backstage() const;
+
     RobotColour colour_;
 
     // Opponent robot
@@ -66,6 +68,7 @@ class World {
     SizedArray<Bleacher, 10> default_bleachers_;
 
     // State of the world
+    SizedArray<Backstage, 2> backstages_{};
     SizedArray<Bleacher, 10> bleachers_;
     SizedArray<Can, 40> cans_;
     SizedArray<Plank, 20> planks_;

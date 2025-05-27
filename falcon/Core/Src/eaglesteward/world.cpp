@@ -12,6 +12,12 @@
 World::World(RobotColour colour) {
     colour_ = colour;
 
+    // Backstage positions
+    backstages_ = {
+        {0.375f, 1.775f, -M_PI_2, RobotColour::Yellow},
+        {FIELD_WIDTH_M - 0.375f, 1.775f, M_PI_2, RobotColour::Blue},
+    };
+
     // Default bleachers, sorted clockwise from the center right
     default_bleachers_ = {
         {FIELD_WIDTH_M - 1.100f, 0.950f, M_PI_2, true},
@@ -442,6 +448,14 @@ BuildingArea *World::closest_building_area(float x, float y, bool only_available
     }
 
     return best;
+}
+
+const Backstage *World::backstage() const {
+    for (auto &backstage : backstages_) {
+        if (backstage.colour == colour_)
+            return &backstage;
+    }
+    return nullptr;
 }
 
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }

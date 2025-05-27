@@ -321,9 +321,17 @@ Status goToBackstageDescend(input_t *input, Command *command, State *state) {
     myprintf("BCKSTG\n");
     state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
 
-    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
+    auto const backstage = state->world.backstage();
+    float const x = state->robot_x - backstage->x;
+    float const y = state->robot_y - backstage->y;
+    float const distance = sqrtf(x * x + y * y);
+    printf("distance %.2f\n", distance);
+
+    if (distance < 0.50f) {
         return Status::SUCCESS;
     }
+
+    descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f);
     return Status::RUNNING;
 }
 
@@ -459,6 +467,8 @@ Status gotoDescend(const char *name, const input_t *input, Command *command, Sta
     if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
         return Status::SUCCESS;
     }
+
+    descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f);
     return Status::RUNNING;
 }
 

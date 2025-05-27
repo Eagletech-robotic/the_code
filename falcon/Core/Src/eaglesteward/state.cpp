@@ -10,8 +10,6 @@
 #include "utils/angles.hpp"
 #include "utils/myprintf.hpp"
 
-#include <math.h>
-
 void State::reset() {
     robot_x = INITIAL_X;
     robot_y = INITIAL_Y;
