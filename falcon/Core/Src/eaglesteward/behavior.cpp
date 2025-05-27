@@ -127,7 +127,8 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 }
 
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BleacherWaypoint);
+    state->world.set_target(TargetType::BleacherWaypoint, state->elapsedTime(*input));
+
     auto seq = statenode(
         [](input_t *, Command *command_, State *state_) {
             const auto [bleacher, distance] =
@@ -194,7 +195,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 }
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
-    state->world.set_target(TargetType::BuildingAreaWaypoint);
+    state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
     auto check_lost_bleacher = [](input_t *, Command *, State *) {
         // if (state_->bleacher_lifted && state_->filtered_tof_m > 0.50f) {
@@ -311,9 +312,10 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     return state->elapsedTime(*input) > 87.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
-Status goToBackstageDescend(input_t *, Command *command, State *state) {
+Status goToBackstageDescend(input_t *input, Command *command, State *state) {
     myprintf("BCKSTG\n");
-    state->world.set_target(TargetType::BackstageWaypoint);
+    state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
+
     if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, 0.10f)) {
         return Status::SUCCESS;
     }
@@ -445,9 +447,10 @@ Status infiniteRectangleStateNode(const input_t *input, Command *command, State 
     return node(const_cast<input_t *>(input), command, state);
 }
 
-Status gotoDescend(const char *name, Command *command, State *state, TargetType target) {
-    state->world.set_target(target);
+Status gotoDescend(const char *name, const input_t *input, Command *command, State *state, TargetType target) {
+    state->world.set_target(target, state->elapsedTime(*input));
     myprintf("%s\n", name);
+
     if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
         return Status::SUCCESS;
     }
@@ -455,17 +458,19 @@ Status gotoDescend(const char *name, Command *command, State *state, TargetType 
 }
 
 Status infiniteRectangleDescend(const input_t *input, Command *command, State *state) {
-    auto node = statenode([](input_t *, Command *command_,
-                             State *state_) { return gotoDescend("0", command_, state_, TargetType::TestPoint0); },
-                          [](input_t *, Command *command_, State *state_) {
-                              return gotoDescend("1", command_, state_, TargetType::TestPoint1);
-                          },
-                          [](input_t *, Command *command_, State *state_) {
-                              return gotoDescend("2", command_, state_, TargetType::TestPoint2);
-                          },
-                          [](input_t *, Command *command_, State *state_) {
-                              return gotoDescend("3", command_, state_, TargetType::TestPoint3);
-                          });
+    auto node = statenode( //
+        [](input_t *input, Command *command_, State *state_) {
+            return gotoDescend("0", input, command_, state_, TargetType::TestPoint0);
+        },
+        [](input_t *input, Command *command_, State *state_) {
+            return gotoDescend("1", input, command_, state_, TargetType::TestPoint1);
+        },
+        [](input_t *input, Command *command_, State *state_) {
+            return gotoDescend("2", input, command_, state_, TargetType::TestPoint2);
+        },
+        [](input_t *input, Command *command_, State *state_) {
+            return gotoDescend("3", input, command_, state_, TargetType::TestPoint3);
+        });
 
     return node(const_cast<input_t *>(input), command, state);
 }
