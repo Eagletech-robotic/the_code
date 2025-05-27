@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eaglesteward/dead_opponent.hpp"
 #include "eaglesteward/game_entities.hpp"
 #include "eaglesteward/potential_field.hpp"
 #include "robotic/eagle_packet.hpp"
@@ -73,6 +74,7 @@ class World {
     // Potential field
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
 
+    DeadOpponent dead_opponent{};
     bool anticollision{false};
 
   private:
