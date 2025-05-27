@@ -21,7 +21,7 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
     // print_complete_input(input);
 
     // 2. Read the last Bluetooth packet (if available) and update the state
-    top_state.updateFromBluetooth();
+    top_state.updateFromBluetooth(input.clock_ms);
 
     // 3. Update position and orientation from IMU and encoders
     top_state.updateFromInput(config, input);

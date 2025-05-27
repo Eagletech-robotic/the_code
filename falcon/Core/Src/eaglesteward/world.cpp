@@ -44,20 +44,20 @@ World::World(RobotColour colour) {
     };
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
-    set_target(TargetType::BleacherWaypoint);
+    set_target(TargetType::BleacherWaypoint, 0);
     while (do_some_calculations([]() { return true; }))
         ;
 }
 
-void World::set_target(TargetType new_target) {
+void World::set_target(TargetType new_target, uint32_t clock_ms) {
     if (new_target == target_)
         return;
 
     target_ = new_target;
-    reset_dijkstra();
+    reset_dijkstra(clock_ms);
 }
 
-void World::reset_dijkstra() {
+void World::reset_dijkstra(uint32_t clock_ms) {
     // Clear previous calculations
     potential_calculating().clear();
 
@@ -70,7 +70,8 @@ void World::reset_dijkstra() {
     enqueue_targets();
 
     // Add obstacles
-    setup_obstacles_field();
+    GamePhase const phase = current_phase(clock_ms);
+    setup_obstacles_field(phase);
 
     printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
 }
@@ -85,7 +86,6 @@ void World::enqueue_targets() {
         }
     };
 
-    // Add targets to the queue
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
@@ -121,6 +121,11 @@ void World::enqueue_targets() {
         }
     }
 
+    if (target_ == TargetType::Evade) {
+        enqueue_grid_cell(0.75, 1.00f, 0.0f);
+        enqueue_grid_cell(FIELD_WIDTH_M - 0.75f, 1.00f, 0.0f);
+    }
+
     if (target_ == TargetType::TestPoint0)
         enqueue_grid_cell(0.75f, 0.30f);
 
@@ -134,7 +139,7 @@ void World::enqueue_targets() {
         enqueue_grid_cell(0.75f, 1.2f);
 }
 
-void World::setup_obstacles_field() {
+void World::setup_obstacles_field(GamePhase phase) {
     auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type) {
         int i0 = std::max(0, static_cast<int>(std::floor(x_min / SQUARE_SIZE_M)));
         int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(x_max / SQUARE_SIZE_M)));
@@ -257,6 +262,17 @@ void World::setup_obstacles_field() {
     }
 
     // ---------------
+    // PAMI exclusion zone
+    // ---------------
+    if (phase == GamePhase::PamiStarted) {
+        if (colour_ == RobotColour::Blue) {
+            mark_rectangle_with_padding(0.65f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed);
+        } else {
+            mark_rectangle_with_padding(3.00f - 2.05f, 3.00f - 0.65f, 1.20f, 1.55f, ObstacleType::Fixed);
+        }
+    }
+
+    // ---------------
     // Opponent's building areas
     // ---------------
     for (const auto &building_area : building_areas_) {
@@ -279,6 +295,10 @@ void World::setup_obstacles_field() {
     // ---------------
     for (const auto &bleacher : bleachers_) {
         if (!bleacher.initial_position)
+            continue;
+
+        if (bleacher.is_easy_central() && phase == GamePhase::PamiStarted)
+            // Ignore central bleachers at the end of the game, as the PAMI exclusion zone could leave us trapped
             continue;
 
         constexpr float HALF_SMALL = BLEACHER_WIDTH / 2.0f;
@@ -327,7 +347,7 @@ void World::do_all_calculations_LONG() {
         ;
 }
 
-void World::update_from_eagle_packet(const EaglePacket &packet) {
+void World::update_from_eagle_packet(const EaglePacket &packet, uint32_t clock_ms) {
     colour_ = packet.robot_colour;
 
     // Reset objects
@@ -369,7 +389,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     }
 
     // Force the recalculation of the potential field
-    reset_dijkstra();
+    reset_dijkstra(clock_ms);
 }
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
@@ -430,3 +450,7 @@ BuildingArea *World::closest_building_area(float x, float y, bool only_available
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
 
 bool World::is_in_field_square(int i, int j) { return i >= 0 && i < FIELD_WIDTH_SQ && j >= 0 && j < FIELD_HEIGHT_SQ; }
+
+GamePhase World::current_phase(uint32_t clock_ms) {
+    return (clock_ms >= 85000) ? GamePhase::PamiStarted : GamePhase::Default;
+}
