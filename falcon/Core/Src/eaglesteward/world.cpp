@@ -124,7 +124,7 @@ void World::enqueue_targets() {
     }
 
     if (target_ == TargetType::Evade) {
-    	anticollision = true;
+        anticollision = true;
         enqueue_grid_cell(0.75, 1.00f, 0.0f);
         enqueue_grid_cell(FIELD_WIDTH_M - 0.75f, 1.00f, 0.0f);
     }
@@ -292,8 +292,8 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4, ObstacleType::Movable);
 
-    if(! anticollision ) {
-    	mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+    if (!anticollision) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
     }
 
     // ---------------
