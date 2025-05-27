@@ -287,7 +287,7 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Opponent robot
     // ---------------
-    if (!dead_opponent.is_dead()) {
+    if (dead_opponent.is_alive()) {
         mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
     }
     mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
