@@ -101,6 +101,8 @@ struct Safe {
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
 
+            state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
+
             if (state->elapsedTime(*input) - startTime > 3.0) {
                 return Status::SUCCESS;
             }
@@ -108,8 +110,8 @@ struct Safe {
         };
 
         auto evasion = [this](input_t *, Command *command, State *state) {
-            myprintf("evasion");
-            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            myprintf("evade");
+            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED_BLEACHER, 0.0);
             return Status::RUNNING;
         };
 
@@ -456,7 +458,7 @@ Status gotoDescend(const char *name, const input_t *input, Command *command, Sta
     state->world.set_target(target, state->elapsedTime(*input));
     myprintf("%s\n", name);
 
-    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS)) {
+    if (descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED*3.0, MAX_ROTATION_RADIUS)) {
         return Status::SUCCESS;
     }
     return Status::RUNNING;
@@ -487,12 +489,12 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
     auto root = sequence( //
         alternative(isJackRemoved, logAndFail("Game-not-started"), waitBeforeGame),
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),
-        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
+		alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);
