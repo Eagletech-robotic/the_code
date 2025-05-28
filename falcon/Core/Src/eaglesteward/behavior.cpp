@@ -64,7 +64,7 @@ auto dontMoveUntil = [](float s) {
     };
 };
 
-auto rotate = [](float angle) {
+auto rotate = [](float angle, float Kp_angle = 250.0f) {
     return [=](const input_t *, Command *command, State *state) {
         myprintf("rotate %.f", to_degrees(angle));
         float error_angle = angle_normalize(angle - state->robot_theta);
@@ -73,7 +73,6 @@ auto rotate = [](float angle) {
             return Status::SUCCESS;
         }
 
-        const float Kp_angle = 250.0f;    /* angle    → vitesse angulaire  */
         float w = Kp_angle * error_angle; /* rad/s */
         float halfBase = WHEELBASE_M * 0.5f;
         float v_left = -w * halfBase;
@@ -292,6 +291,10 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             myprintf("BA-APPCNT x=%.3f y=%.3f\n", slot.x, slot.y);
             return Status::RUNNING;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            return rotate(angle_normalize(state_->target.orientation + M_PI), 10.0f)(input_, command_, state_);
         },
         [](input_t *, Command *command_, State *state_) {
             auto const &slot = state_->target;
