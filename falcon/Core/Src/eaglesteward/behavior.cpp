@@ -82,7 +82,7 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
         myprintf("rotate %.f", to_degrees(angle));
         float error_angle = angle_normalize(angle - state->robot_theta);
 
-        if (fabsf(error_angle) < to_radians(1)) {
+        if (fabsf(error_angle) < to_radians(4)) {
             return Status::SUCCESS;
         }
 
