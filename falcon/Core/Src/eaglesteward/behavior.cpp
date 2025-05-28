@@ -204,7 +204,6 @@ struct Back {
 
     Status operator()(const input_t *input, Command *command, State *state) {
 
-
         auto start = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
             myprintf("start");
@@ -214,13 +213,13 @@ struct Back {
 
         auto back = [this](input_t *input, Command *command, State *state) {
             myprintf("back");
-            //tourner dans le bon sens pour le bleacher dans les coins en bas
-            if(state->world.colour_ == RobotColour::Yellow ) {
-            	command->target_left_speed = .0f;
-            	command->target_right_speed = -0.5f;
+            // tourner dans le bon sens pour le bleacher dans les coins en bas
+            if (state->world.colour_ == RobotColour::Yellow) {
+                command->target_left_speed = .0f;
+                command->target_right_speed = -0.5f;
             } else {
-            	command->target_left_speed = -.50f;
-            	command->target_right_speed = 0.f;
+                command->target_left_speed = -.50f;
+                command->target_right_speed = 0.f;
             }
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
@@ -230,7 +229,7 @@ struct Back {
 
             const auto building_area = state->world.closest_building_area(state->robot_x, state->robot_y, true);
             auto const slot = building_area->available_slot();
-            auto const angle_diff = angle_normalize(slot.orientation	 + state->robot_theta);
+            auto const angle_diff = angle_normalize(slot.orientation + state->robot_theta);
 
             // calcul de l'angle nécessaire à aller chercher
             myprintf(" diff=%.2f", angle_diff);
@@ -253,7 +252,6 @@ struct Back {
 
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
-
 
     auto node = statenode(
         Back{},
