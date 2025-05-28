@@ -224,7 +224,7 @@ struct Back {
             }
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            if (state->elapsedTime(*input) - startTime > 4.0) {
+            if (state->elapsedTime(*input) - startTime > 3.0) {
                 return Status::SUCCESS;
             }
 
@@ -233,11 +233,8 @@ struct Back {
             auto const angle_diff = angle_normalize(slot.orientation	 + state->robot_theta);
 
             // calcul de l'angle nécessaire à aller chercher
-           // float arrival_distance, target_angle;
-           // state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
-            //auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
             myprintf(" diff=%.2f", angle_diff);
-            if (fabs(angle_diff) < 0.5) { // angle d'arret de la manoeuvre par rapport à la cible
+            if (fabs(angle_diff) < 0.7) { // angle d'arret de la manoeuvre par rapport à la cible
                 return Status::SUCCESS;
             }
 
