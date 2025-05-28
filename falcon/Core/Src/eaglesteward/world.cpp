@@ -111,11 +111,13 @@ void World::enqueue_targets() {
     }
 
     if (target_ == TargetType::BackstageWaypoint) {
+        // Waypoint just down the backstage line
         if (colour_ == RobotColour::Yellow) {
             enqueue_grid_cell(0.35f, 1.35f);
         } else {
             enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.35f);
         }
+        // Make our robot head to the center if the waypoint is not immediately accessible
         enqueue_grid_cell(1.5f, 0.9f, 1e3);
     }
 
