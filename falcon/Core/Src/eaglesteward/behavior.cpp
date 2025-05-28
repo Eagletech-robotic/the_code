@@ -309,7 +309,7 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     // 85s PAMIs start
     // 100s End of game
-    return state->elapsedTime(*input) > 87.0f ? Status::FAILURE : Status::SUCCESS;
+    return state->elapsedTime(*input) > 85.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status goToBackstageDescend(input_t *input, Command *command, State *state) {
@@ -363,10 +363,10 @@ Status gotoBackstageLine(input_t *, Command *command, State *state) {
     float target_x, target_y;
     if (state->colour == RobotColour::Blue) {
         target_x = 3.00f - 0.375f;
-        target_y = 2.00f - 0.15f;
+        target_y = 2.00f - 0.4f;
     } else {
         target_x = 0.375f;
-        target_y = 2.00f - 0.15f;
+        target_y = 2.00f - 0.4f;
     }
     const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
                                             MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS,
