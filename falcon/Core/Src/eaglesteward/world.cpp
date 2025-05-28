@@ -44,20 +44,20 @@ World::World(RobotColour colour) {
     };
 
     // Pre-compute the potential field for the bleachers, as this will be our first target when the game starts.
-    set_target(TargetType::BleacherWaypoint);
+    set_target(TargetType::BleacherWaypoint, 0);
     while (do_some_calculations([]() { return true; }))
         ;
 }
 
-void World::set_target(TargetType new_target) {
+void World::set_target(TargetType new_target, float elapsed_time) {
     if (new_target == target_)
         return;
 
     target_ = new_target;
-    reset_dijkstra();
+    reset_dijkstra(elapsed_time);
 }
 
-void World::reset_dijkstra() {
+void World::reset_dijkstra(float elapsed_time) {
     // Clear previous calculations
     potential_calculating().clear();
 
@@ -70,7 +70,8 @@ void World::reset_dijkstra() {
     enqueue_targets();
 
     // Add obstacles
-    setup_obstacles_field();
+    GamePhase const phase = current_phase(elapsed_time);
+    setup_obstacles_field(phase);
 
     printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
 }
@@ -85,7 +86,6 @@ void World::enqueue_targets() {
         }
     };
 
-    // Add targets to the queue
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
@@ -121,6 +121,11 @@ void World::enqueue_targets() {
         }
     }
 
+    if (target_ == TargetType::Evade) {
+        enqueue_grid_cell(0.75, 1.00f, 0.0f);
+        enqueue_grid_cell(FIELD_WIDTH_M - 0.75f, 1.00f, 0.0f);
+    }
+
     if (target_ == TargetType::TestPoint0)
         enqueue_grid_cell(0.75f, 0.30f);
 
@@ -134,7 +139,7 @@ void World::enqueue_targets() {
         enqueue_grid_cell(0.75f, 1.2f);
 }
 
-void World::setup_obstacles_field() {
+void World::setup_obstacles_field(GamePhase phase) {
     auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type) {
         int i0 = std::max(0, static_cast<int>(std::floor(x_min / SQUARE_SIZE_M)));
         int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(x_max / SQUARE_SIZE_M)));
@@ -257,13 +262,19 @@ void World::setup_obstacles_field() {
     }
 
     // ---------------
-    // Opponent's building areas
+    // PAMI exclusion zone
+    // ---------------
+    if (phase == GamePhase::PamiStarted) {
+        mark_rectangle_with_padding(0.95f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed);
+    }
+
+    // ---------------
+    // Building areas
     // ---------------
     for (const auto &building_area : building_areas_) {
-        if (building_area.colour == colour_)
-            continue;
-        float const half_width = building_area.span_x() / 2;
-        float const half_height = building_area.span_y() / 2;
+        auto const occupied_space_only = building_area.colour == colour_;
+        float const half_width = building_area.span_x(occupied_space_only) / 2;
+        float const half_height = building_area.span_y(occupied_space_only) / 2;
         mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
                                     building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
@@ -271,14 +282,27 @@ void World::setup_obstacles_field() {
     // ---------------
     // Opponent robot
     // ---------------
-    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4, ObstacleType::Movable);
-    mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2, ObstacleType::Fixed);
+    // Short range interdiction
+    if (target_ == TargetType::Evade) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.0f, ObstacleType::Fixed);
+    } else {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
+    }
+
+    // Long range repelling
+    if (dead_opponent.is_alive()) {
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
+    }
 
     // ---------------
     // Bleachers in their initial position
     // ---------------
     for (const auto &bleacher : bleachers_) {
         if (!bleacher.initial_position)
+            continue;
+
+        if (bleacher.is_easy_central() && phase == GamePhase::PamiStarted)
+            // Ignore central bleachers at the end of the game, as the PAMI exclusion zone could leave us trapped
             continue;
 
         constexpr float HALF_SMALL = BLEACHER_WIDTH / 2.0f;
@@ -327,7 +351,7 @@ void World::do_all_calculations_LONG() {
         ;
 }
 
-void World::update_from_eagle_packet(const EaglePacket &packet) {
+void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_time) {
     colour_ = packet.robot_colour;
 
     // Reset objects
@@ -369,7 +393,7 @@ void World::update_from_eagle_packet(const EaglePacket &packet) {
     }
 
     // Force the recalculation of the potential field
-    reset_dijkstra();
+    reset_dijkstra(elapsed_time);
 }
 
 std::pair<Bleacher *, float> World::closest_available_bleacher(float x, float y) {
@@ -430,3 +454,7 @@ BuildingArea *World::closest_building_area(float x, float y, bool only_available
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
 
 bool World::is_in_field_square(int i, int j) { return i >= 0 && i < FIELD_WIDTH_SQ && j >= 0 && j < FIELD_HEIGHT_SQ; }
+
+GamePhase World::current_phase(float elapsed_time) {
+    return (elapsed_time >= 85.0f) ? GamePhase::PamiStarted : GamePhase::Default;
+}
