@@ -147,7 +147,7 @@ struct Safe {
             // Precompute the potential field
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
-            if (state->elapsedTime(*input) - startTime > 3) {
+            if (state->elapsedTime(*input) - startTime > 3.0f) {
                 return Status::SUCCESS;
             }
             return Status::RUNNING;
