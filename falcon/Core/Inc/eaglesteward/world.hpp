@@ -1,5 +1,6 @@
 #pragma once
 
+#include "eaglesteward/dead_opponent.hpp"
 #include "eaglesteward/game_entities.hpp"
 #include "eaglesteward/potential_field.hpp"
 #include "robotic/eagle_packet.hpp"
@@ -14,21 +15,24 @@ enum class TargetType {
     BleacherWaypoint,
     BackstageWaypoint,
     BuildingAreaWaypoint,
+    Evade,
     TestPoint0, // pour test de la descente
     TestPoint1,
     TestPoint2,
     TestPoint3,
 };
 
+enum class GamePhase { Default, PamiStarted };
+
 class World {
   public:
     explicit World(RobotColour colour);
 
     /** Set the next target for the robot. */
-    void set_target(TargetType target);
+    void set_target(TargetType target, float elapsed_time);
 
     /** Replace objects with those found in EaglePacket. */
-    void update_from_eagle_packet(const EaglePacket &packet);
+    void update_from_eagle_packet(const EaglePacket &packet, float elapsed_time);
 
     /** Return the yaw angle of the steepest slope in the potential field, from the robot's position. */
     bool potential_field_descent(float x, float y, float arrival_distance, float &out_yaw) const {
@@ -70,6 +74,8 @@ class World {
     // Potential field
     TargetType target_ = TargetType::None; // Leave None, so that the field is re-computed the first time it changes
 
+    DeadOpponent dead_opponent{};
+
   private:
     // Double buffered potential fields
     uint8_t ready_field_ = 1;
@@ -82,11 +88,12 @@ class World {
 
     [[nodiscard]] auto &potential_calculating() { return potential_fields_[1 - ready_field_]; }
 
-    void reset_dijkstra();
+    void reset_dijkstra(float elapsed_time);
 
     static bool is_in_field(float x, float y);
     static bool is_in_field_square(int i, int j);
 
     void enqueue_targets();
-    void setup_obstacles_field();
+    void setup_obstacles_field(GamePhase phase);
+    static GamePhase current_phase(float elapsed_time);
 };
