@@ -97,8 +97,8 @@ void World::enqueue_targets() {
             if (!bleacher.initial_position)
                 continue;
 
-            if (bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow ||
-                bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue)
+            if ((bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow) ||
+                (bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue))
                 continue;
 
             float value = 1.50f;

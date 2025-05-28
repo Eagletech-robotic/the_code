@@ -281,7 +281,7 @@ struct BackAfterPickup {
                 if (state->colour == RobotColour::Yellow)
                     target_angle = to_radians(-45);
                 else
-                    target_angle = to_radians(135);
+                    target_angle = to_radians(90);
                 break;
             case 4:
                 if (state->colour == RobotColour::Yellow)
@@ -295,7 +295,7 @@ struct BackAfterPickup {
                 if (state->colour == RobotColour::Blue)
                     target_angle = to_radians(-135);
                 else
-                    target_angle = to_radians(45);
+                    target_angle = to_radians(90);
                 break;
             case 7:
                 straight_backward = true;
