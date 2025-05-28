@@ -19,7 +19,6 @@ auto logAndFail(char const *s) {
 bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f,
              bool reverseOK = false) {
     constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
-    constexpr float PI_F = 3.14159265f;
 
     auto &world = state.world;
     float target_angle;
@@ -39,7 +38,7 @@ bool descend(Command &command, State &state, float v_max, float w_max, float r_m
     float linear_speed = v_max;        // vitesse par défaut (avant)
 
     if (reverseOK) {
-        float angle_diff_rev = angle_normalize(target_angle - (state.robot_theta + PI_F));
+        float angle_diff_rev = angle_normalize(target_angle - (state.robot_theta + M_PI));
         /* Si l’erreur d’orientation est plus petite en marche arrière,
            on choisit le mode arrière et une vitesse linéaire négative.   */
         if (fabsf(angle_diff_rev) < fabsf(angle_diff_fwd)) {
