@@ -50,22 +50,6 @@ class Bleacher : public GameEntity {
     bool is_next_to_backstage() const;
 };
 
-// Can class
-class Can : public GameEntity {
-  public:
-    Can() = default;
-
-    Can(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
-};
-
-// Plank class
-class Plank : public GameEntity {
-  public:
-    Plank() = default;
-
-    Plank(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
-};
-
 // BuildingArea class
 class BuildingArea : public GameEntity {
   public:
@@ -93,4 +77,33 @@ class BuildingArea : public GameEntity {
     [[nodiscard]] float span_x(bool occupied_space_only) const;
     [[nodiscard]] float span_y(bool occupied_space_only) const;
     [[nodiscard]] float get_length_span(bool occupied_space_only) const;
+};
+
+// Backstage class
+class Backstage : public GameEntity {
+  public:
+    RobotColour colour = RobotColour::Blue;
+
+    Backstage() = default;
+
+    Backstage(float x_val, float y_val, float orientation_val, RobotColour colour_val)
+        : GameEntity(x_val, y_val, orientation_val) {
+        colour = colour_val;
+    }
+};
+
+// Can class
+class Can : public GameEntity {
+  public:
+    Can() = default;
+
+    Can(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
+};
+
+// Plank class
+class Plank : public GameEntity {
+  public:
+    Plank() = default;
+
+    Plank(float x_val, float y_val, float orientation_val) : GameEntity(x_val, y_val, orientation_val) {}
 };
