@@ -228,11 +228,102 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     return node(const_cast<input_t *>(input), command, state);
 }
 
+struct BackAfterPickup {
+    inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
+
+    Status operator()(const input_t *input, Command *command, State *state) {
+
+        auto start = [this](input_t *input, Command *command, State *state) {
+            startTime = state->elapsedTime(*input);
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            return Status::SUCCESS;
+        };
+
+        auto back = [this](input_t *input, Command *command, State *state) {
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+            int const bleacher_index = state->world.closest_initial_bleacher_index(state->robot_x, state->robot_y);
+
+            bool straight_backward = false;
+            float target_angle = FLT_MAX;
+
+            // Bleachers are numbered from 0 to 9, clockwise from the central right.
+            switch (bleacher_index) {
+            case 1:
+                target_angle = to_radians(45);
+                break;
+            case 2:
+                straight_backward = true;
+                break;
+            case 3:
+                if (state->colour == RobotColour::Yellow)
+                    target_angle = to_radians(-45);
+                else
+                    target_angle = to_radians(135);
+                break;
+            case 4:
+                if (state->colour == RobotColour::Yellow)
+                    target_angle = to_radians(135);
+                break;
+            case 5:
+                if (state->colour == RobotColour::Blue)
+                    target_angle = to_radians(45);
+                break;
+            case 6:
+                if (state->colour == RobotColour::Blue)
+                    target_angle = to_radians(-135);
+                else
+                    target_angle = to_radians(45);
+                break;
+            case 7:
+                straight_backward = true;
+                break;
+            case 8:
+                target_angle = to_radians(-45);
+                break;
+            }
+
+            // Straight backward should last this long.
+            if (straight_backward && state->elapsedTime(*input) - startTime > 4.0f) {
+                return Status::SUCCESS;
+            }
+
+            // Skip this bleacher
+            if (!straight_backward && target_angle > FLT_MAX / 2.0f) {
+                return Status::SUCCESS;
+            }
+
+            // Move backward in straight line
+            if (straight_backward) {
+                myprintf("BA-BCK straight\n");
+                command->target_left_speed = -0.5f;
+                command->target_right_speed = -0.5f;
+                return Status::RUNNING;
+            }
+
+            // Otherwise, move backward while rotating to the target angle
+            auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
+
+            if (fabs(angle_diff) < to_radians(5)) {
+                return Status::SUCCESS;
+            }
+
+            myprintf("BA-BCK diff=%.2f\n", to_degrees(angle_diff));
+            command->target_left_speed = angle_diff > 0.0f ? -0.5f : 0.0f;
+            command->target_right_speed = angle_diff < 0.0f ? -0.5f : 0.0f;
+            return Status::RUNNING;
+        };
+
+        auto node = statenode(start, back);
+        return node(const_cast<input_t *>(input), command, state);
+    }
+};
+
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
     auto node = statenode(
-        //
+        BackAfterPickup{},
         [](input_t *, Command *command_, State *state_) {
             const auto building_area = state_->world.closest_building_area(state_->robot_x, state_->robot_y, true);
             if (!building_area) {

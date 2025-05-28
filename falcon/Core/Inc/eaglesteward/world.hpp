@@ -48,6 +48,9 @@ class World {
     /** Return the closest bleacher to the given coordinates. */
     [[nodiscard]] std::pair<Bleacher *, float> closest_available_bleacher(float x, float y);
 
+    // Returns the index (0-9) of the closest initial bleacher of the given position.
+    [[nodiscard]] int closest_initial_bleacher_index(float x, float y) const;
+
     void remove_bleacher(float x, float y);
 
     [[nodiscard]] BuildingArea *closest_building_area(float x, float y, bool only_available);
