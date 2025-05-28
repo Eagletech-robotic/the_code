@@ -197,6 +197,8 @@ struct Back {
     inline static float startTime = 0.0f; // elapsedtime du déclenchement du Safe
 
     Status operator()(const input_t *input, Command *command, State *state) {
+
+
         auto start = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
             myprintf("start");
@@ -206,23 +208,36 @@ struct Back {
 
         auto back = [this](input_t *input, Command *command, State *state) {
             myprintf("back");
-            command->target_left_speed = .0f;
-            command->target_right_speed = -0.5f;
-            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            if (state->elapsedTime(*input) - startTime > 3.0) {
-                return Status::SUCCESS;
+            //tourner dans le bon sens pour le bleacher dans les coins en bas
+            if(state->world.colour_ == RobotColour::Yellow ) {
+            	command->target_left_speed = .0f;
+            	command->target_right_speed = -0.5f;
+            } else {
+            	command->target_left_speed = -.50f;
+            	command->target_right_speed = 0.f;
             }
-            float arrival_distance, target_angle;
-            state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
-            auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
-            myprintf(" diff=%.2f", angle_diff);
-            if (fabs(angle_diff) < 0.5) {
+            command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+
+            if (state->elapsedTime(*input) - startTime > 4.0) {
                 return Status::SUCCESS;
             }
 
-            // isEdge<
-            if (state->robot_x < 0.2 || state->robot_x < 3.0 - 0.2 || state->robot_y < 0.2 ||
-                state->robot_y < 3.0 - 0.2) {
+            const auto building_area = state->world.closest_building_area(state->robot_x, state->robot_y, true);
+            auto const slot = building_area->available_slot();
+            auto const angle_diff = angle_normalize(slot.orientation	 + state->robot_theta);
+
+            // calcul de l'angle nécessaire à aller chercher
+           // float arrival_distance, target_angle;
+           // state->world.potential_field_descent(state->robot_x, state->robot_y, arrival_distance, target_angle);
+            //auto const angle_diff = angle_normalize(target_angle - state->robot_theta);
+            myprintf(" diff=%.2f", angle_diff);
+            if (fabs(angle_diff) < 0.5) { // angle d'arret de la manoeuvre par rapport à la cible
+                return Status::SUCCESS;
+            }
+
+            const float margin = 0.5;
+            if (state->robot_x < margin || state->robot_x > 3.0 - margin || state->robot_y < margin ||
+                state->robot_y > 3.0 - margin) {
                 return Status::RUNNING;
             }
             return Status::SUCCESS;
