@@ -16,7 +16,8 @@ auto logAndFail(char const *s) {
     };
 }
 
-bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f) {
+bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f,
+             bool reverseOK = false) {
     constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
 
     auto &world = state.world;
@@ -28,12 +29,24 @@ bool descend(Command &command, State &state, float v_max, float w_max, float r_m
     if (has_arrived) {
         return true;
     } else {
-        auto const angle_diff = angle_normalize(target_angle - state.robot_theta);
+        // Choose fwd/bwd movement
+        auto const angle_diff_fwd = angle_normalize(target_angle - state.robot_theta);
+        float angle_diff = angle_diff_fwd; // valeur par défaut (avant)
+        float linear_speed = v_max;        // vitesse par défaut (avant)
+
+        if (reverseOK) {
+            float angle_diff_rev = angle_normalize(target_angle - (state.robot_theta + M_PI));
+            /* Si l’erreur d’orientation est plus petite en marche arrière,
+               on choisit le mode arrière et une vitesse linéaire négative.   */
+            if (fabsf(angle_diff_rev) < fabsf(angle_diff_fwd)) {
+                angle_diff = angle_diff_rev;
+                linear_speed = -v_max; // même module, signe négatif
+            }
+        }
 
         // Calculate the linear and angular speed
         float angular_speed = KP_ROTATION * angle_diff; // rad/s
-        float linear_speed = v_max;
-        /* Limitation de la vitesse angulaire ------------------------------------*/
+        /* Limitation (|w| ≤ w_max, rayon ≥ r_max) ------------------------------ */
         limit_vw(&linear_speed, &angular_speed, w_max, r_max);
 
         // Wheel speeds
@@ -96,7 +109,7 @@ Status isSafe(input_t *, Command *, State *state) {
         float const y = state->robot_y - state->world.opponent_y;
         float const opponent_distance = sqrtf(x * x + y * y);
 
-        if (opponent_distance < 0.40f) {
+        if (opponent_distance < 0.42f) {
             myprintf("SFE-DETECT %.2f\n", opponent_distance);
             return Status::FAILURE;
         }
@@ -127,15 +140,24 @@ struct Safe {
             // Precompute the potential field
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
-            if (state->elapsedTime(*input) - startTime > 3.0) {
+            if (state->elapsedTime(*input) - startTime > 3.0f) {
                 return Status::SUCCESS;
             }
             return Status::RUNNING;
         };
 
-        auto evade = [this](input_t *, Command *command, State *state) {
+        auto evade = [this](input_t *input, Command *command, State *state) {
             myprintf("SFE-EVADE\n");
-            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED_BLEACHER, 0.0);
+            state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
+
+            if (state->world.potential_at(state->robot_x, state->robot_y) > FLT_MAX / 2.0f) {
+                // on ne sait pas ou fuir
+                command->target_left_speed = 0.0f;
+                command->target_right_speed = 0.0f;
+                return Status::RUNNING;
+            }
+
+            descend(*command, *state, 1.0f, MAX_ROTATION_SPEED_BLEACHER, 0.0, 0.01, true);
             return Status::RUNNING;
         };
 
