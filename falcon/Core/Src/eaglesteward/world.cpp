@@ -96,6 +96,11 @@ void World::enqueue_targets() {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
                 continue;
+
+            if (bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow ||
+                bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue)
+                continue;
+
             float value = 1.50f;
             if (bleacher.is_easy_side(colour_)) {
                 value = 0.00f;

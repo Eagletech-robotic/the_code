@@ -34,16 +34,6 @@ std::array<GameEntity, 2> Bleacher::waypoints() const {
     }};
 }
 
-bool Bleacher::in_building_area(const SizedArray<BuildingArea, 8> &building_areas) const {
-    for (const auto &building_area : building_areas) {
-        if (std::abs(x - building_area.x) < (building_area.span_x(false) + BLEACHER_WIDTH) / 2 &&
-            std::abs(y - building_area.y) < (building_area.span_y(false) + BLEACHER_WIDTH) / 2) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool Bleacher::is_easy_central() const {
     return floatEqual(y, 0.950f) && (floatEqual(x, FIELD_WIDTH_M - 1.100f) || floatEqual(x, 1.100f));
 }
@@ -51,6 +41,11 @@ bool Bleacher::is_easy_central() const {
 bool Bleacher::is_easy_side(const RobotColour colour) const {
     return floatEqual(y, 0.250f) &&
            (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.775f) : floatEqual(x, 0.775f));
+}
+
+bool Bleacher::is_reserved(const RobotColour colour) const {
+    return floatEqual(y, 1.725f) &&
+           (colour == RobotColour::Blue ? floatEqual(x, FIELD_WIDTH_M - 0.825f) : floatEqual(x, 0.825f));
 }
 
 bool Bleacher::is_next_to_backstage() const { return y >= 1.0f; }
