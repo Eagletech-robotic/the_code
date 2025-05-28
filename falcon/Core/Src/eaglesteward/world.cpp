@@ -365,6 +365,25 @@ void World::do_all_calculations_LONG() {
         ;
 }
 
+int World::closest_initial_bleacher_index(float x, float y) const {
+    int best_index = -1;
+    float best_distance = std::numeric_limits<float>::max();
+
+    for (size_t i = 0; i < default_bleachers_.size(); ++i) {
+        const auto &bleacher = default_bleachers_[i];
+        float dx = x - bleacher.x;
+        float dy = y - bleacher.y;
+        float distance = std::sqrt(dx * dx + dy * dy);
+
+        if (distance < best_distance) {
+            best_distance = distance;
+            best_index = static_cast<int>(i);
+        }
+    }
+
+    return best_index;
+}
+
 void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_time) {
     colour_ = packet.robot_colour;
 
