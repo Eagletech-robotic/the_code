@@ -12,6 +12,12 @@
 World::World(RobotColour colour) {
     colour_ = colour;
 
+    // Backstage positions
+    backstages_ = {
+        {0.375f, 1.775f, -M_PI_2, RobotColour::Yellow},
+        {FIELD_WIDTH_M - 0.375f, 1.775f, M_PI_2, RobotColour::Blue},
+    };
+
     // Default bleachers, sorted clockwise from the center right
     default_bleachers_ = {
         {FIELD_WIDTH_M - 1.100f, 0.950f, M_PI_2, true},
@@ -90,6 +96,11 @@ void World::enqueue_targets() {
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
                 continue;
+
+            if (bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow ||
+                bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue)
+                continue;
+
             float value = 1.50f;
             if (bleacher.is_easy_side(colour_)) {
                 value = 0.00f;
@@ -105,11 +116,14 @@ void World::enqueue_targets() {
     }
 
     if (target_ == TargetType::BackstageWaypoint) {
+        // Waypoint just down the backstage line
         if (colour_ == RobotColour::Yellow) {
             enqueue_grid_cell(0.35f, 1.35f);
         } else {
             enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.35f);
         }
+        // Make our robot head to the center if the waypoint is not immediately accessible
+        enqueue_grid_cell(1.5f, 0.9f, 1e3);
     }
 
     if (target_ == TargetType::BuildingAreaWaypoint) {
@@ -449,6 +463,14 @@ BuildingArea *World::closest_building_area(float x, float y, bool only_available
     }
 
     return best;
+}
+
+const Backstage *World::backstage() const {
+    for (auto &backstage : backstages_) {
+        if (backstage.colour == colour_)
+            return &backstage;
+    }
+    return nullptr;
 }
 
 bool World::is_in_field(float x, float y) { return x >= 0 && x < FIELD_WIDTH_M && y >= 0 && y < FIELD_HEIGHT_M; }
