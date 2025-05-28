@@ -298,9 +298,9 @@ void World::setup_obstacles_field(GamePhase phase) {
     // ---------------
     // Short range interdiction
     if (target_ == TargetType::Evade) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.5, ObstacleType::Fixed);
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.5f, ObstacleType::Fixed);
     } else {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 2.0f, ObstacleType::Fixed);
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 1.5f, ObstacleType::Fixed);
     }
 
     // Long range repelling
