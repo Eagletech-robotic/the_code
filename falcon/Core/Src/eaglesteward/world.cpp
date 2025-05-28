@@ -116,6 +116,7 @@ void World::enqueue_targets() {
         } else {
             enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.35f);
         }
+        enqueue_grid_cell(1.5f, 0.9f, 1e3);
     }
 
     if (target_ == TargetType::BuildingAreaWaypoint) {
