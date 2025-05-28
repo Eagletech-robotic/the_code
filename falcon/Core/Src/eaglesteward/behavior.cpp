@@ -55,6 +55,36 @@ bool descend(Command &command, State &state, float v_max, float w_max, float r_m
     }
 }
 
+auto dontMoveUntil = [](float s) {
+    return [=](const input_t *input, Command *command, State *state) {
+        myprintf("dont move");
+        command->target_left_speed = 0.f;
+        command->target_right_speed = 0.f;
+        return state->elapsedTime(*input) < s ? Status::RUNNING : Status::SUCCESS;
+    };
+};
+
+auto rotate = [](float angle) {
+    return [=](const input_t *, Command *command, State *state) {
+        myprintf("rotate %.f", to_degrees(angle));
+        float error_angle = angle_normalize(angle - state->robot_theta);
+
+        if (fabsf(error_angle) < to_radians(1)) {
+            return Status::SUCCESS;
+        }
+
+        const float Kp_angle = 250.0f;    /* angle    → vitesse angulaire  */
+        float w = Kp_angle * error_angle; /* rad/s */
+        float halfBase = WHEELBASE_M * 0.5f;
+        float v_left = -w * halfBase;
+        float v_right = +w * halfBase;
+
+        command->target_left_speed = v_left;
+        command->target_right_speed = v_right;
+        return Status::RUNNING;
+    };
+};
+
 Status isSafe(input_t *, Command *, State *state) {
     if (state->filtered_tof_m < 0.18f) {
         myprintf("FLSAFE\n");
@@ -312,77 +342,49 @@ Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     return state->elapsedTime(*input) > 85.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
-Status goToBackstageDescend(input_t *input, Command *command, State *state) {
-    myprintf("BCKSTG\n");
-    state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
-
-    auto const backstage = state->world.backstage();
-    float const dx = state->robot_x - backstage->x;
-    float const dy = state->robot_y - backstage->y;
-
-    if (std::abs(dx) < 0.06f && std::abs(dy) < 0.5f) {
-        return Status::SUCCESS;
-    }
-
-    descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
-    return Status::RUNNING;
-}
-
-auto dontMoveUntil = [](float s) {
-    return [=](const input_t *input, Command *command, State *state) {
-        myprintf("dont move");
-        command->target_left_speed = 0.f;
-        command->target_right_speed = 0.f;
-        return state->elapsedTime(*input) < s ? Status::RUNNING : Status::SUCCESS;
-    };
-};
-
-auto rotate = [](float a) {
-    return [=](const input_t *, Command *command, State *state) {
-        myprintf("rotate %.f", a);
-        float desired_angle = a * DEG_TO_RAD;
-        float error_angle = angle_normalize(desired_angle - state->robot_theta);
-
-        if (fabsf(error_angle) < 1 * DEG_TO_RAD) {
-            return Status::SUCCESS;
-        }
-
-        const float Kp_angle = 250.0f;    /* angle    → vitesse angulaire  */
-        float w = Kp_angle * error_angle; /* rad/s */
-        float halfBase = WHEELBASE_M * 0.5f;
-        float v_left = -w * halfBase;
-        float v_right = +w * halfBase;
-
-        command->target_left_speed = v_left;
-        command->target_right_speed = v_right;
-        return Status::RUNNING;
-    };
-};
-
-Status gotoBackstageLine(input_t *, Command *command, State *state) {
-    float target_x, target_y;
-    if (state->colour == RobotColour::Blue) {
-        target_x = 3.00f - 0.375f;
-        target_y = 2.00f - 0.4f;
-    } else {
-        target_x = 0.375f;
-        target_y = 2.00f - 0.4f;
-    }
-    const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x, target_y,
-                                            MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS,
-                                            WHEELBASE_M, // m, entraxe
-                                            0.05f,       // m, distance à l'arrivé pour être arrivé
-                                            &command->target_left_speed, &command->target_right_speed);
-    if (has_arrived) {
-        return Status::SUCCESS;
-    } else {
-        return Status::RUNNING;
-    }
-}
-
 Status goToBackstage(input_t *input, Command *command, State *state) {
     command->shovel = ShovelCommand::SHOVEL_RETRACTED;
-    auto node = statenode(goToBackstageDescend, rotate(90.0f), dontMoveUntil(96), gotoBackstageLine, holdAfterEnd);
+
+    auto node = statenode(
+        //
+        [](input_t *input, Command *command, State *state) {
+            myprintf("BCKSTG\n");
+            state->world.set_target(TargetType::BackstageWaypoint, state->elapsedTime(*input));
+
+            auto const backstage = state->world.backstage();
+            float const dx = state->robot_x - backstage->x;
+            float const dy = state->robot_y - backstage->y;
+
+            if (std::abs(dx) < 0.06f && std::abs(dy) < 0.5f) {
+                return Status::SUCCESS;
+            }
+
+            descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            return Status::RUNNING;
+        },
+        rotate(M_PI_2),    //
+        dontMoveUntil(96), //
+        [](input_t *, Command *command, State *state) {
+            float target_x, target_y;
+            if (state->colour == RobotColour::Blue) {
+                target_x = 3.00f - 0.375f;
+                target_y = 2.00f - 0.4f;
+            } else {
+                target_x = 0.375f;
+                target_y = 2.00f - 0.4f;
+            }
+            const bool has_arrived = pid_controller(state->robot_x, state->robot_y, state->robot_theta, target_x,
+                                                    target_y, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS,
+                                                    WHEELBASE_M, // m, entraxe
+                                                    0.05f,       // m, distance à l'arrivé pour être arrivé
+                                                    &command->target_left_speed, &command->target_right_speed);
+            if (has_arrived) {
+                return Status::SUCCESS;
+            } else {
+                return Status::RUNNING;
+            }
+        },
+        holdAfterEnd);
 
     return node(const_cast<input_t *>(input), command, state);
 }
