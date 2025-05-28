@@ -16,24 +16,15 @@ auto logAndFail(char const *s) {
     };
 }
 
-bool descend(Command &command,
-             State   &state,
-             float    v_max,
-             float    w_max,
-             float    r_max,
-             float    arrival_distance = 0.01f,
-             bool     reverseOK        = false)
-{
-    constexpr float KP_ROTATION = 50.0f;               // Rotation PID's P gain
-    constexpr float PI_F        = 3.14159265f;
+bool descend(Command &command, State &state, float v_max, float w_max, float r_max, float arrival_distance = 0.01f,
+             bool reverseOK = false) {
+    constexpr float KP_ROTATION = 50.0f; // Rotation PID's P gain
+    constexpr float PI_F = 3.14159265f;
 
     auto &world = state.world;
     float target_angle;
 
-    bool has_arrived = world.potential_field_descent(state.robot_x,
-                                                     state.robot_y,
-                                                     arrival_distance,
-                                                     target_angle);
+    bool has_arrived = world.potential_field_descent(state.robot_x, state.robot_y, arrival_distance, target_angle);
     myprintf("descend %.3f", to_degrees(target_angle));
 
     if (has_arrived) {
@@ -44,46 +35,44 @@ bool descend(Command &command,
     /* Choix marche avant / marche arrière                                    */
     /* ---------------------------------------------------------------------- */
     float angle_diff_fwd = angle_normalize(target_angle - state.robot_theta);
-    float angle_diff     = angle_diff_fwd;     // valeur par défaut (avant)
-    float linear_speed   = v_max;              // vitesse par défaut (avant)
+    float angle_diff = angle_diff_fwd; // valeur par défaut (avant)
+    float linear_speed = v_max;        // vitesse par défaut (avant)
 
     if (reverseOK) {
         float angle_diff_rev = angle_normalize(target_angle - (state.robot_theta + PI_F));
         /* Si l’erreur d’orientation est plus petite en marche arrière,
            on choisit le mode arrière et une vitesse linéaire négative.   */
         if (fabsf(angle_diff_rev) < fabsf(angle_diff_fwd)) {
-            angle_diff   = angle_diff_rev;
-            linear_speed = -v_max;             // même module, signe négatif
+            angle_diff = angle_diff_rev;
+            linear_speed = -v_max; // même module, signe négatif
         }
     }
 
     /* ---------------------------------------------------------------------- */
     /* Calcul des vitesses angulaire et linéaire                              */
     /* ---------------------------------------------------------------------- */
-    float angular_speed = KP_ROTATION * angle_diff;    // rad/s
+    float angular_speed = KP_ROTATION * angle_diff; // rad/s
 
     /* Limitation (|w| ≤ w_max, rayon ≥ r_max) ------------------------------ */
     limit_vw(&linear_speed, &angular_speed, w_max, r_max);
 
     /* Vitesses roue gauche / droite ---------------------------------------- */
     constexpr float HALF_BASE = WHEELBASE_M * 0.5f;
-    float speed_left  = linear_speed - angular_speed * HALF_BASE;
+    float speed_left = linear_speed - angular_speed * HALF_BASE;
     float speed_right = linear_speed + angular_speed * HALF_BASE;
 
     /* Saturation sur la roue la plus rapide -------------------------------- */
     float abs_fastest_wheel = fmaxf(fabsf(speed_left), fabsf(speed_right));
     if (abs_fastest_wheel > v_max) {
         float scale = v_max / abs_fastest_wheel;
-        speed_left  *= scale;
+        speed_left *= scale;
         speed_right *= scale;
     }
 
-    command.target_left_speed  = speed_left;
+    command.target_left_speed = speed_left;
     command.target_right_speed = speed_right;
     return false;
 }
-
-
 
 auto dontMoveUntil = [](float s) {
     return [=](const input_t *input, Command *command, State *state) {
@@ -168,8 +157,8 @@ struct Safe {
             myprintf("SFE-EVADE\n");
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
-            if(state->world.potential_at(state->robot_x, state->robot_y) > FLT_MAX/2.0f) {
-            	// on ne sait pas ou fuir
+            if (state->world.potential_at(state->robot_x, state->robot_y) > FLT_MAX / 2.0f) {
+                // on ne sait pas ou fuir
                 command->target_left_speed = 0.f;
                 command->target_right_speed = 0.f;
             }
