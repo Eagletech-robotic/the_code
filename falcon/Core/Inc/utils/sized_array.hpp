@@ -69,9 +69,9 @@ template <typename T, size_t Capacity> class SizedArray {
      * @throws std::out_of_range if index is out of range.
      */
     const T &operator[](size_t index) const {
-//        if (index >= size_) {
-//         //   throw std::out_of_range("Index out of range");
-//        }
+        //        if (index >= size_) {
+        //         //   throw std::out_of_range("Index out of range");
+        //        }
         return data_[index];
     }
 
@@ -81,9 +81,9 @@ template <typename T, size_t Capacity> class SizedArray {
      * @throws std::out_of_range if the array is at full capacity.
      */
     void push_back(const T &value) {
-//        if (size_ >= Capacity) {
-//            // throw std::out_of_range("Exceeds array capacity");
-//        }
+        //        if (size_ >= Capacity) {
+        //            // throw std::out_of_range("Exceeds array capacity");
+        //        }
         data_[size_] = value;
         size_++;
     }

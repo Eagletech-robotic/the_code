@@ -97,9 +97,7 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
     };
 };
 
-inline bool isBInFrontOfA(float ax, float ay, float aTheta,
-                          float bx, float by)
-{
+inline bool isBInFrontOfA(float ax, float ay, float aTheta, float bx, float by) {
     // Vecteur AB
     const float dx = bx - ax;
     const float dy = by - ay;
@@ -109,7 +107,7 @@ inline bool isBInFrontOfA(float ax, float ay, float aTheta,
     const float fy = std::sin(aTheta);
 
     // Produit scalaire : signe > 0 ⇒ même demi-espace orienté qu’A
-    constexpr float EPS = 1e-6f;          // tolérance numérique
+    constexpr float EPS = 1e-6f; // tolérance numérique
     return (dx * fx + dy * fy) > EPS;
 }
 
@@ -125,13 +123,14 @@ Status isSafe(input_t *, Command *, State *state) {
         float const y = state->robot_y - state->world.opponent_y;
         float const opponent_distance = sqrtf(x * x + y * y);
 
-        bool inFront = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, state->world.opponent_x, state->world.opponent_y);
-        myprintf("isSafe d=%.2f front=%i fw=%i m=%i\n", opponent_distance, inFront, state->isMovingForward, state->isMoving);
+        bool inFront = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, state->world.opponent_x,
+                                     state->world.opponent_y);
+        myprintf("isSafe d=%.2f front=%i fw=%i\n", opponent_distance, inFront, state->is_moving_forward);
         bool opponentInTheTrajectory;
-        if ( state->isMovingForward) {
-        	opponentInTheTrajectory = inFront;
+        if (state->is_moving_forward) {
+            opponentInTheTrajectory = inFront;
         } else {
-        	opponentInTheTrajectory =  ! inFront;
+            opponentInTheTrajectory = !inFront;
         }
 
         if (opponentInTheTrajectory && opponent_distance < 0.48f) {
