@@ -5,6 +5,7 @@
 
 void OpponentTracker::push(bool is_detected, float elapsed_time, float x, float y) {
     detected[idx] = is_detected;
+    timestamps[idx] = elapsed_time;
 
     if (is_detected) {
         positions_x[idx] = x;

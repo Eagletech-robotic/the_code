@@ -103,17 +103,27 @@ Status isSafe(input_t *, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    // If the opponent position is known, check the distance
-    if (state->world.opponent_x != 0.0f && state->world.opponent_y != 0.0f) {
-        float const x = state->robot_x - state->world.opponent_x;
-        float const y = state->robot_y - state->world.opponent_y;
-        float const opponent_distance = sqrtf(x * x + y * y);
-
-        if (opponent_distance < 0.42f) {
-            myprintf("SFE-DETECT %.2f\n", opponent_distance);
-            return Status::FAILURE;
-        }
+    // Use the last interpolated opponent's position, or its last known position if it cannot be interpolated.
+    auto const &world = state->world;
+    float opponent_x, opponent_y;
+    if (!world.opponent_tracker.get_interpolated_position(opponent_x, opponent_y)) {
+        opponent_x = world.opponent_x;
+        opponent_y = world.opponent_y;
     }
+
+    // Calculate opponent distance and presence on our trajectory.
+    float const distance = std::hypot(state->robot_x - opponent_x, state->robot_y - opponent_y);
+    bool in_front = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, opponent_x, opponent_y);
+    auto const in_trajectory = state->is_moving_forward ? in_front : !in_front;
+
+    myprintf("Safety %.2f [%i %i] %.2f %.2f\n", distance, in_front, state->is_moving_forward, opponent_x, opponent_y);
+
+    // "Not-safe" condition
+    if (in_trajectory && distance < 0.43f) {
+        myprintf("SFE-DETECT %.2f\n", distance);
+        return Status::FAILURE;
+    }
+
     return Status::SUCCESS;
 }
 

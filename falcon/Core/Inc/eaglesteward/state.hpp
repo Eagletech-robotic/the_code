@@ -58,6 +58,7 @@ class State {
     PID_t pid_theta{};
     PID_t pid_speed{};
     RollingHistory odo_history{};
+    bool is_moving_forward;
 
     // Bluetooth
     bool packet_received_at_this_step{false};

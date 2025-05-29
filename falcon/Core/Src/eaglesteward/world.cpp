@@ -392,9 +392,9 @@ void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_ti
         opponent_x = static_cast<float>(packet.opponent_x_cm) / 100.0f;
         opponent_y = static_cast<float>(packet.opponent_y_cm) / 100.0f;
         opponent_theta = angle_normalize(to_radians(packet.opponent_theta_deg));
-        opponent_tracker.push(true, opponent_x, opponent_y);
+        opponent_tracker.push(true, elapsed_time, opponent_x, opponent_y);
     } else {
-        opponent_tracker.push(false, 0.0f, 0.0f);
+        opponent_tracker.push(false, elapsed_time, 0.0f, 0.0f);
 
         // Assume the opponent robot is in the invisible camera spot if it's not detected for several frames.
         if (opponent_tracker.get_consecutive_non_detections() >= 10) {
