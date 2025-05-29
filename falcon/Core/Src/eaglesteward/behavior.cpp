@@ -126,6 +126,7 @@ Status isSafe(input_t *, Command *, State *state) {
         float const opponent_distance = sqrtf(x * x + y * y);
 
         bool inFront = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, state->world.opponent_x, state->world.opponent_y);
+        myprintf("isSafe d=%.2f front=%i fw=%i m=%i\n", opponent_distance, inFront, state->isMovingForward, state->isMoving);
         bool opponentInTheTrajectory;
         if ( state->isMovingForward) {
         	opponentInTheTrajectory = inFront;

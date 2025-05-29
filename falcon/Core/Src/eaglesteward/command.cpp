@@ -11,10 +11,10 @@ void set_output(const config_t &config, const input_t &input, const Command &com
     motor_calculate_ratios(config, state, input, command.target_left_speed, command.target_right_speed,
                            output.motor_left_ratio, output.motor_right_ratio);
 
-    const float speed_min = 0.1f;
-    state.isMoving = fabs(output.motor_left_ratio + output.motor_right_ratio) > speed_min;
+    const float speed_min = 0.01f;
+    state.isMoving = fabs(command.target_left_speed + command.target_right_speed) > speed_min;
 
-    if (output.motor_left_ratio + output.motor_right_ratio < 0.0f) {
+    if (command.target_left_speed + command.target_right_speed < 0.0f) {
     	state.isMovingForward = false;
     } else {
     	state.isMovingForward = true;
