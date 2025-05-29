@@ -23,7 +23,7 @@ void top_step(const config_t &config, const input_t &input, output_t &output) {
     // 2. Read the last Bluetooth packet (if available) and update the state
     auto const elapsed_time = top_state.elapsedTime(input);
     if(top_state.updateFromBluetooth(elapsed_time)) {
-    	top_state.last_packet_time = elapsed_time;
+    	top_state.last_packet_time_ms = input.clock_ms;
     }
 
     // 3. Update position and orientation from IMU and encoders

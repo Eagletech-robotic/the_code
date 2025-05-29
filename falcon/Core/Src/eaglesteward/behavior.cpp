@@ -185,7 +185,7 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
 }
 
 Status is_com_lost(input_t *input, Command *command, State *state) {
-	if(state->last_packet_time + 2.0f < state->elapsedTime(*input)) {
+	if(state->last_packet_time_ms + 2000 < state->clock_ms) {
 		return Status::FAILURE;
 	}
 	return Status::SUCCESS;

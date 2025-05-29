@@ -83,8 +83,8 @@ class State {
     // Target coordinates for PID approach
     GameEntity target{0.0f, 0.0f, 0.0f};
 
-    //date du dernier paquet reçu
-    float last_packet_time{0.0f};
+    //date du dernier paquet reçu en ms (clock_ms)
+    int32_t last_packet_time{0.0f};
 
     // --- Method ---
 
