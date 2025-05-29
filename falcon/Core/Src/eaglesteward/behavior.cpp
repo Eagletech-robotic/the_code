@@ -119,7 +119,7 @@ Status isSafe(input_t *, Command *, State *state) {
     myprintf("Safety %.2f [%i %i] %.2f %.2f\n", distance, in_front, state->is_moving_forward, opponent_x, opponent_y);
 
     // "Not-safe" condition
-    if (in_trajectory && distance < 0.48f) {
+    if (in_trajectory && distance < 0.43f) {
         myprintf("SFE-DETECT %.2f\n", distance);
         return Status::FAILURE;
     }
