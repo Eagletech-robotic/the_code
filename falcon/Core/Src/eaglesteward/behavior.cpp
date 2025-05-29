@@ -258,13 +258,14 @@ struct BackAfterPickup {
         auto start = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            state->target = GameEntity{state->robot_x, state->robot_y, state->robot_theta};
             return Status::SUCCESS;
         };
 
         auto back = [this](input_t *input, Command *command, State *state) {
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
 
-            int const bleacher_index = state->world.closest_initial_bleacher_index(state->robot_x, state->robot_y);
+            int const bleacher_index = state->world.closest_initial_bleacher_index(state->target.x, state->target.y);
 
             bool straight_backward = false;
             float target_angle = FLT_MAX;
@@ -306,7 +307,7 @@ struct BackAfterPickup {
             }
 
             // Straight backward should last this long.
-            if (straight_backward && state->elapsedTime(*input) - startTime > 4.0f) {
+            if (straight_backward && state->elapsedTime(*input) - startTime > 5.0f) {
                 return Status::SUCCESS;
             }
 
