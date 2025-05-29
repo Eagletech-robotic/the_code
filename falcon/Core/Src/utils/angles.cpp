@@ -90,3 +90,17 @@ bool isLookingOutwards(float w, float h, float s, float x, float y, float theta,
     /* ─── 4. verdict : place libre < côté du robot ? ───────────────────── */
     return dist < s - tol;
 }
+
+bool isBInFrontOfA(float ax, float ay, float aTheta, float bx, float by) {
+    // Vecteur AB
+    const float dx = bx - ax;
+    const float dy = by - ay;
+
+    // Vecteur direction du robot A
+    const float fx = std::cos(aTheta);
+    const float fy = std::sin(aTheta);
+
+    // Produit scalaire : signe > 0 ⇒ même demi-espace orienté qu’A
+    constexpr float EPS = 1e-6f; // tolérance numérique
+    return (dx * fx + dy * fy) > EPS;
+}

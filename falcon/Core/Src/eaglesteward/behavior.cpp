@@ -97,47 +97,33 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
     };
 };
 
-inline bool isBInFrontOfA(float ax, float ay, float aTheta, float bx, float by) {
-    // Vecteur AB
-    const float dx = bx - ax;
-    const float dy = by - ay;
-
-    // Vecteur direction du robot A
-    const float fx = std::cos(aTheta);
-    const float fy = std::sin(aTheta);
-
-    // Produit scalaire : signe > 0 ⇒ même demi-espace orienté qu’A
-    constexpr float EPS = 1e-6f; // tolérance numérique
-    return (dx * fx + dy * fy) > EPS;
-}
-
 Status isSafe(input_t *, Command *, State *state) {
     if (state->filtered_tof_m < 0.18f) {
         myprintf("FLSAFE\n");
         return Status::FAILURE;
     }
 
-    // If the opponent position is known, check the distance
-    if (state->world.opponent_x != 0.0f && state->world.opponent_y != 0.0f) {
-        float const x = state->robot_x - state->world.opponent_x;
-        float const y = state->robot_y - state->world.opponent_y;
-        float const opponent_distance = sqrtf(x * x + y * y);
-
-        bool inFront = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, state->world.opponent_x,
-                                     state->world.opponent_y);
-        myprintf("isSafe d=%.2f front=%i fw=%i\n", opponent_distance, inFront, state->is_moving_forward);
-        bool opponentInTheTrajectory;
-        if (state->is_moving_forward) {
-            opponentInTheTrajectory = inFront;
-        } else {
-            opponentInTheTrajectory = !inFront;
-        }
-
-        if (opponentInTheTrajectory && opponent_distance < 0.48f) {
-            myprintf("SFE-DETECT %.2f\n", opponent_distance);
-            return Status::FAILURE;
-        }
+    // Use the last interpolated opponent's position, or its last known position if it cannot be interpolated.
+    auto const &world = state->world;
+    float opponent_x, opponent_y;
+    if (!world.opponent_tracker.get_interpolated_position(opponent_x, opponent_y)) {
+        opponent_x = world.opponent_x;
+        opponent_y = world.opponent_y;
     }
+
+    // Calculate opponent distance and presence on our trajectory.
+    float const distance = std::hypot(state->robot_x - opponent_x, state->robot_y - opponent_y);
+    bool in_front = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, opponent_x, opponent_y);
+    auto const in_trajectory = state->is_moving_forward ? in_front : !in_front;
+
+    myprintf("Safety %.2f [%i %i] %.2f %.2f\n", distance, in_front, state->is_moving_forward, opponent_x, opponent_y);
+
+    // "Not-safe" condition
+    if (in_trajectory && distance < 0.48f) {
+        myprintf("SFE-DETECT %.2f\n", distance);
+        return Status::FAILURE;
+    }
+
     return Status::SUCCESS;
 }
 
