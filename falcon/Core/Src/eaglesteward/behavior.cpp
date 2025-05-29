@@ -268,7 +268,7 @@ struct BackAfterPickup {
         auto start = [this](input_t *input, Command *command, State *state) {
             startTime = state->elapsedTime(*input);
             command->shovel = ShovelCommand::SHOVEL_EXTENDED;
-            state->target = GameEntity{state->robot_x, state->robot_y, state->robot_theta};
+            state->lock_target(state->robot_x, state->robot_y, state->robot_theta);
             return Status::SUCCESS;
         };
 
