@@ -408,39 +408,6 @@ void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_ti
     cans_.clear();
     planks_.clear();
 
-    // Insert initial bleachers from  the header
-    // for (size_t i = 0; i < 10; ++i) {
-    // if (packet.initial_bleachers[i]) {
-    // bleachers_.push_back(default_bleachers_[i]);
-    // }
-    // }
-
-    // Insert objects from the object list
-    for (uint8_t i = 0; i < packet.object_count; ++i) {
-        auto const &object = packet.objects[i];
-
-        auto const x = static_cast<float>(object.x_cm) * 0.01f;
-        auto const y = static_cast<float>(object.y_cm) * 0.01f;
-        auto const orientation = to_radians(object.orientation_deg);
-
-        switch (object.type) {
-        case ObjectType::Bleacher:
-            if (!bleachers_.full())
-                bleachers_.push_back({x, y, orientation, false});
-            break;
-        case ObjectType::Can:
-            if (!cans_.full())
-                cans_.push_back({x, y, orientation});
-            break;
-        case ObjectType::Plank:
-            if (!planks_.full())
-                planks_.push_back({x, y, orientation});
-            break;
-        default:
-            break;
-        }
-    }
-
     // Force the recalculation of the potential field
     reset_dijkstra(elapsed_time);
 }

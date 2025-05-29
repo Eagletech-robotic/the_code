@@ -36,9 +36,6 @@ class BitPacker {
 };
 
 std::vector<uint8_t> build_payload(const EaglePacket &packet) {
-    if (packet.object_count > 40)
-        throw std::invalid_argument("object_count > 40");
-
     BitPacker bp;
     bp.push(static_cast<uint8_t>(packet.robot_colour), 1);
     bp.push(packet.robot_detected ? 1u : 0u, 1);
@@ -51,24 +48,8 @@ std::vector<uint8_t> build_payload(const EaglePacket &packet) {
     bp.push(packet.opponent_y_cm, 8);
     bp.push(static_cast<uint16_t>(packet.opponent_theta_deg), 9);
 
-    for (bool initial_bleacher : packet.initial_bleachers) {
-        bp.push(initial_bleacher ? 1u : 0u, 1);
-    }
+    bp.push(0u, 1);                  // padding bit 56
 
-    bp.push(packet.object_count, 6); // object_count bits 65‑70
-    bp.push(0u, 1);                  // padding bit 71
-
-    for (uint8_t i = 0; i < packet.object_count; ++i) {
-        const auto &object = packet.objects[i];
-        bp.push(static_cast<uint8_t>(object.type), 2);
-
-        const auto raw_x = static_cast<uint8_t>(std::round(static_cast<float>(object.x_cm) * 255.0f / 300.0f));
-        const auto raw_y = static_cast<uint8_t>(std::round(static_cast<float>(object.y_cm) * 127.0f / 200.0f));
-
-        bp.push(raw_x, 8); // 0‑255
-        bp.push(raw_y, 7); // 0‑127
-        bp.push(object.orientation_deg / 30, 3);
-    }
     return bp.to_bytes();
 }
 
@@ -94,23 +75,6 @@ bool packets_equal(const EaglePacket &a, const EaglePacket &b) {
         return false;
     if (a.opponent_theta_deg != b.opponent_theta_deg)
         return false;
-    for (int i = 0; i < 10; ++i)
-            if (a.initial_bleachers[i] != b.initial_bleachers[i])
-                    return false;
-    if (a.object_count != b.object_count)
-        return false;
-
-    for (uint8_t i = 0; i < a.object_count; ++i) {
-        const auto cm_tol = 3; // ≤3 cm difference is OK after quantisation
-        if (a.objects[i].type != b.objects[i].type)
-            return false;
-        if (std::abs(int(a.objects[i].x_cm) - int(b.objects[i].x_cm)) > cm_tol)
-            return false;
-        if (std::abs(int(a.objects[i].y_cm) - int(b.objects[i].y_cm)) > cm_tol)
-            return false;
-        if (a.objects[i].orientation_deg != b.objects[i].orientation_deg)
-            return false;
-    }
     return true;
 }
 
@@ -133,85 +97,11 @@ TEST(EaglePacketDecode, RoundTripOneObject) {
     src.opponent_y_cm = 50;
     src.opponent_theta_deg = 90;
 
-    src.object_count = 1;
-    src.objects[0] = {ObjectType::Bleacher, 25, 15, 60};
-
     const auto payload = build_payload(src);
 
     EaglePacket dst{};
     ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
     EXPECT_TRUE(packets_equal(src, dst));
-}
-
-TEST(EaglePacketDecode, ZeroObjects) {
-    EaglePacket src{};
-    src.robot_colour = RobotColour::Blue;
-    src.robot_detected = false;
-    src.robot_x_cm = 1;
-    src.robot_y_cm = 2;
-    src.robot_theta_deg = 0;
-    src.opponent_x_cm = 3;
-    src.opponent_y_cm = 4;
-    src.opponent_theta_deg = 0;
-    src.opponent_detected = false;
-    src.object_count = 0;
-
-    const auto payload = build_payload(src);
-
-    EaglePacket dst{};
-    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
-    EXPECT_TRUE(packets_equal(src, dst));
-}
-
-TEST(EaglePacketDecode, MaxObjects) {
-    EaglePacket src{};
-    src.robot_colour = RobotColour::Yellow;
-    src.robot_detected = true;
-    for (uint8_t i = 0; i < 40; ++i) {
-        src.objects[i] = {static_cast<ObjectType>(i % 3), uint16_t(i & 63), uint8_t(i % 32), uint8_t((i % 7) * 30)};
-    }
-    src.robot_theta_deg = 30;
-    src.opponent_detected = true;
-    src.opponent_theta_deg = 330;
-    src.object_count = 40;
-
-    const auto payload = build_payload(src);
-
-    EaglePacket dst{};
-    ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), dst));
-    EXPECT_TRUE(packets_equal(src, dst));
-}
-
-TEST(EaglePacketDecode, InvalidObjectCount) {
-    /* object_count = 41 (binary 101001, LSB‑first)
-       bits 65‑70 → bits 1‑6 of byte 8 */
-    std::vector<uint8_t> payload(10, 0);
-    payload[8] = 0b01010010;            // bits1‑6 = 1 0 0 1 0 1  (41)
-                                         // bit0 (initial_bleachers[9]) = 0
-                                         // bit7 (padding bit71)        = 0
-    EaglePacket out{};
-    EXPECT_FALSE(decode_eagle_packet(payload.data(), payload.size(), out));
-}
-
-TEST(EaglePacketDecode, TooShortHeader) {
-    std::vector<uint8_t> tiny{0xAA, 0xBB, 0xCC}; // three bytes only
-    EaglePacket out{};
-    ASSERT_TRUE(decode_eagle_packet(tiny.data(), tiny.size(), out));
-    EXPECT_EQ(out.object_count, 0); // zero-padded under-read
-}
-
-TEST(EaglePacketDecode, TooShortForObjects) {
-    /* declare 3 objects but supply none */
-    EaglePacket hdr_only{};
-    hdr_only.object_count = 3;
-    const auto payload = build_payload(hdr_only);
-    std::vector<uint8_t> truncated(payload.begin(), payload.begin() + 11); // keep header only
-
-    EaglePacket out{};
-    ASSERT_TRUE(decode_eagle_packet(truncated.data(), truncated.size(), out));
-    EXPECT_EQ(out.object_count, 3);
-    EXPECT_EQ(out.objects[0].x_cm, 0); // zero-padded
-    EXPECT_EQ(out.objects[0].orientation_deg, 0);
 }
 
 TEST(EaglePacketDecode, BoundaryValues) {
@@ -226,9 +116,6 @@ TEST(EaglePacketDecode, BoundaryValues) {
     src.opponent_y_cm = 0;
     src.opponent_theta_deg = 359;
     src.opponent_detected = false;
-
-    src.object_count = 1;
-    src.objects[0] = {ObjectType::Plank, 0, 0, 0};
 
     const auto payload = build_payload(src);
 
@@ -277,30 +164,8 @@ TEST(EaglePacketDecode, ManualBitPatternOneObject) {
 
         /* Byte 6  (bits 48‑55)
              bits48‑54 opponent_theta (cont.)
-             bit55      initial_bleachers[0] =0 */
+             bit55     padding =0 */
         0b00010110,
-
-        /* Byte 7  (bits 56‑63)
-             bits56‑63 initial_bleachers[1‑8] =0 */
-        0b00000000,
-
-        /* Byte 8  (bits 64‑71)
-             bit64  initial_bleachers[9] =0
-             bits65‑70 object_count =1 (binary 000001, LSB‑first)
-             bit71 padding =0 */
-        0b00000010,
-
-        /* Byte 9  (bits 72‑79)
-             bits72‑78 object[0] type + x (bits0‑6 of object) */
-        0b00110000,
-
-        /* Byte 10 (bits 80‑87)
-             object[0] x (cont.) + y (bits) */
-        0b01010000,
-
-        /* Byte 11 (bits 88‑95)
-             object[0] y (cont.) + θ index (bits 0‑2) */
-        0b00000100
     };
 
     EaglePacket expected{};
@@ -314,9 +179,6 @@ TEST(EaglePacketDecode, ManualBitPatternOneObject) {
     expected.opponent_x_cm = 5;
     expected.opponent_y_cm = 6;
     expected.opponent_theta_deg = 90;
-
-    expected.object_count = 1;
-    expected.objects[0] = {ObjectType::Bleacher, 14, 31, 60};
 
     EaglePacket out{};
     ASSERT_TRUE(decode_eagle_packet(payload.data(), payload.size(), out));
@@ -332,13 +194,7 @@ TEST(EaglePacketDecode, ManualBitPatternOneObject) {
             << "opponent_detected=" << out.opponent_detected << "\n"
             << "opponent_x_cm=" << out.opponent_x_cm << "\n"
             << "opponent_y_cm=" << out.opponent_y_cm << "\n"
-            << "opponent_theta_deg=" << out.opponent_theta_deg << "\n"
-            << "initial_bleachers[0]=" << out.initial_bleachers[0] << "\n"
-            << "object_count=" << static_cast<int>(out.object_count) << "\n"
-            << "object[0].type=" << static_cast<int>(out.objects[0].type) << "\n"
-            << "object[0].x_cm=" << out.objects[0].x_cm << "\n"
-            << "object[0].y_cm=" << out.objects[0].y_cm << "\n"
-            << "object[0].orientation_deg=" << out.objects[0].orientation_deg << std::endl;
+            << "opponent_theta_deg=" << out.opponent_theta_deg << "\n";
         ADD_FAILURE() << oss.str();
     }
 
