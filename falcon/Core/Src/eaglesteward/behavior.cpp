@@ -345,7 +345,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
     constexpr float SPEED_DESCENT = 1.0f;
-    constexpr float SPEED_APPROACH = 0.55f;
+    constexpr float SPEED_APPROACH = 0.40f;
 
     auto node = statenode(
         BackAfterPickup{},
