@@ -1,6 +1,5 @@
 #pragma once
 
-#include "eaglesteward/dead_opponent.hpp"
 #include "eaglesteward/game_entities.hpp"
 #include "eaglesteward/opponent_tracker.hpp"
 #include "eaglesteward/potential_field.hpp"

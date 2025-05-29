@@ -395,6 +395,12 @@ void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_ti
         opponent_tracker.push(true, opponent_x, opponent_y);
     } else {
         opponent_tracker.push(false, 0.0f, 0.0f);
+
+        // Assume the opponent robot is in the invisible camera spot if it's not detected for several frames.
+        if (opponent_tracker.get_consecutive_non_detections() >= 10) {
+            opponent_x = 1.50f;
+            opponent_y = 2.50f; // Out of the field is fine as the invisible spot is the opponent's arrival area.
+        }
     }
 
     // Reset objects
