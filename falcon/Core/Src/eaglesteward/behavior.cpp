@@ -97,6 +97,22 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
     };
 };
 
+inline bool isBInFrontOfA(float ax, float ay, float aTheta,
+                          float bx, float by)
+{
+    // Vecteur AB
+    const float dx = bx - ax;
+    const float dy = by - ay;
+
+    // Vecteur direction du robot A
+    const float fx = std::cos(aTheta);
+    const float fy = std::sin(aTheta);
+
+    // Produit scalaire : signe > 0 ⇒ même demi-espace orienté qu’A
+    constexpr float EPS = 1e-6f;          // tolérance numérique
+    return (dx * fx + dy * fy) > EPS;
+}
+
 Status isSafe(input_t *, Command *, State *state) {
     if (state->filtered_tof_m < 0.18f) {
         myprintf("FLSAFE\n");
@@ -109,7 +125,15 @@ Status isSafe(input_t *, Command *, State *state) {
         float const y = state->robot_y - state->world.opponent_y;
         float const opponent_distance = sqrtf(x * x + y * y);
 
-        if (opponent_distance < 0.42f) {
+        bool inFront = isBInFrontOfA(state->robot_x, state->robot_y, state->robot_theta, state->world.opponent_x, state->world.opponent_y);
+        bool opponentInTheTrajectory;
+        if ( state->isMovingForward) {
+        	opponentInTheTrajectory = inFront;
+        } else {
+        	opponentInTheTrajectory =  ! inFront;
+        }
+
+        if (state->isMoving && opponentInTheTrajectory && opponent_distance < 0.42f) {
             myprintf("SFE-DETECT %.2f\n", opponent_distance);
             return Status::FAILURE;
         }
