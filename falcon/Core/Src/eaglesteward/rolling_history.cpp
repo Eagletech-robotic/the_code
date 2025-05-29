@@ -34,7 +34,7 @@ void RollingHistory::rectify_odometry_from_camera_position(float camera_x, float
                           rotation_span);
 
     // Only trust the camera orientation for limited rotations within the area
-    if (rotation_span <= to_radians(2.0f)) {
+    if (rotation_span <= to_radians(ROTATION_SPAN_MAX_DEGREES)) {
         out_corrected_theta = angle_normalize(camera_theta + relative_theta);
     } else {
         printf("BT TH-IGN span=%.3f\n", to_degrees(rotation_span));
@@ -110,7 +110,7 @@ void RollingHistory::rotation_span_in_area(float min_x, float min_y, float max_x
     float cumulative_x = 0.f, cumulative_y = 0.f, cumulative_theta = 0.f;
     float min_theta = FLT_MAX, max_theta = -FLT_MAX;
 
-    for (int step_nb = 0; step_nb < SIZE; ++step_nb) {
+    for (int step_nb = 0; step_nb < ROTATION_SPAN_NB_STEPS; ++step_nb) {
         if (cumulative_x >= min_x && cumulative_x <= max_x && cumulative_y >= min_y && cumulative_y <= max_y) {
             if (cumulative_theta < min_theta)
                 min_theta = cumulative_theta;
