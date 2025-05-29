@@ -82,7 +82,7 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
         myprintf("rotate %.f", to_degrees(angle));
         float error_angle = angle_normalize(angle - state->robot_theta);
 
-        if (fabsf(error_angle) < to_radians(1)) {
+        if (fabsf(error_angle) < to_radians(4)) {
             return Status::SUCCESS;
         }
 
@@ -281,7 +281,7 @@ struct BackAfterPickup {
                 if (state->colour == RobotColour::Yellow)
                     target_angle = to_radians(-45);
                 else
-                    target_angle = to_radians(135);
+                    target_angle = to_radians(90);
                 break;
             case 4:
                 if (state->colour == RobotColour::Yellow)
@@ -295,7 +295,7 @@ struct BackAfterPickup {
                 if (state->colour == RobotColour::Blue)
                     target_angle = to_radians(-135);
                 else
-                    target_angle = to_radians(45);
+                    target_angle = to_radians(90);
                 break;
             case 7:
                 straight_backward = true;
@@ -344,6 +344,9 @@ struct BackAfterPickup {
 Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BuildingAreaWaypoint, state->elapsedTime(*input));
 
+    constexpr float SPEED_DESCENT = 1.0f;
+    constexpr float SPEED_APPROACH = 0.40f;
+
     auto node = statenode(
         BackAfterPickup{},
         [](input_t *, Command *command_, State *state_) {
@@ -362,7 +365,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             }
 
             myprintf("BA-SRCH x=%.3f y=%.3f\n", waypoint.x, waypoint.y);
-            descend(*command_, *state_, 0.8f, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
+            descend(*command_, *state_, SPEED_DESCENT, MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS);
             return Status::RUNNING;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -374,7 +377,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             auto const target_x = slot.x + cos(slot.orientation) * distance;
             auto const target_y = slot.y + sin(slot.orientation) * distance;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, 0.8f,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, target_x, target_y, SPEED_DESCENT,
                                MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.12f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 return Status::SUCCESS;
@@ -394,7 +397,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
 
             auto const flag_clearance = building_area->is_starting() && building_area->first_available_slot == 0;
 
-            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, 0.25f,
+            if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, slot.x, slot.y, SPEED_APPROACH,
                                MAX_ROTATION_SPEED_BLEACHER, MAX_ROTATION_RADIUS, WHEELBASE_M,
                                ROBOT_RADIUS - (flag_clearance ? 0.00f : 0.05f), &command_->target_left_speed,
                                &command_->target_right_speed)) {
