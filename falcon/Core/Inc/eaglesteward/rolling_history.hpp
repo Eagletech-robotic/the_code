@@ -18,6 +18,10 @@ class RollingHistory {
     // => Keep it slightly above the average number of lookback steps.
     static constexpr int SIZE = 250;
 
+    // The window size and max angle for rotation span.
+    static constexpr int ROTATION_SPAN_NB_STEPS = 70;
+    static constexpr float ROTATION_SPAN_MAX_DEGREES = 2.0f;
+
     std::array<float, SIZE> deltas_x{}, deltas_y{}, deltas_theta{};
 
     int idx{0};
