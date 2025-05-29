@@ -64,7 +64,8 @@ void State::updateFromInput(const config_t &config, const input_t &input) {
     print();
 }
 
-void State::updateFromBluetooth(float elapsed_time) {
+// return the presence of new packet
+bool State::updateFromBluetooth(float elapsed_time) {
     // Read until the last available packet
     const uint8_t *packet, *last_packet = nullptr;
     while ((packet = g_bluetooth_decoder.read_packet()) != nullptr)
@@ -72,13 +73,13 @@ void State::updateFromBluetooth(float elapsed_time) {
 
     // Stop here if there is no new packet
     if (last_packet == nullptr)
-        return;
+        return false;
 
     // Decode the packet. Stop here if it fails.
     EaglePacket eagle_packet{};
     if (!decode_eagle_packet(last_packet, PACKET_SIZE, eagle_packet)) {
         myprintf("decode_eagle_packet() failed\n");
-        return;
+        return false;
     }
 
     // ------ DECODING -------
@@ -108,4 +109,5 @@ void State::updateFromBluetooth(float elapsed_time) {
 
     packet_received_at_this_step = true;
     myprintf("Packet received, state updated");
+    return true;
 }

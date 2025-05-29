@@ -184,6 +184,19 @@ Status hasBleacherAttached(input_t *, Command *, State *state) {
     return state->bleacher_lifted ? Status::SUCCESS : Status::FAILURE;
 }
 
+Status is_com_lost(input_t *input, Command *command, State *state) {
+	if(state->last_packet_time + 2.0f < state->elapsedTime(*input)) {
+		return Status::FAILURE;
+	}
+	return Status::SUCCESS;
+}
+
+Status stop (input_t *input, Command *command, State *state) {
+	command->target_left_speed = 0.0f;
+	command->target_right_speed = 0.0f;
+	return Status::RUNNING;
+}
+
 Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
     state->world.set_target(TargetType::BleacherWaypoint, state->elapsedTime(*input));
 
@@ -625,8 +638,10 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         // alternative(logAndFail("back and forward"), backAndForwardStateNode),
         // alternative(logAndFail("Rectangle descend"), infiniteRectangleDescend),
         alternative(isGameActive, logAndFail("Game-finished"), holdAfterEnd),
-        alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
+		alternative(is_com_lost, logAndFail("COm_lost"), stop),
+		alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
+
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
         // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),

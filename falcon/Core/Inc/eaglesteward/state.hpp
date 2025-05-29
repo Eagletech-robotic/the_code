@@ -27,7 +27,7 @@ class State {
 
     void updateFromInput(const config_t &cfg, const input_t &in);
 
-    void updateFromBluetooth(float elapsed_time);
+    bool updateFromBluetooth(float elapsed_time);
 
     /* PUBLIC DATA ---------------------------------------------------- */
     RobotColour colour{RobotColour::Yellow};
@@ -82,6 +82,9 @@ class State {
 
     // Target coordinates for PID approach
     GameEntity target{0.0f, 0.0f, 0.0f};
+
+    //date du dernier paquet reçu
+    float last_packet_time{0.0f};
 
     // --- Method ---
 
