@@ -289,6 +289,11 @@ void World::setup_obstacles_field(GamePhase phase) {
         auto const occupied_space_only = building_area.colour == colour_;
         float const half_width = building_area.span_x(occupied_space_only) / 2;
         float const half_height = building_area.span_y(occupied_space_only) / 2;
+
+        if (half_height < 0.01f || half_width < 0.01f) {
+            continue;
+        }
+
         mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
                                     building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
