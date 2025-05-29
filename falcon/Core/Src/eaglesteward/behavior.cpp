@@ -134,7 +134,7 @@ Status isSafe(input_t *, Command *, State *state) {
         	opponentInTheTrajectory =  ! inFront;
         }
 
-        if (state->isMoving && opponentInTheTrajectory && opponent_distance < 0.42f) {
+        if (opponentInTheTrajectory && opponent_distance < 0.48f) {
             myprintf("SFE-DETECT %.2f\n", opponent_distance);
             return Status::FAILURE;
         }
