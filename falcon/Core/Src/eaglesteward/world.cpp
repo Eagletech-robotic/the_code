@@ -304,7 +304,7 @@ void World::setup_obstacles_field(GamePhase phase) {
     }
 
     // Long range repelling
-    if (dead_opponent.is_alive()) {
+    if (opponent_tracker.is_alive()) {
         mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
     }
 
@@ -387,19 +387,29 @@ int World::closest_initial_bleacher_index(float x, float y) const {
 void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_time) {
     colour_ = packet.robot_colour;
 
+    if (packet.opponent_detected) {
+        // Read the opponent's position and orientation
+        opponent_x = static_cast<float>(packet.opponent_x_cm) / 100.0f;
+        opponent_y = static_cast<float>(packet.opponent_y_cm) / 100.0f;
+        opponent_theta = angle_normalize(to_radians(packet.opponent_theta_deg));
+        opponent_tracker.push(true, opponent_x, opponent_y);
+    } else {
+        opponent_tracker.push(false, 0.0f, 0.0f);
+    }
+
     // Reset objects
     // bleachers_.clear();
     cans_.clear();
     planks_.clear();
 
-    // 1) Insert initial bleachers from  the header
+    // Insert initial bleachers from  the header
     // for (size_t i = 0; i < 10; ++i) {
     // if (packet.initial_bleachers[i]) {
     // bleachers_.push_back(default_bleachers_[i]);
     // }
     // }
 
-    // 2) Insert objects from the object list
+    // Insert objects from the object list
     for (uint8_t i = 0; i < packet.object_count; ++i) {
         auto const &object = packet.objects[i];
 

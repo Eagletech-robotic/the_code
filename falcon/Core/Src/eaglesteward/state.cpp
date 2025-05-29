@@ -85,6 +85,7 @@ void State::updateFromBluetooth(float elapsed_time) {
     // Read the colour
     colour = eagle_packet.robot_colour;
 
+    // Read our robot position
     if (eagle_packet.robot_detected) {
         float const camera_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
         float const camera_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
@@ -102,14 +103,7 @@ void State::updateFromBluetooth(float elapsed_time) {
         robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
     }
 
-    if (eagle_packet.opponent_detected) {
-        // Read the opponent's position and orientation
-        world.opponent_x = static_cast<float>(eagle_packet.opponent_x_cm) / 100.0f;
-        world.opponent_y = static_cast<float>(eagle_packet.opponent_y_cm) / 100.0f;
-        world.opponent_theta = angle_normalize(to_radians(eagle_packet.opponent_theta_deg));
-    }
-
-    // Update the world from the packet
+    // Read the World properties from the packet
     world.update_from_eagle_packet(eagle_packet, elapsed_time);
 
     packet_received_at_this_step = true;
