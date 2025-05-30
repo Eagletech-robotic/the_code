@@ -432,6 +432,19 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return rotate(angle_normalize(state_->target.orientation + M_PI), 10.0f)(input_, command_, state_);
         },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->start_retraction_at = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            constexpr float WAIT_TIME = 0.5f;
+            if (state_->elapsedTime(*input_) - state_->start_retraction_at < WAIT_TIME) {
+                command_->target_left_speed = 0.f;
+                command_->target_right_speed = 0.f;
+                return Status::RUNNING;
+            }
+            return Status::SUCCESS;
+        },
         [](input_t *, Command *command_, State *state_) {
             auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
