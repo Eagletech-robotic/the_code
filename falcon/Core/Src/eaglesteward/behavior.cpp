@@ -150,7 +150,7 @@ struct Safe {
         };
 
         auto hold = [this](input_t *input, Command *command, State *state) {
-            myprintf("SFE-HOLD\n");
+            myprintf("SFE-HOLD %2.f\n", state->elapsedTime(*input) - state->on_evade_since);
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
 
