@@ -41,6 +41,8 @@ class Bleacher : public GameEntity {
 
     [[nodiscard]] std::array<GameEntity, 2> waypoints() const;
 
+    [[nodiscard]] bool is_accessible_bleacher(RobotColour colour) const;
+
     // The 2 bleachers in the centre
     [[nodiscard]] bool is_easy_central() const;
 
