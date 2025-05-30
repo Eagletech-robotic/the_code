@@ -161,9 +161,6 @@ struct Safe {
                 return Status::SUCCESS;
             }
 
-            //            if (state->elapsedTime(*input) - startTime > 3.0f) {
-            //                return Status::SUCCESS;
-            //            }
             return Status::RUNNING;
         };
 
@@ -175,9 +172,7 @@ struct Safe {
                 // on ne sait pas ou fuir
 
                 float target_angle;
-
-                bool has_arrived =
-                    state->world.potential_field_descent(state->robot_x, state->robot_y, 0.01, target_angle);
+                state->world.potential_field_descent(state->robot_x, state->robot_y, 0.01, target_angle);
 
                 if (isBInFrontOfA(state->robot_x, state->robot_y, target_angle, state->world.opponent_x,
                                   state->world.opponent_y)) {
