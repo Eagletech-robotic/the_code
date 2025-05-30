@@ -496,7 +496,7 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
                 return Status::SUCCESS;
             }
 
-            descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, true);
+            descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, false);
             return Status::RUNNING;
         },
         rotate(M_PI_2),    //
