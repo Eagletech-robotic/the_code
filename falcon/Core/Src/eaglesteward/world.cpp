@@ -154,15 +154,42 @@ void World::enqueue_targets() {
 }
 
 void World::setup_obstacles_field(GamePhase phase) {
-    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type) {
-        int i0 = std::max(0, static_cast<int>(std::floor(x_min / SQUARE_SIZE_M)));
-        int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(x_max / SQUARE_SIZE_M)));
-        int j0 = std::max(0, static_cast<int>(std::floor(y_min / SQUARE_SIZE_M)));
-        int j1 = std::min(FIELD_HEIGHT_SQ - 1, static_cast<int>(std::floor(y_max / SQUARE_SIZE_M)));
+    // bevel = 0 => no padding
+    // bevel > 0 => padding of ROBOT_RADIUS, with a bevel at each corner
+    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type, int bevel = 0) {
+        // Adjust bounds if padding is requested
+        float actual_x_min = bevel > 0 ? x_min - ROBOT_RADIUS : x_min;
+        float actual_x_max = bevel > 0 ? x_max + ROBOT_RADIUS : x_max;
+        float actual_y_min = bevel > 0 ? y_min - ROBOT_RADIUS : y_min;
+        float actual_y_max = bevel > 0 ? y_max + ROBOT_RADIUS : y_max;
 
-        for (int i = i0; i <= i1; ++i)
-            for (int j = j0; j <= j1; ++j)
+        // Convert to grid coordinates
+        int i0 = std::max(0, static_cast<int>(std::floor(actual_x_min / SQUARE_SIZE_M)));
+        int i1 = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::floor(actual_x_max / SQUARE_SIZE_M)));
+        int j0 = std::max(0, static_cast<int>(std::floor(actual_y_min / SQUARE_SIZE_M)));
+        int j1 = std::min(FIELD_HEIGHT_SQ - 1, static_cast<int>(std::floor(actual_y_max / SQUARE_SIZE_M)));
+
+        for (int i = i0; i <= i1; ++i) {
+            for (int j = j0; j <= j1; ++j) {
+                // Skip beveled corners if padding is enabled
+                if (bevel > 0) {
+                    // Bottom-left corner
+                    if ((i - i0) + (j - j0) < bevel)
+                        continue;
+                    // Bottom-right corner
+                    if ((i1 - i) + (j - j0) < bevel)
+                        continue;
+                    // Top-left corner
+                    if ((i - i0) + (j1 - j) < bevel)
+                        continue;
+                    // Top-right corner
+                    if ((i1 - i) + (j1 - j) < bevel)
+                        continue;
+                }
+
                 obstacles_field_[i][j] = std::max(obstacles_field_[i][j], type);
+            }
+        }
     };
 
     auto mark_circle = [this](float center_x, float center_y, float radius_f, ObstacleType type) {
@@ -184,66 +211,6 @@ void World::setup_obstacles_field(GamePhase phase) {
         }
     };
 
-    auto mark_rectangle_with_padding = [this, mark_rectangle](float x_min, float x_max, float y_min, float y_max,
-                                                              ObstacleType type) {
-        // Center rectangle + top and bottom
-        mark_rectangle(x_min, x_max, y_min - ROBOT_RADIUS, y_max + ROBOT_RADIUS, type);
-        // Left and right sides
-        mark_rectangle(x_min - ROBOT_RADIUS, x_min, y_min, y_max, type);
-        mark_rectangle(x_max, x_max + ROBOT_RADIUS, y_min, y_max, type);
-
-        // Mark quarter circles at corners
-        auto mark_quarter_circle = [this](float center_x, float center_y, float radius_f, int x_dir, int y_dir,
-                                          ObstacleType type) {
-            // Calculate bounds in floating point first to avoid rounding errors
-            float x_min_f = (x_dir < 0) ? center_x - radius_f : center_x;
-            float x_max_f = (x_dir > 0) ? center_x + radius_f : center_x;
-            float y_min_f = (y_dir < 0) ? center_y - radius_f : center_y;
-            float y_max_f = (y_dir > 0) ? center_y + radius_f : center_y;
-
-            // Convert to grid coordinates with proper bounds checking
-            int i_start = std::max(0, static_cast<int>(std::floor(x_min_f / SQUARE_SIZE_M)));
-            int i_end = std::min(FIELD_WIDTH_SQ - 1, static_cast<int>(std::ceil(x_max_f / SQUARE_SIZE_M)));
-            int j_start = std::max(0, static_cast<int>(std::floor(y_min_f / SQUARE_SIZE_M)));
-            int j_end = std::min(FIELD_HEIGHT_SQ - 1, static_cast<int>(std::ceil(y_max_f / SQUARE_SIZE_M)));
-
-            // Convert center to grid coordinates
-            int center_i = static_cast<int>(std::floor(center_x / SQUARE_SIZE_M));
-            int center_j = static_cast<int>(std::floor(center_y / SQUARE_SIZE_M));
-
-            // Square of radius in grid units
-            float radius_grid = radius_f / SQUARE_SIZE_M;
-            float square_radius_grid = radius_grid * radius_grid;
-
-            for (int i = i_start; i <= i_end; ++i) {
-                int di = i - center_i;
-                float square_i = static_cast<float>(di * di);
-
-                // Early termination if we're outside the circle radius
-                if (square_i > square_radius_grid)
-                    continue;
-
-                for (int j = j_start; j <= j_end; ++j) {
-                    int dj = j - center_j;
-
-                    // Check if we're within the circle and in the correct quadrant
-                    if (di * x_dir >= 0 && dj * y_dir >= 0) {
-                        float square_j = static_cast<float>(dj * dj);
-                        if (square_i + square_j <= square_radius_grid) {
-                            obstacles_field_[i][j] = std::max(obstacles_field_[i][j], type);
-                        }
-                    }
-                }
-            }
-        };
-
-        // Corners
-        mark_quarter_circle(x_min, y_min, ROBOT_RADIUS, -1, -1, type); // Bottom-left
-        mark_quarter_circle(x_max, y_min, ROBOT_RADIUS, 1, -1, type);  // Bottom-right
-        mark_quarter_circle(x_min, y_max, ROBOT_RADIUS, -1, 1, type);  // Top-left
-        mark_quarter_circle(x_max, y_max, ROBOT_RADIUS, 1, 1, type);   // Top-right
-    };
-
     // ---------------
     // Borders
     // ---------------
@@ -255,31 +222,31 @@ void World::setup_obstacles_field(GamePhase phase) {
     // Scene
     // ---------------
     // Central scene
-    mark_rectangle_with_padding(1.05f, 3.00f - 1.05f, 1.55f, 2.00f, ObstacleType::Fixed);
+    mark_rectangle(1.05f, 3.00f - 1.05f, 1.55f, 2.00f, ObstacleType::Fixed, 2);
 
     // Lateral ramps
-    mark_rectangle_with_padding(0.65f, 1.05f, 1.80f, 2.00f, ObstacleType::Fixed);
-    mark_rectangle_with_padding(3.00f - 1.05f, 3.00f - 0.65f, 1.80f, 2.00f, ObstacleType::Fixed);
+    mark_rectangle(0.65f, 1.05f, 1.80f, 2.00f, ObstacleType::Fixed, 2);
+    mark_rectangle(3.00f - 1.05f, 3.00f - 0.65f, 1.80f, 2.00f, ObstacleType::Fixed, 2);
 
     // Opponent reserved bleacher
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle_with_padding(0.60f, 1.05f, 1.675f, 1.80f, ObstacleType::Fixed);
+        mark_rectangle(0.60f, 1.05f, 1.675f, 1.80f, ObstacleType::Fixed, 2);
     } else {
-        mark_rectangle_with_padding(3.0f - 1.05f, 3.00f - 0.60f, 1.675f, 1.80f, ObstacleType::Fixed);
+        mark_rectangle(3.0f - 1.05f, 3.00f - 0.60f, 1.675f, 1.80f, ObstacleType::Fixed, 2);
     }
 
     // Opponent backstage area
     if (colour_ == RobotColour::Blue) {
-        mark_rectangle_with_padding(0.00f, 0.60f, 1.55f, 2.00f, ObstacleType::Fixed);
+        mark_rectangle(0.00f, 0.60f, 1.55f, 2.00f, ObstacleType::Fixed, 2);
     } else {
-        mark_rectangle_with_padding(3.00f - 0.60f, 3.00f, 1.55f, 2.00f, ObstacleType::Fixed);
+        mark_rectangle(3.00f - 0.60f, 3.00f, 1.55f, 2.00f, ObstacleType::Fixed, 2);
     }
 
     // ---------------
     // PAMI exclusion zone
     // ---------------
     if (phase == GamePhase::PamiStarted) {
-        mark_rectangle_with_padding(0.95f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed);
+        mark_rectangle(0.95f, 2.05f, 1.20f, 1.55f, ObstacleType::Fixed, 5);
     }
 
     // ---------------
@@ -294,8 +261,8 @@ void World::setup_obstacles_field(GamePhase phase) {
             continue;
         }
 
-        mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
-                                    building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
+        mark_rectangle(building_area.x - half_width, building_area.x + half_width, building_area.y - half_height,
+                       building_area.y + half_height, ObstacleType::Fixed, 3);
     }
 
     // ---------------
@@ -310,7 +277,7 @@ void World::setup_obstacles_field(GamePhase phase) {
 
     // Long range repelling
     if (opponent_tracker.is_alive()) {
-        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 4.0f, ObstacleType::Movable);
+        mark_circle(opponent_x, opponent_y, ROBOT_RADIUS * 3.0f, ObstacleType::Movable);
     }
 
     // ---------------
@@ -327,11 +294,11 @@ void World::setup_obstacles_field(GamePhase phase) {
         constexpr float HALF_SMALL = BLEACHER_WIDTH / 2.0f;
         constexpr float HALF_LARGE = BLEACHER_LENGTH / 2.0f;
         if (bleacher.is_horizontal()) {
-            mark_rectangle_with_padding(bleacher.x - HALF_SMALL, bleacher.x + HALF_SMALL, bleacher.y - HALF_LARGE,
-                                        bleacher.y + HALF_LARGE, ObstacleType::Fixed);
+            mark_rectangle(bleacher.x - HALF_SMALL, bleacher.x + HALF_SMALL, bleacher.y - HALF_LARGE,
+                           bleacher.y + HALF_LARGE, ObstacleType::Fixed, 2);
         } else {
-            mark_rectangle_with_padding(bleacher.x - HALF_LARGE, bleacher.x + HALF_LARGE, bleacher.y - HALF_SMALL,
-                                        bleacher.y + HALF_SMALL, ObstacleType::Fixed);
+            mark_rectangle(bleacher.x - HALF_LARGE, bleacher.x + HALF_LARGE, bleacher.y - HALF_SMALL,
+                           bleacher.y + HALF_SMALL, ObstacleType::Fixed, 2);
         }
     }
 
