@@ -39,7 +39,9 @@ class World {
         return potential_fields_[ready_field_].gradient_descent(x, y, arrival_distance, out_yaw);
     }
 
-    [[nodiscard]] float potential_at(float px, float py) const { return potential_fields_[ready_field_].potential_at(px, py); }
+    [[nodiscard]] float potential_at(float px, float py) const {
+        return potential_fields_[ready_field_].potential_at(px, py);
+    }
 
     /** Do some calculations that fit in a step. Returns true if calculations were done. */
     bool do_some_calculations(const std::function<bool()> &can_continue);
