@@ -241,6 +241,19 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             myprintf("BL-APPCNT1 x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
         },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->positioning_holdon_before_pickup = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            constexpr float WAIT_TIME = 1.0f;
+            if (state_->elapsedTime(*input_) - state_->positioning_holdon_before_pickup < WAIT_TIME) {
+                command_->target_left_speed = 0.f;
+                command_->target_right_speed = 0.f;
+                return Status::RUNNING;
+            }
+            return Status::SUCCESS;
+        },
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
@@ -523,8 +536,8 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
             descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, false);
             return Status::RUNNING;
         },
-        rotate(M_PI_2, 10.0f),    //
-        dontMoveUntil(96), //
+        rotate(M_PI_2, 10.0f), //
+        dontMoveUntil(96),     //
         [](input_t *, Command *command, State *state) {
             float target_x, target_y;
             if (state->colour == RobotColour::Blue) {

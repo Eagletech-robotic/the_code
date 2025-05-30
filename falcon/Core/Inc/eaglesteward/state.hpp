@@ -62,6 +62,7 @@ class State {
     bool is_moving_forward;
 
     float on_evade_since{0.0f};
+    float positioning_holdon_before_pickup{-FLT_MAX};
 
     // Bluetooth
     bool packet_received_at_this_step{false};
