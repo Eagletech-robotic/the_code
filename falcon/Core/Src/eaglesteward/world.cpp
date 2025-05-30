@@ -79,7 +79,7 @@ void World::reset_dijkstra(float elapsed_time) {
     GamePhase const phase = current_phase(elapsed_time);
     setup_obstacles_field(phase);
 
-    printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
+    // printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
 }
 
 void World::enqueue_targets() {
@@ -289,6 +289,11 @@ void World::setup_obstacles_field(GamePhase phase) {
         auto const occupied_space_only = building_area.colour == colour_;
         float const half_width = building_area.span_x(occupied_space_only) / 2;
         float const half_height = building_area.span_y(occupied_space_only) / 2;
+
+        if (half_height < 0.01f || half_width < 0.01f) {
+            continue;
+        }
+
         mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
                                     building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
@@ -354,7 +359,7 @@ bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     bool more_work = potential_calculating().compute_dijkstra_partial(obstacles_field_, pqueue_, can_continue);
     if (!more_work) {
         // Computation is done, swap buffers
-        printf("DIJSK DONE\n");
+        // printf("DIJSK DONE\n");
         ready_field_ ^= 1;
     }
     return more_work;
