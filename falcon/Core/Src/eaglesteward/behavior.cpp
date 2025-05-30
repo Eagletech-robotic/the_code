@@ -98,7 +98,11 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
 };
 
 Status isSafe(input_t *input, Command *, State *state) {
-    if (state->filtered_tof_m < 0.18f) {
+	if (state->elapsedTime(*input) - state->on_evade_since < 0.5f) {
+	        return Status::FAILURE;
+	    }
+
+	if (state->filtered_tof_m < 0.18f) {
         myprintf("FLSAFE\n");
         state->on_evade_since = state->elapsedTime(*input);
         return Status::FAILURE;
@@ -123,10 +127,6 @@ Status isSafe(input_t *input, Command *, State *state) {
     if (in_trajectory && distance < 0.45f) {
         myprintf("SFE-DETECT %.2f\n", distance);
         state->on_evade_since = state->elapsedTime(*input);
-        return Status::FAILURE;
-    }
-
-    if (state->elapsedTime(*input) - state->on_evade_since < 0.5f) {
         return Status::FAILURE;
     }
 
@@ -157,6 +157,10 @@ struct Safe {
             // Precompute the potential field
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
+            if(state->elapsedTime(*input) - state->on_evade_since  > 3.0f) {
+            	return Status::SUCCESS;
+            }
+
             if (state->elapsedTime(*input) - startTime > 3.0f) {
                 return Status::SUCCESS;
             }
@@ -169,12 +173,19 @@ struct Safe {
 
             if (state->world.potential_at(state->robot_x, state->robot_y) > FLT_MAX / 2.0f) {
                 // on ne sait pas ou fuir
-                command->target_left_speed = 0.0f;
-                command->target_right_speed = 0.0f;
-                return Status::RUNNING;
+
+            	float target_angle;
+
+            	bool has_arrived = state->world.potential_field_descent(state->robot_x, state->robot_y, 0.01, target_angle);
+
+            	if(isBInFrontOfA(state->robot_x, state->robot_y, target_angle, state->world.opponent_x, state->world.opponent_y)) {
+            		command->target_left_speed = 0.0f;
+            		command->target_right_speed = 0.0f;
+            		return Status::RUNNING;
+            	}
             }
 
-            descend(*command, *state, 1.0f, MAX_ROTATION_SPEED_BLEACHER, 0.0, 0.01, true);
+            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED_BLEACHER, 0.0, 0.01, true);
             return Status::RUNNING;
         };
 
