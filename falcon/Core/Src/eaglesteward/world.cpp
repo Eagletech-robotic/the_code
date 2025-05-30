@@ -79,7 +79,7 @@ void World::reset_dijkstra(float elapsed_time) {
     GamePhase const phase = current_phase(elapsed_time);
     setup_obstacles_field(phase);
 
-    printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
+    // printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
 }
 
 void World::enqueue_targets() {
@@ -359,7 +359,7 @@ bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     bool more_work = potential_calculating().compute_dijkstra_partial(obstacles_field_, pqueue_, can_continue);
     if (!more_work) {
         // Computation is done, swap buffers
-        printf("DIJSK DONE\n");
+        // printf("DIJSK DONE\n");
         ready_field_ ^= 1;
     }
     return more_work;
