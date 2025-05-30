@@ -79,7 +79,7 @@ void World::reset_dijkstra(float elapsed_time) {
     GamePhase const phase = current_phase(elapsed_time);
     setup_obstacles_field(phase);
 
-    printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
+    // printf("DIJSK RST %d\n", static_cast<int>(pqueue_.size()));
 }
 
 void World::enqueue_targets() {
@@ -289,6 +289,11 @@ void World::setup_obstacles_field(GamePhase phase) {
         auto const occupied_space_only = building_area.colour == colour_;
         float const half_width = building_area.span_x(occupied_space_only) / 2;
         float const half_height = building_area.span_y(occupied_space_only) / 2;
+
+        if (half_height < 0.01f || half_width < 0.01f) {
+            continue;
+        }
+
         mark_rectangle_with_padding(building_area.x - half_width, building_area.x + half_width,
                                     building_area.y - half_height, building_area.y + half_height, ObstacleType::Fixed);
     }
@@ -354,7 +359,7 @@ bool World::do_some_calculations(const std::function<bool()> &can_continue) {
     bool more_work = potential_calculating().compute_dijkstra_partial(obstacles_field_, pqueue_, can_continue);
     if (!more_work) {
         // Computation is done, swap buffers
-        printf("DIJSK DONE\n");
+        // printf("DIJSK DONE\n");
         ready_field_ ^= 1;
     }
     return more_work;
@@ -407,39 +412,6 @@ void World::update_from_eagle_packet(const EaglePacket &packet, float elapsed_ti
     // bleachers_.clear();
     cans_.clear();
     planks_.clear();
-
-    // Insert initial bleachers from  the header
-    // for (size_t i = 0; i < 10; ++i) {
-    // if (packet.initial_bleachers[i]) {
-    // bleachers_.push_back(default_bleachers_[i]);
-    // }
-    // }
-
-    // Insert objects from the object list
-    for (uint8_t i = 0; i < packet.object_count; ++i) {
-        auto const &object = packet.objects[i];
-
-        auto const x = static_cast<float>(object.x_cm) * 0.01f;
-        auto const y = static_cast<float>(object.y_cm) * 0.01f;
-        auto const orientation = to_radians(object.orientation_deg);
-
-        switch (object.type) {
-        case ObjectType::Bleacher:
-            if (!bleachers_.full())
-                bleachers_.push_back({x, y, orientation, false});
-            break;
-        case ObjectType::Can:
-            if (!cans_.full())
-                cans_.push_back({x, y, orientation});
-            break;
-        case ObjectType::Plank:
-            if (!planks_.full())
-                planks_.push_back({x, y, orientation});
-            break;
-        default:
-            break;
-        }
-    }
 
     // Force the recalculation of the potential field
     reset_dijkstra(elapsed_time);

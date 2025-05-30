@@ -20,10 +20,10 @@ void output_init(output_t &output) {
 
 void output_set(const output_t &output) {
     if (output.motor_left_ratio < -1.0 || 1.0 < output.motor_left_ratio) {
-        printf("V2 survitesse (%f)\r\n", output.motor_left_ratio);
+        myprintf("V2 survitesse (%f)\r\n", output.motor_left_ratio);
     }
     if (output.motor_right_ratio < -1.0 || 1.0 < output.motor_right_ratio) {
-        printf("V1 survitesse (%f)\r\n", output.motor_right_ratio);
+        myprintf("V1 survitesse (%f)\r\n", output.motor_right_ratio);
     }
     motorSet(output.motor_right_ratio, output.motor_left_ratio);
 

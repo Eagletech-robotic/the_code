@@ -4,31 +4,20 @@
 
 /* --------------------------------------------------------------------------
    Bluetooth packet format (little‑endian bit order).
-   Packet length: 109 bytes
-   - Header: 9 bytes
-   - Up to 40 objects × 20 bits = 100 bytes.
+   Packet length: 7 bytes
 
-   Byte   Bit‑index  Purpose                                Size (bits)
-   ───────────────────────────────────────────────────────────────────────
-   0-8   0          robot_colour (0=blue, 1=yellow)        1
-         1          robot_detected (0=no, 1=yes)           1
-         2‑10       robot_x (0–300)                        9
-         11‑18      robot_y (0–200)                        8
-         19‑27      robot_theta_deg [0, 360)               9
-         28         opponent_detected (0=no, 1=yes)        1
-         29‑37      opponent_x (0–300)                     9
-         38‑45      opponent_y (0–200)                     8
-         46‑54      opponent_theta_deg [0, 360)            9
-         55‑64      initial_bleachers[10], clockwise from  10
-                    the center right – 1 bit each
-         65‑70      object_count (0‑40)                    6
-         71         padding (0)                            1
-   9+20i repeating object (0 ≤ i < 40):                    20 bits each
-         0-1        type (0=bleacher, 1=plank, 2=can)      2
-         2-9        x (0‑300)                              8
-         10-16      y (0‑200)                              7
-         17-19      θ_deg (0,30,…,330)                     3
-   ->108            padding (0)                            Fill to 109 bytes
+    Bit‑index  Purpose                                Size (bits)
+   ─────────────────────────────────────────────────────────────────
+   0          robot_colour (0=blue, 1=yellow)        1
+   1          robot_detected (0=no, 1=yes)           1
+   2‑10       robot_x (0–300)                        9
+   11‑18      robot_y (0–200)                        8
+   19‑27      robot_theta_deg [0, 360)               9
+   28         opponent_detected (0=no, 1=yes)        1
+   29‑37      opponent_x (0–300)                     9
+   38‑45      opponent_y (0–200)                     8
+   46‑54      opponent_theta_deg [0, 360)            9
+   55         padding (0)                            1
    -------------------------------------------------------------------------- */
 
 enum class RobotColour : uint8_t { Blue = 0, Yellow = 1 };
@@ -53,11 +42,6 @@ struct EaglePacket {
     uint16_t opponent_x_cm;
     uint16_t opponent_y_cm;
     int16_t opponent_theta_deg;
-
-    bool initial_bleachers[10]{}; // clockwise from center right
-
-    uint8_t object_count;
-    EagleObject objects[40];
 };
 
 // Decode the payload sitting between starter byte and checksum.

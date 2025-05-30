@@ -96,11 +96,12 @@ void State::updateFromBluetooth(float elapsed_time) {
                                                           robot_theta, corrected_x, corrected_y, corrected_theta);
 
         // Blend with current odometry
-        constexpr float CAMERA_GAIN = 0.5f; // the closest tp 1, the more we trust the camera
+        constexpr float CAMERA_GAIN_POSITION = 0.5f; // the closest tp 1, the more we trust the camera
+        constexpr float CAMERA_GAIN_THETA = 0.5f;
 
-        robot_x = robot_x * (1.0f - CAMERA_GAIN) + corrected_x * CAMERA_GAIN;
-        robot_y = robot_y * (1.0f - CAMERA_GAIN) + corrected_y * CAMERA_GAIN;
-        robot_theta = angle_normalize(robot_theta + CAMERA_GAIN * angle_normalize(corrected_theta - robot_theta));
+        robot_x = robot_x * (1.0f - CAMERA_GAIN_POSITION) + corrected_x * CAMERA_GAIN_POSITION;
+        robot_y = robot_y * (1.0f - CAMERA_GAIN_POSITION) + corrected_y * CAMERA_GAIN_POSITION;
+        robot_theta = angle_normalize(robot_theta + CAMERA_GAIN_THETA * angle_normalize(corrected_theta - robot_theta));
     }
 
     // Read the World properties from the packet
