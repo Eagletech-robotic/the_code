@@ -156,8 +156,7 @@ void World::enqueue_targets() {
 void World::setup_obstacles_field(GamePhase phase) {
     // bevel = 0 => no padding
     // bevel > 0 => padding of ROBOT_RADIUS, with a bevel at each corner
-    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type,
-                                 int bevel = 0) {
+    auto mark_rectangle = [this](float x_min, float x_max, float y_min, float y_max, ObstacleType type, int bevel = 0) {
         // Adjust bounds if padding is requested
         float actual_x_min = bevel > 0 ? x_min - ROBOT_RADIUS : x_min;
         float actual_x_max = bevel > 0 ? x_max + ROBOT_RADIUS : x_max;
