@@ -71,7 +71,7 @@ GameEntity BuildingArea::available_slot() const {
     if (type == Type::Small) {
         return {x, y, orientation};
     } else {
-        const float from_center = static_cast<float>(first_available_slot - 1) * 0.30f + 0.05f;
+        const float from_center = static_cast<float>(first_available_slot - 1) * 0.30f + 0.20f;
         return {x + std::cos(orientation) * from_center, y + std::sin(orientation) * from_center, orientation};
     }
 }
