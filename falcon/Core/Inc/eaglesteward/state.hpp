@@ -42,6 +42,7 @@ class State {
     float robot_x{0.f}; // meters
     float robot_y{0.f};
     float robot_theta{0.f};
+    float last_robot_update_time{-FLT_MAX}; // Elapsed time of the last position update from the camera
 
     // World
     World world{colour};

@@ -86,7 +86,8 @@ void State::updateFromBluetooth(float elapsed_time) {
     colour = eagle_packet.robot_colour;
 
     // Read our robot position
-    if (eagle_packet.robot_detected) {
+    constexpr int MIN_TIME_BETWEEN_ROBOT_UPDATES = 1.0f; // seconds
+    if (eagle_packet.robot_detected && (elapsed_time - last_robot_update_time) >= MIN_TIME_BETWEEN_ROBOT_UPDATES) {
         float const camera_x = static_cast<float>(eagle_packet.robot_x_cm) * 0.01f;
         float const camera_y = static_cast<float>(eagle_packet.robot_y_cm) * 0.01f;
         float const camera_theta = angle_normalize(to_radians(eagle_packet.robot_theta_deg));
@@ -96,12 +97,13 @@ void State::updateFromBluetooth(float elapsed_time) {
                                                           robot_theta, corrected_x, corrected_y, corrected_theta);
 
         // Blend with current odometry
-        constexpr float CAMERA_GAIN_POSITION = 0.5f; // the closest tp 1, the more we trust the camera
-        constexpr float CAMERA_GAIN_THETA = 0.5f;
+        constexpr float CAMERA_GAIN_POSITION = 0.8f; // the closest tp 1, the more we trust the camera
+        constexpr float CAMERA_GAIN_THETA = 0.8f;
 
         robot_x = robot_x * (1.0f - CAMERA_GAIN_POSITION) + corrected_x * CAMERA_GAIN_POSITION;
         robot_y = robot_y * (1.0f - CAMERA_GAIN_POSITION) + corrected_y * CAMERA_GAIN_POSITION;
         robot_theta = angle_normalize(robot_theta + CAMERA_GAIN_THETA * angle_normalize(corrected_theta - robot_theta));
+        last_robot_update_time = elapsed_time;
     }
 
     // Read the World properties from the packet
