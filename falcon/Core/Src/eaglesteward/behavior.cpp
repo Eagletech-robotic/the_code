@@ -130,7 +130,7 @@ Status isSafe(input_t *input, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    state->on_evade_since = 0.0f;
+    state->on_evade_since = -100.0f;
     return Status::SUCCESS;
 }
 
@@ -150,16 +150,17 @@ struct Safe {
         };
 
         auto hold = [this](input_t *input, Command *command, State *state) {
-            myprintf("SFE-HOLD\n");
+            myprintf("SFE-HOLD %2.f\n", state->elapsedTime(*input) - state->on_evade_since);
             command->target_left_speed = 0.f;
             command->target_right_speed = 0.f;
 
             // Precompute the potential field
             state->world.set_target(TargetType::Evade, state->elapsedTime(*input));
 
-            if (state->elapsedTime(*input) - startTime > 3.0f) {
+            if (state->elapsedTime(*input) - state->on_evade_since > 3.0f) {
                 return Status::SUCCESS;
             }
+
             return Status::RUNNING;
         };
 
@@ -169,12 +170,19 @@ struct Safe {
 
             if (state->world.potential_at(state->robot_x, state->robot_y) > FLT_MAX / 2.0f) {
                 // on ne sait pas ou fuir
-                command->target_left_speed = 0.0f;
-                command->target_right_speed = 0.0f;
-                return Status::RUNNING;
+
+                float target_angle;
+                state->world.potential_field_descent(state->robot_x, state->robot_y, 0.01, target_angle);
+
+                if (isBInFrontOfA(state->robot_x, state->robot_y, target_angle, state->world.opponent_x,
+                                  state->world.opponent_y)) {
+                    command->target_left_speed = 0.0f;
+                    command->target_right_speed = 0.0f;
+                    return Status::RUNNING;
+                }
             }
 
-            descend(*command, *state, 1.0f, MAX_ROTATION_SPEED_BLEACHER, 0.0, 0.01, true);
+            descend(*command, *state, 0.6f, MAX_ROTATION_SPEED_BLEACHER, 0.0, 0.01, true);
             return Status::RUNNING;
         };
 
