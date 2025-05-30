@@ -43,7 +43,7 @@ bool Bleacher::is_accessible_bleacher(const RobotColour colour) const {
         return false;
     }
 
-    if (is_reserved(colour)) {
+    if (is_next_to_backstage()) {
         // May block pami's path
         return false;
     }
