@@ -63,6 +63,7 @@ class State {
 
     float on_evade_since{0.0f};
     float positioning_holdon_before_pickup{-FLT_MAX};
+    float slow_motion_after_pickup{-FLT_MAX};
 
     // Bluetooth
     bool packet_received_at_this_step{false};

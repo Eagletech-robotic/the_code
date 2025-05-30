@@ -252,6 +252,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
                 command_->target_right_speed = 0.f;
                 return Status::RUNNING;
             }
+            printf("BL-WAIT\n");
             return Status::SUCCESS;
         },
         [](input_t *, Command *command_, State *state_) {
@@ -269,14 +270,33 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
-                state_->world.remove_bleacher(state_->target.x, state_->target.y);
-                state_->release_target();
-                state_->bleacher_lifted = true;
                 return Status::SUCCESS;
             }
 
             myprintf("BL-APPCNT2 x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            state_->slow_motion_after_pickup = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            constexpr float MOTION_TIME = 0.5f;
+            if (state_->elapsedTime(*input_) - state_->slow_motion_after_pickup < MOTION_TIME) {
+                command_->target_left_speed = 0.3f;
+                command_->target_right_speed = 0.3f;
+                return Status::RUNNING;
+            }
+            printf("BL-SLOW\n");
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->world.remove_bleacher(state_->target.x, state_->target.y);
+            state_->release_target();
+            state_->bleacher_lifted = true;
+            return Status::SUCCESS;
         });
 
     return node(const_cast<input_t *>(input), command, state);
@@ -456,6 +476,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
                 command_->target_right_speed = 0.f;
                 return Status::RUNNING;
             }
+            printf("BA-WAIT\n");
             return Status::SUCCESS;
         },
         [](input_t *, Command *command_, State *state_) {
