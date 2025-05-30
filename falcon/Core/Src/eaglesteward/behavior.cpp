@@ -478,7 +478,16 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     // 85s PAMIs start
     // 100s End of game
-    return state->elapsedTime(*input) > 85.0f ? Status::FAILURE : Status::SUCCESS;
+    const bool isTimeElapsed = state->elapsedTime(*input) > 85.0f;
+    bool remainingAccessibleBleachers = false;
+    for (const auto &bleacher : state->world.bleachers_) {
+        if (bleacher.is_accessible_bleacher(state->colour)) {
+            remainingAccessibleBleachers = true;
+            break;
+        }
+    }
+    return (isTimeElapsed || !(remainingAccessibleBleachers || state->bleacher_lifted)) ? Status::FAILURE
+                                                                                        : Status::SUCCESS;
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
