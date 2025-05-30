@@ -109,7 +109,8 @@ float PotentialField::finite_potential(int i, int j) const {
         return FLT_MAX;
 
     constexpr float d_cell = SQUARE_SIZE_M;
-    return best + d_cell * std::sqrt(float(best_c * best_c + best_r * best_r));
+    constexpr float INFINITE_PENALTY = 1.0f * SQUARE_SIZE_M; // Discourage robot from staying in infinite area
+    return best + d_cell * std::sqrt(float(best_c * best_c + best_r * best_r)) + INFINITE_PENALTY;
 }
 
 float PotentialField::potential_at(float px, float py) const {
@@ -167,43 +168,40 @@ std::pair<float, float> PotentialField::bilinear_gradient(float px, float py) co
 }
 
 std::pair<float, float> PotentialField::interpolated_gradient(float px, float py) const {
-    // Convert to grid coordinates
-    float gx = px / SQUARE_SIZE_M;
-    float gy = py / SQUARE_SIZE_M;
-
+    // Convert to grid coordinates, in a grid system shifted lower left by 0.5 SQUARE_SIZE_M
+    float gx = px / SQUARE_SIZE_M + 0.5f;
+    float gy = py / SQUARE_SIZE_M + 0.5f;
     int i = static_cast<int>(std::floor(gx));
     int j = static_cast<int>(std::floor(gy));
+    float frac_x = gx - i;
+    float frac_y = gy - j;
 
     // Clamp to valid range
     i = std::clamp(i, 0, FIELD_WIDTH_SQ - 2);
     j = std::clamp(j, 0, FIELD_HEIGHT_SQ - 2);
 
-    // Fractional part
-    float fx = gx - i;
-    float fy = gy - j;
-
     // Compute gradients at the 4 cell centers
-    float cx00 = (i + 0.5f) * SQUARE_SIZE_M;
-    float cy00 = (j + 0.5f) * SQUARE_SIZE_M;
+    float cx00 = (i - 0.5f) * SQUARE_SIZE_M;
+    float cy00 = (j - 0.5f) * SQUARE_SIZE_M;
     auto [gx00, gy00] = bilinear_gradient(cx00, cy00);
 
-    float cx10 = (i + 1.5f) * SQUARE_SIZE_M;
-    float cy10 = (j + 0.5f) * SQUARE_SIZE_M;
+    float cx10 = (i + 0.5f) * SQUARE_SIZE_M;
+    float cy10 = (j - 0.5f) * SQUARE_SIZE_M;
     auto [gx10, gy10] = bilinear_gradient(cx10, cy10);
 
-    float cx01 = (i + 0.5f) * SQUARE_SIZE_M;
-    float cy01 = (j + 1.5f) * SQUARE_SIZE_M;
+    float cx01 = (i - 0.5f) * SQUARE_SIZE_M;
+    float cy01 = (j + 0.5f) * SQUARE_SIZE_M;
     auto [gx01, gy01] = bilinear_gradient(cx01, cy01);
 
-    float cx11 = (i + 1.5f) * SQUARE_SIZE_M;
-    float cy11 = (j + 1.5f) * SQUARE_SIZE_M;
+    float cx11 = (i + 0.5f) * SQUARE_SIZE_M;
+    float cy11 = (j + 0.5f) * SQUARE_SIZE_M;
     auto [gx11, gy11] = bilinear_gradient(cx11, cy11);
 
     // Bilinear interpolation of gradients
-    float w00 = (1 - fx) * (1 - fy);
-    float w10 = fx * (1 - fy);
-    float w01 = (1 - fx) * fy;
-    float w11 = fx * fy;
+    float w00 = (1 - frac_x) * (1 - frac_y);
+    float w10 = frac_x * (1 - frac_y);
+    float w01 = (1 - frac_x) * frac_y;
+    float w11 = frac_x * frac_y;
 
     float dx = w00 * gx00 + w10 * gx10 + w01 * gx01 + w11 * gx11;
     float dy = w00 * gy00 + w10 * gy10 + w01 * gy01 + w11 * gy11;

@@ -201,7 +201,9 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
 
             if (bleacher) {
                 auto [local_x, local_y] = bleacher->position_in_local_frame(state_->robot_x, state_->robot_y);
-                if (fabsf(local_x) < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f) {
+                auto const south_of_central_bleacher = bleacher->is_easy_central() && local_x < 0.0f;
+                if (fabsf(local_x) < BLEACHER_WAYPOINT_DISTANCE + 0.10f && fabsf(local_y) < 0.10f &&
+                    !south_of_central_bleacher) {
                     state_->lock_target(bleacher->x, bleacher->y, bleacher->orientation);
                     return Status::SUCCESS;
                 }
