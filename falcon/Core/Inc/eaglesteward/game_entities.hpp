@@ -47,6 +47,10 @@ class Bleacher : public GameEntity {
     // The bleacher closest to the starting position, on the side of our robot
     [[nodiscard]] bool is_easy_side(RobotColour colour) const;
 
+    [[nodiscard]] bool is_left_side() const { return x < FIELD_WIDTH_M / 2.0; }
+
+    [[nodiscard]] bool is_right_side() const { return x >= FIELD_WIDTH_M / 2.0; }
+
     // The reserved bleacher next to the backstage
     [[nodiscard]] bool is_reserved(RobotColour colour) const;
 

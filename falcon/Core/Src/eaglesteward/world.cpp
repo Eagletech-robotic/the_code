@@ -93,12 +93,28 @@ void World::enqueue_targets() {
     };
 
     if (target_ == TargetType::BleacherWaypoint) {
+        int ourSideBleachersCount = 0;
+        for (const auto &bleacher : bleachers_) {
+            if (!bleacher.initial_position)
+                continue;
+
+            if (colour_ == RobotColour::Blue && bleacher.is_left_side() ||
+                colour_ == RobotColour::Yellow && bleacher.is_right_side())
+                continue;
+
+            ourSideBleachersCount++;
+        }
+
         for (const auto &bleacher : bleachers_) {
             if (!bleacher.initial_position)
                 continue;
 
             if ((bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow) ||
                 (bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue))
+                continue;
+
+            if (ourSideBleachersCount && colour_ == RobotColour::Blue && bleacher.is_left_side() ||
+                ourSideBleachersCount && colour_ == RobotColour::Yellow && bleacher.is_right_side())
                 continue;
 
             float value = 1.50f;
