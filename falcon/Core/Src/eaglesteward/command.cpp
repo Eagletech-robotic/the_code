@@ -17,10 +17,10 @@ void set_output(const config_t &config, const input_t &input, const Command &com
     // Shovel
     switch (command.shovel) {
     case ShovelCommand::SHOVEL_EXTENDED:
-        output.shovel_ratio = 0.105f;
+        output.shovel_ratio = 0.130f;
         break;
     case ShovelCommand::SHOVEL_RETRACTED:
-        output.shovel_ratio = 0.05f;
+        output.shovel_ratio = 0.050f;
         break;
     }
 
