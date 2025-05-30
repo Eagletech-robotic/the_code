@@ -130,7 +130,7 @@ Status isSafe(input_t *input, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    state->on_evade_since = 0.0f;
+    state->on_evade_since = -100.0f;
     return Status::SUCCESS;
 }
 
