@@ -469,7 +469,7 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     // 85s PAMIs start
     // 100s End of game
-    return state->elapsedTime(*input) > 85.0f ? Status::FAILURE : Status::SUCCESS;
+    return state->elapsedTime(*input) > 81.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
@@ -489,7 +489,7 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
                 return Status::SUCCESS;
             }
 
-            descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS);
+            descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, true);
             return Status::RUNNING;
         },
         rotate(M_PI_2),    //
