@@ -81,7 +81,7 @@ class BuildingArea : public GameEntity {
 
     [[nodiscard]] GameEntity available_slot() const;
     [[nodiscard]] GameEntity waypoint() const;
-    [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 3; }
+    [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 2; }
     [[nodiscard]] bool is_full() const { return first_available_slot >= nb_slots(); }
     [[nodiscard]] bool is_starting() const;
     [[nodiscard]] float span_x(bool occupied_space_only) const;
