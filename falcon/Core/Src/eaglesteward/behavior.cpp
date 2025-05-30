@@ -82,7 +82,7 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
         myprintf("rotate %.f", to_degrees(angle));
         float error_angle = angle_normalize(angle - state->robot_theta);
 
-        if (fabsf(error_angle) < to_radians(4)) {
+        if (fabsf(error_angle) < to_radians(2)) {
             return Status::SUCCESS;
         }
 
@@ -254,7 +254,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             }
 
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
-                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
+                               MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.14f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
                 state_->world.remove_bleacher(state_->target.x, state_->target.y);
                 state_->release_target();
