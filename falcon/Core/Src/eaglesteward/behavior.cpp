@@ -503,7 +503,7 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
             float const dx = state->robot_x - backstage->x;
             float const dy = state->robot_y - backstage->y;
 
-            if (std::abs(dx) < 0.06f && std::abs(dy) < 0.55f) {
+            if (std::abs(dx) < 0.06f && std::abs(dy) < 0.57f) {
                 return Status::SUCCESS;
             }
 
