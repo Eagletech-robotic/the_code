@@ -97,7 +97,7 @@ void State::updateFromBluetooth(float elapsed_time) {
 
         // Blend with current odometry
         constexpr float CAMERA_GAIN_POSITION = 0.5f; // the closest tp 1, the more we trust the camera
-        constexpr float CAMERA_GAIN_THETA = 1.0f;
+        constexpr float CAMERA_GAIN_THETA = 0.5f;
 
         robot_x = robot_x * (1.0f - CAMERA_GAIN_POSITION) + corrected_x * CAMERA_GAIN_POSITION;
         robot_y = robot_y * (1.0f - CAMERA_GAIN_POSITION) + corrected_y * CAMERA_GAIN_POSITION;
