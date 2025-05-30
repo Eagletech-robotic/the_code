@@ -130,7 +130,7 @@ Status isSafe(input_t *input, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    state->on_evade_since = 0.0f;
+    state->on_evade_since = -100.0f;
     return Status::SUCCESS;
 }
 
@@ -161,9 +161,9 @@ struct Safe {
             	return Status::SUCCESS;
             }
 
-            if (state->elapsedTime(*input) - startTime > 3.0f) {
-                return Status::SUCCESS;
-            }
+//            if (state->elapsedTime(*input) - startTime > 3.0f) {
+//                return Status::SUCCESS;
+//            }
             return Status::RUNNING;
         };
 
