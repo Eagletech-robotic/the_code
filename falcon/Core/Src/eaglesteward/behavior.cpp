@@ -523,7 +523,7 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
             descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, false);
             return Status::RUNNING;
         },
-        rotate(M_PI_2),    //
+        rotate(M_PI_2, 10.0f),    //
         dontMoveUntil(96), //
         [](input_t *, Command *command, State *state) {
             float target_x, target_y;
