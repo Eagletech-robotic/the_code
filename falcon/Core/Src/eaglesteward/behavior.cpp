@@ -469,7 +469,7 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     // 85s PAMIs start
     // 100s End of game
-    return state->elapsedTime(*input) > 83.0f ? Status::FAILURE : Status::SUCCESS;
+    return state->elapsedTime(*input) > 81.0f ? Status::FAILURE : Status::SUCCESS;
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
