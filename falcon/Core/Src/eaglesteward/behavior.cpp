@@ -97,9 +97,14 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
     };
 };
 
-Status isSafe(input_t *, Command *, State *state) {
-    if (state->filtered_tof_m < 0.18f) {
+Status isSafe(input_t *input, Command *, State *state) {
+    if(state->elapsedTime(*input) - state->on_evade_since < 0.5f) {
+    	return Status::FAILURE;
+    }
+
+	if (state->filtered_tof_m < 0.18f) {
         myprintf("FLSAFE\n");
+        state->on_evade_since = state->elapsedTime(*input);
         return Status::FAILURE;
     }
 
@@ -121,9 +126,11 @@ Status isSafe(input_t *, Command *, State *state) {
     // "Not-safe" condition
     if (in_trajectory && distance < 0.43f) {
         myprintf("SFE-DETECT %.2f\n", distance);
+        state->on_evade_since = state->elapsedTime(*input);
         return Status::FAILURE;
     }
 
+    state->on_evade_since = 0.0f;
     return Status::SUCCESS;
 }
 
