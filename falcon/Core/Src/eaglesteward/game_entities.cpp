@@ -34,6 +34,23 @@ std::array<GameEntity, 2> Bleacher::waypoints() const {
     }};
 }
 
+bool Bleacher::is_accessible_bleacher(const RobotColour colour) const {
+    if (!initial_position)
+        return false;
+
+    // The bleachers on the side of the robot
+    if ((colour == RobotColour::Blue && is_left_side()) || (colour == RobotColour::Yellow && is_right_side())) {
+        return false;
+    }
+
+    if (is_next_to_backstage()) {
+        // May block pami's path
+        return false;
+    }
+
+    return true;
+}
+
 bool Bleacher::is_easy_central() const {
     return floatEqual(y, 0.950f) && (floatEqual(x, FIELD_WIDTH_M - 1.100f) || floatEqual(x, 1.100f));
 }
@@ -54,7 +71,7 @@ GameEntity BuildingArea::available_slot() const {
     if (type == Type::Small) {
         return {x, y, orientation};
     } else {
-        const float from_center = static_cast<float>(first_available_slot - 1) * 0.15f + 0.05f;
+        const float from_center = static_cast<float>(first_available_slot - 1) * 0.30f + 0.20f;
         return {x + std::cos(orientation) * from_center, y + std::sin(orientation) * from_center, orientation};
     }
 }

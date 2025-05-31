@@ -42,6 +42,7 @@ class State {
     float robot_x{0.f}; // meters
     float robot_y{0.f};
     float robot_theta{0.f};
+    float last_robot_update_time{-FLT_MAX}; // Elapsed time of the last position update from the camera
 
     // World
     World world{colour};
@@ -61,9 +62,14 @@ class State {
     bool is_moving_forward;
 
     float on_evade_since{0.0f};
+    float positioning_holdon_before_pickup{-FLT_MAX};
+    float slow_motion_after_pickup{-FLT_MAX};
 
     // Bluetooth
     bool packet_received_at_this_step{false};
+
+    // Shovel
+    float start_retraction_at{-FLT_MAX};
 
     // LED
     int32_t led_lighted_at_ms{-1}; // Time in clock_ms when the LED was last turned on. -1 means off.

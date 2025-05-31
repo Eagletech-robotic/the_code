@@ -109,7 +109,8 @@ float PotentialField::finite_potential(int i, int j) const {
         return FLT_MAX;
 
     constexpr float d_cell = SQUARE_SIZE_M;
-    constexpr float INFINITE_PENALTY = 1.0f * SQUARE_SIZE_M; // Discourage robot from staying in infinite area
+    // constexpr float INFINITE_PENALTY = 1.0f * SQUARE_SIZE_M; // Discourage robot from staying in infinite area
+    constexpr float INFINITE_PENALTY = 0.0f;
     return best + d_cell * std::sqrt(float(best_c * best_c + best_r * best_r)) + INFINITE_PENALTY;
 }
 

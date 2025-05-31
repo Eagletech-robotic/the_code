@@ -41,11 +41,17 @@ class Bleacher : public GameEntity {
 
     [[nodiscard]] std::array<GameEntity, 2> waypoints() const;
 
+    [[nodiscard]] bool is_accessible_bleacher(RobotColour colour) const;
+
     // The 2 bleachers in the centre
     [[nodiscard]] bool is_easy_central() const;
 
     // The bleacher closest to the starting position, on the side of our robot
     [[nodiscard]] bool is_easy_side(RobotColour colour) const;
+
+    [[nodiscard]] bool is_left_side() const { return x < FIELD_WIDTH_M / 2.0; }
+
+    [[nodiscard]] bool is_right_side() const { return x >= FIELD_WIDTH_M / 2.0; }
 
     // The reserved bleacher next to the backstage
     [[nodiscard]] bool is_reserved(RobotColour colour) const;
@@ -75,7 +81,7 @@ class BuildingArea : public GameEntity {
 
     [[nodiscard]] GameEntity available_slot() const;
     [[nodiscard]] GameEntity waypoint() const;
-    [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 3; }
+    [[nodiscard]] uint8_t nb_slots() const { return type == Type::Small ? 1 : 2; }
     [[nodiscard]] bool is_full() const { return first_available_slot >= nb_slots(); }
     [[nodiscard]] bool is_starting() const;
     [[nodiscard]] float span_x(bool occupied_space_only) const;

@@ -82,7 +82,7 @@ auto rotate = [](float angle, float Kp_angle = 250.0f) {
         myprintf("rotate %.f", to_degrees(angle));
         float error_angle = angle_normalize(angle - state->robot_theta);
 
-        if (fabsf(error_angle) < to_radians(4)) {
+        if (fabsf(error_angle) < to_radians(2)) {
             return Status::SUCCESS;
         }
 
@@ -130,7 +130,7 @@ Status isSafe(input_t *input, Command *, State *state) {
         return Status::FAILURE;
     }
 
-    state->on_evade_since = 0.0f;
+    state->on_evade_since = -100.0f;
     return Status::SUCCESS;
 }
 
@@ -241,6 +241,20 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             myprintf("BL-APPCNT1 x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
         },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->positioning_holdon_before_pickup = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            constexpr float WAIT_TIME = 1.0f;
+            if (state_->elapsedTime(*input_) - state_->positioning_holdon_before_pickup < WAIT_TIME) {
+                command_->target_left_speed = 0.f;
+                command_->target_right_speed = 0.f;
+                return Status::RUNNING;
+            }
+            printf("BL-WAIT\n");
+            return Status::SUCCESS;
+        },
         [](input_t *, Command *command_, State *state_) {
             auto const &bleacher = state_->target;
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
@@ -256,14 +270,33 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             if (pid_controller(state_->robot_x, state_->robot_y, state_->robot_theta, bleacher.x, bleacher.y, 0.25f,
                                MAX_ROTATION_SPEED, MAX_ROTATION_RADIUS, WHEELBASE_M, 0.16f,
                                &command_->target_left_speed, &command_->target_right_speed)) {
-                state_->world.remove_bleacher(state_->target.x, state_->target.y);
-                state_->release_target();
-                state_->bleacher_lifted = true;
                 return Status::SUCCESS;
             }
 
             myprintf("BL-APPCNT2 x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            state_->slow_motion_after_pickup = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
+            constexpr float MOTION_TIME = 0.5f;
+            if (state_->elapsedTime(*input_) - state_->slow_motion_after_pickup < MOTION_TIME) {
+                command_->target_left_speed = 0.3f;
+                command_->target_right_speed = 0.3f;
+                return Status::RUNNING;
+            }
+            printf("BL-SLOW\n");
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->world.remove_bleacher(state_->target.x, state_->target.y);
+            state_->release_target();
+            state_->bleacher_lifted = true;
+            return Status::SUCCESS;
         });
 
     return node(const_cast<input_t *>(input), command, state);
@@ -432,6 +465,20 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return rotate(angle_normalize(state_->target.orientation + M_PI), 10.0f)(input_, command_, state_);
         },
+        [](input_t *input_, Command *command_, State *state_) {
+            state_->start_retraction_at = state_->elapsedTime(*input_);
+            return Status::SUCCESS;
+        },
+        [](input_t *input_, Command *command_, State *state_) {
+            constexpr float WAIT_TIME = 0.5f;
+            if (state_->elapsedTime(*input_) - state_->start_retraction_at < WAIT_TIME) {
+                command_->target_left_speed = 0.f;
+                command_->target_right_speed = 0.f;
+                return Status::RUNNING;
+            }
+            printf("BA-WAIT\n");
+            return Status::SUCCESS;
+        },
         [](input_t *, Command *command_, State *state_) {
             auto const &slot = state_->target;
             auto const [local_x, local_y] = slot.position_in_local_frame(state_->robot_x, state_->robot_y);
@@ -478,7 +525,16 @@ Status holdAfterEnd(input_t *, Command *command, State *) {
 Status isBackstagePhaseNotActive(input_t *input, Command *, State *state) {
     // 85s PAMIs start
     // 100s End of game
-    return state->elapsedTime(*input) > 81.0f ? Status::FAILURE : Status::SUCCESS;
+    const bool isTimeElapsed = state->elapsedTime(*input) > 85.0f;
+    bool remainingAccessibleBleachers = false;
+    for (const auto &bleacher : state->world.bleachers_) {
+        if (bleacher.is_accessible_bleacher(state->colour)) {
+            remainingAccessibleBleachers = true;
+            break;
+        }
+    }
+    return (isTimeElapsed || !(remainingAccessibleBleachers || state->bleacher_lifted)) ? Status::FAILURE
+                                                                                        : Status::SUCCESS;
 }
 
 Status goToBackstage(input_t *input, Command *command, State *state) {
@@ -494,15 +550,15 @@ Status goToBackstage(input_t *input, Command *command, State *state) {
             float const dx = state->robot_x - backstage->x;
             float const dy = state->robot_y - backstage->y;
 
-            if (std::abs(dx) < 0.06f && std::abs(dy) < 0.5f) {
+            if (std::abs(dx) < 0.06f && std::abs(dy) < 0.57f) {
                 return Status::SUCCESS;
             }
 
             descend(*command, *state, MAX_SPEED, MAX_ROTATION_SPEED, 0.0f, 0.01f, false);
             return Status::RUNNING;
         },
-        rotate(M_PI_2),    //
-        dontMoveUntil(96), //
+        rotate(M_PI_2, 10.0f), //
+        dontMoveUntil(96),     //
         [](input_t *, Command *command, State *state) {
             float target_x, target_y;
             if (state->colour == RobotColour::Blue) {
@@ -637,7 +693,7 @@ Status top_behavior(const input_t *input, Command *command, State *state) {
         alternative(isSafe, logAndFail("Ensure-safety"), evadeOpponent),
         alternative(isFlagPhaseCompleted, logAndFail("Release-flag"), deployFlag),
         alternative(isBackstagePhaseNotActive, logAndFail("Go-to-backstage"), goToBackstage),
-        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode) ,
+        // alternative(logAndFail("Rectangle statenode"),infiniteRectangleStateNode),
         alternative(hasBleacherAttached, logAndFail("Pickup-bleacher"), gotoClosestBleacher),
         alternative(logAndFail("Drop-bleacher"), goToClosestBuildingArea));
     return root(const_cast<input_t *>(input), command, state);

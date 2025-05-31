@@ -94,11 +94,7 @@ void World::enqueue_targets() {
 
     if (target_ == TargetType::BleacherWaypoint) {
         for (const auto &bleacher : bleachers_) {
-            if (!bleacher.initial_position)
-                continue;
-
-            if ((bleacher.is_reserved(RobotColour::Blue) && colour_ == RobotColour::Yellow) ||
-                (bleacher.is_reserved(RobotColour::Yellow) && colour_ == RobotColour::Blue))
+            if (!bleacher.is_accessible_bleacher(colour_))
                 continue;
 
             float value = 1.50f;
@@ -118,9 +114,9 @@ void World::enqueue_targets() {
     if (target_ == TargetType::BackstageWaypoint) {
         // Waypoint just down the backstage line
         if (colour_ == RobotColour::Yellow) {
-            enqueue_grid_cell(0.35f, 1.35f);
+            enqueue_grid_cell(0.35f, 1.28f);
         } else {
-            enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.35f);
+            enqueue_grid_cell(FIELD_WIDTH_M - 0.35f, 1.28f);
         }
         // Make our robot head to the center if the waypoint is not immediately accessible
         enqueue_grid_cell(1.5f, 0.9f, 1e3);
