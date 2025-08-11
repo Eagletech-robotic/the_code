@@ -1,10 +1,3 @@
-/*
- * myprintf.h
- *
- *  Created on: Apr 10, 2025
- *      Author: nboulay
- */
-
 #pragma once
 #include <stdio.h>
 

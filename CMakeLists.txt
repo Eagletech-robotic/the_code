@@ -9,7 +9,10 @@ set(CMAKE_CXX_STANDARD 20)
 enable_testing()
 
 # Include directories
-include_directories(platforms/falcon-2025/Core/Inc)
+include_directories(
+        platforms/shared/include
+        platforms/falcon-2025/Core/Inc
+)
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
 add_subdirectory(host-tools)
@@ -36,6 +39,7 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
 
     # Include directories (relative to this CMakeLists.txt)
     include_directories(
+            platforms/shared/include
             platforms/falcon-2025/Core/Inc
             platforms/falcon-2025/Drivers/STM32L4xx_HAL_Driver/Inc
             platforms/falcon-2025/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
@@ -45,6 +49,7 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
 
     # Find source files (adjust patterns if needed)
     file(GLOB_RECURSE STM32_CORE_SOURCES
+        "platforms/shared/src/*.cpp"
         "platforms/falcon-2025/Core/Src/*.c"
         "platforms/falcon-2025/Core/Src/*.cpp"
     )
@@ -67,7 +72,7 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
     endif()
 
     # Combine final source list: All core .c files + unique .cpp files + drivers + startup
-    set(STM32_SOURCES 
+    set(STM32_SOURCES
         ${STM32_CORE_SOURCES}
         ${STM32_DRIVER_SOURCES}
         ${STM32_STARTUP_FILE}
