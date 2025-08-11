@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 enable_testing()
 
 # Include directories
-include_directories(falcon/Core/Inc)
+include_directories(platforms/falcon-2025/Core/Inc)
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
 add_subdirectory(host-tools)
@@ -25,9 +25,9 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
     message(STATUS "Building for STM32 target")
 
     # Define the STM32 target properties
-    set(STM32_TARGET_NAME falcon)
+    set(STM32_TARGET_NAME falcon-2025)
     set(STM32_MCU_FAMILY STM32L4S5xx)
-    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/falcon/STM32L4S5VITX_FLASH.ld)
+    set(STM32_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/STM32L4S5VITX_FLASH.ld)
 
     # Check if linker script exists
     if(NOT EXISTS ${STM32_LINKER_SCRIPT})
@@ -36,23 +36,23 @@ if(CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
 
     # Include directories (relative to this CMakeLists.txt)
     include_directories(
-        falcon/Core/Inc
-        falcon/Drivers/STM32L4xx_HAL_Driver/Inc
-        falcon/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
-        falcon/Drivers/CMSIS/Device/ST/STM32L4xx/Include
-        falcon/Drivers/CMSIS/Include
+            platforms/falcon-2025/Core/Inc
+            platforms/falcon-2025/Drivers/STM32L4xx_HAL_Driver/Inc
+            platforms/falcon-2025/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
+            platforms/falcon-2025/Drivers/CMSIS/Device/ST/STM32L4xx/Include
+            platforms/falcon-2025/Drivers/CMSIS/Include
     )
 
     # Find source files (adjust patterns if needed)
     file(GLOB_RECURSE STM32_CORE_SOURCES
-        "falcon/Core/Src/*.c"
-        "falcon/Core/Src/*.cpp"
+        "platforms/falcon-2025/Core/Src/*.c"
+        "platforms/falcon-2025/Core/Src/*.cpp"
     )
     file(GLOB_RECURSE STM32_DRIVER_SOURCES
-        "falcon/Drivers/STM32L4xx_HAL_Driver/Src/*.c"
+        "platforms/falcon-2025/Drivers/STM32L4xx_HAL_Driver/Src/*.c"
         # Add other driver sources if needed, e.g., CMSIS RTOS
     )
-    set(STM32_STARTUP_FILE falcon/Core/Startup/startup_stm32l4s5vitx.s)
+    set(STM32_STARTUP_FILE platforms/falcon-2025/Core/Startup/startup_stm32l4s5vitx.s)
 
     # Tell CMake to treat all found .c files as C++ to mimic IDE behavior
     foreach(C_SOURCE_FILE ${STM32_CORE_SOURCES} ${STM32_DRIVER_SOURCES})

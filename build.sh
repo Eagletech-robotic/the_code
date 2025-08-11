@@ -4,7 +4,7 @@
 # Exit on error
 set -e
 
-FORMAT_DIRS="falcon/Core/Inc falcon/Core/Src"
+FORMAT_DIRS="platforms/falcon-2025/Core/Inc platforms/falcon-2025/Core/Src"
 BUILD_DIR="build"
 BUILD_WASM_DIR="build-wasm"
 BUILD_STM32_DIR="build-stm32"
@@ -169,7 +169,7 @@ build_wasm() {
 
 build_stm32() {
     local build_type="$1"
-    echo "=== Building STM32 firmware (${build_type}) (falcon.elf) ==="
+    echo "=== Building STM32 firmware (${build_type}) (falcon-2025.elf) ==="
 
     if [ ! -f cmake/stm32_toolchain.cmake ]; then
         echo "Error: Toolchain file cmake/stm32_toolchain.cmake not found!" >&2
@@ -179,10 +179,10 @@ build_stm32() {
     mkdir -p "${BUILD_STM32_DIR}"
     cd "${BUILD_STM32_DIR}"
     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/stm32_toolchain.cmake -DCMAKE_BUILD_TYPE=${build_type}
-    make -j$(nproc) falcon.elf
+    make -j$(nproc) falcon-2025.elf
     cd ..
 
-    echo "STM32 build complete. Output: ${BUILD_STM32_DIR}/falcon.elf"
+    echo "STM32 build complete. Output: ${BUILD_STM32_DIR}/falcon-2025.elf"
 }
 
 test_native() {

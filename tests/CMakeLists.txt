@@ -4,20 +4,20 @@ project(BluetoothTests LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Inc
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Inc
 )
 
 # The program source file(s) we are testing.
 # We compile the .cpp directly into the test executable.
 set(PROGRAM_SOURCES
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/robotic/bluetooth.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/robotic/eagle_packet.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/opponent_tracker.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/game_entities.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/potential_field.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/eaglesteward/world.cpp
-    ${CMAKE_SOURCE_DIR}/falcon/Core/Src/utils/angles.cpp
-    # ${CMAKE_SOURCE_DIR}/falcon/Core/Src/utils/myprintf.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/robotic/bluetooth.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/robotic/eagle_packet.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/opponent_tracker.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/game_entities.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/potential_field.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/world.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/utils/angles.cpp
+    # ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/utils/myprintf.cpp
 )
 
 # Find the test source file(s)

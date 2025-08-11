@@ -24,7 +24,7 @@ set(CMAKE_CXX_FLAGS_INIT "${COMMON_FLAGS} -std=c++17 -Wno-psabi -Wno-volatile") 
 set(CMAKE_ASM_FLAGS_INIT "${CPU_FLAGS}")
 
 # Linker flags based on STM32CubeIDE output
-set(LINKER_SCRIPT_FLAG "-T${CMAKE_SOURCE_DIR}/falcon/STM32L4S5VITX_FLASH.ld") # Updated to actual linker script location
+set(LINKER_SCRIPT_FLAG "-T${CMAKE_SOURCE_DIR}/platforms/falcon-2025/STM32L4S5VITX_FLASH.ld") # Updated to actual linker script location
 set(CMAKE_EXE_LINKER_FLAGS_INIT " \
     ${LINKER_SCRIPT_FLAG} \
     ${CPU_FLAGS} \

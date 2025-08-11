@@ -4,13 +4,13 @@ project(host_tools)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../falcon/Core/Inc
+        ../platforms/falcon-2025/Core/Inc
 )
 
 file(GLOB_RECURSE SOURCES_NO_STM32_DEPENDENCY
-        "${CMAKE_CURRENT_SOURCE_DIR}/../falcon/Core/Src/eaglesteward/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../falcon/Core/Src/utils/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../falcon/Core/Src/robotic/*.cpp"
+        "../platforms/falcon-2025/Core/Src/eaglesteward/*.cpp"
+        "../platforms/falcon-2025/Core/Src/utils/*.cpp"
+        "../platforms/falcon-2025/Core/Src/robotic/*.cpp"
 )
 
 
