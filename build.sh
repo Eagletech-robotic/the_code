@@ -4,7 +4,11 @@
 # Exit on error
 set -e
 
-FORMAT_DIRS="platforms/falcon-2025/Core/Inc platforms/falcon-2025/Core/Src"
+FORMAT_DIRS=(
+    "platforms/shared"
+    "platforms/falcon-2025/Core/Inc"
+    "platforms/falcon-2025/Core/Src"
+)
 BUILD_DIR="build"
 BUILD_WASM_DIR="build-wasm"
 BUILD_STM32_DIR="build-stm32"
