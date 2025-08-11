@@ -1,13 +1,6 @@
-/*
- * top.c
- *
- *  Created on: Sep 28, 2024
- *      Author: nboulay
- */
-
 #include "iot01A/top.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "iot01A/config.h"
 #include "iot01A/input.h"
@@ -15,6 +8,7 @@
 #include "iot01A/motor.h"
 #include "iot01A/output.h"
 #include "iot01A/top_driver.h"
+#include "iot01A/timer.h"
 #include "main.h" // top niveau du code, main.c est remplit de code généré cela permet de séparer
 #include "utils/myprintf.hpp"
 

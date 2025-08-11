@@ -1,10 +1,4 @@
 #pragma once
-/*
- * timer.h
- *
- *  Created on: May 9, 2025
- *      Author: nboulay
- */
 
 #ifdef __cplusplus
 extern "C" {

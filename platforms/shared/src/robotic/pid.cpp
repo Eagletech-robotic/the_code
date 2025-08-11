@@ -18,7 +18,7 @@
 // int controllerDirection = DIRECT;
 
 #include "robotic/pid.hpp"
-#include <stdio.h> //printf
+#include <cstdio>
 
 float clamp(float val, float Min, float Max) {
     float ret = val;

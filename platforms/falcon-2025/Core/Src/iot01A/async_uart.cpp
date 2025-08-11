@@ -1,14 +1,9 @@
-/*
- * async_uart.c
- *
- *  Created on: Mar 23, 2025
- *      Author: nboulay
- */
 #include "iot01A/um7.hpp"
 #include "main.h"
 #include "robotic/bluetooth.hpp"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
+
 // lecture de um7 + configuration du port série en interruption
 // lecture du BT
 

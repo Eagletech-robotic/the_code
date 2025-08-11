@@ -1,7 +1,7 @@
 #include "robotic/inertial.hpp"
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 // todo :
 // remplacer les const par des paramètres

@@ -1,10 +1,3 @@
-/*
- * motor.c
- *
- *  Created on: Aug 17, 2024
- *      Author: nboulay
- */
-
 // Le but est d'ajouter le control de sens au control des PWM
 
 #include "iot01A/pwm.h"

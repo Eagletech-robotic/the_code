@@ -1,7 +1,7 @@
 #include "eaglesteward/game_entities.hpp"
 
 #include "utils/angles.hpp"
-#include "utils/myprintf.hpp"
+
 /**
  * Return the coordinates of the robot in the frame of the given entity.
  */

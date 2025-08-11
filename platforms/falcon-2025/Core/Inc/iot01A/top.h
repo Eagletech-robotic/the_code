@@ -1,10 +1,4 @@
 #pragma once
-/*
- * top.h
- *
- *  Created on: Sep 28, 2024
- *      Author: nboulay
- */
 
 #ifdef __cplusplus
 extern "C" {

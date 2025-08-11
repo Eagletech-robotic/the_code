@@ -1,5 +1,5 @@
 #pragma once
-#include <math.h>
+#include <cmath>
 
 // Robot physical constants
 static constexpr float WHEELBASE_M = 0.33f; // Distance between the wheels

@@ -1,10 +1,3 @@
-/*
- * sensors.c
- *
- *  Created on: 29 gen 2021
- *      Author: Raul Rosa
- */
-
 #include "iot01A/sensors.h"
 #include "stm32l4xx_hal.h"
 #include <stdlib.h>

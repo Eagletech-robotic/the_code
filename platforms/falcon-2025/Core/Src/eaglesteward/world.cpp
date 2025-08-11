@@ -2,7 +2,6 @@
 
 #include "utils/myprintf.hpp"
 
-#include "iot01A/top_driver.h"
 #include <cfloat>
 #include <cmath>
 

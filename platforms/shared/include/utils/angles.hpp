@@ -1,6 +1,6 @@
 #pragma once
 
-#include <math.h>
+#include <cmath>
 
 constexpr float RAD_TO_DEG = 180.0f / static_cast<float>(M_PI);
 constexpr float DEG_TO_RAD = static_cast<float>(M_PI) / 180.0f;

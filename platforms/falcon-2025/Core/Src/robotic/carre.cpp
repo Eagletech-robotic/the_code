@@ -1,10 +1,3 @@
-/*
- * carre.c
- *
- *  Created on: Aug 30, 2024
- *      Author: nboulay
- */
-
 // le but est de faire parcourir au robot un carré de taille 1m par 1m de façon répété
 //  cela permet de vérifier la précision du positionnement
 //  ce fichier devrait être un maximum indépendant de la façon de fonctionner du robot pour permettre de réutiliser ce
@@ -19,9 +12,8 @@
 // soit R = e* (v1+v2) / (v1-v2)
 
 #include "robotic/carre.hpp"
-#include "robotic/projection.hpp"
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 void carre_init(carre_t *carre, float cycle_period_s) {
     // output_init(carre->output);

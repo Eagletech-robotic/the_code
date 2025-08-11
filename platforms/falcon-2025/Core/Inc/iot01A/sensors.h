@@ -1,11 +1,4 @@
 #pragma once
-/*
- * sensors.h
- *
- *  Created on: 29 gen 2021
- *      Author: UTPM9
- */
-
 #include "main.h"
 
 #ifdef __cplusplus

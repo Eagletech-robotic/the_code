@@ -1,9 +1,3 @@
-/*
- * pwm.c
- *
- *  Created on: Aug 16, 2024
- *      Author: nboulay
- */
 #include "iot01A/pwm.h"
 #include "main.h"
 #include <stdio.h>

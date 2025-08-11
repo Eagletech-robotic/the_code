@@ -1,18 +1,12 @@
-/*
- * um7.c
- *
- *  Created on: Feb 11, 2025
- *      Author: nboulay
- */
-
 // Drivers UM7
 // https://www.pololu.com/file/0J1556/UM7%20Datasheet_v1-8_30.07.2018.pdf
 // code issue : https://github.com/Nagillimi/MYUM7/blob/master/MYUM7.cpp
 
 #include "iot01A/um7.hpp"
 #include "main.h"
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
+
 typedef int byte;
 
 // Placeholder for parsing binary packets

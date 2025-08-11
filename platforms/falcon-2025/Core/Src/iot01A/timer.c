@@ -1,10 +1,3 @@
-/*
- * timer.c
- *
- *  Created on: May 9, 2025
- *      Author: nboulay
- */
-
 #include "iot01A/timer.h"
 #include "main.h"
 #include "utils/myprintf.hpp"

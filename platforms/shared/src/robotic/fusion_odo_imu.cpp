@@ -7,8 +7,8 @@
 // ici je fais plus simple, j'utilise une fusion linéiaire l'orientation de l'IMU et l'avancement de l'odomètre
 
 #include "utils/myprintf.hpp"
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 /**
  * @brief

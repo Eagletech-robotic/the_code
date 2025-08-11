@@ -1,11 +1,10 @@
-
 // fonction de génération des sorties.
 //  le but est de pouvoir tester les autres fonctions indépendement de la cible
 //  et de générer les sorties de façon fixe temporrellement à chaque cycle
 
 #include "iot01A/output.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "iot01A/led.h"
 #include "iot01A/motor.h"

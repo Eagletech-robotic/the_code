@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 // !!!!!! IMPORTANT !!!!!!
 // Changes to this structure must be reflected in the simulator.

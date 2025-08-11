@@ -1,10 +1,3 @@
-/*
- * led.c
- *
- *  Created on: Sep 22, 2024
- *      Author: nboulay
- */
-
 // Led PB14 TIM15_CH1
 // Led PA5 qui est aussi sur le connecteur
 //

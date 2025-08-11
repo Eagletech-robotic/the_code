@@ -1,10 +1,3 @@
-/*
- * encoder.h
- *
- *  Created on: Oct 4, 2024
- *      Author: nboulay
- */
-
 #pragma once
 #include "main.h"
 #ifdef __cplusplus

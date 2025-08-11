@@ -1,14 +1,7 @@
-/*
- * input.c
- *
- *  Created on: Nov 1, 2024
- *      Author: nboulay
- */
-
 #include "iot01A/input.h"
 
-#include <inttypes.h>
-#include <math.h>
+#include <cinttypes>
+#include <cmath>
 
 #include "iot01A/async_uart.h"
 #include "iot01A/encoder.h"

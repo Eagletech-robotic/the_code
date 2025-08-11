@@ -1,8 +1,8 @@
 #include "robotic/controllers.hpp"
 
 #include <algorithm>
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 #include "robotic/pid.hpp"
 #include "utils/angles.hpp"

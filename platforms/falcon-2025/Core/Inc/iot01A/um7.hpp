@@ -1,6 +1,7 @@
 #pragma once
+#include <cstdint>
 #include "main.h"
-#include <stdint.h>
+
 //////////////////////////////////////
 //      CONFIGURATION REGISTERS	    //
 //////////////////////////////////////

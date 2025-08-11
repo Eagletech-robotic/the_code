@@ -1,8 +1,5 @@
 #include "eaglesteward/behaviortree.hpp"
-#include "utils/myprintf.hpp"
-#include <stdio.h>
-#include <tuple>
-#include <type_traits>
+#include <cstdio>
 
 Status behavior_as_function(input_t *, Command *, State *) {
     printf("function\n");

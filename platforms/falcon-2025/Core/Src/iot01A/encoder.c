@@ -1,10 +1,3 @@
-/*
- * encoder.c
- *
- *  Created on: Oct 4, 2024
- *      Author: nboulay
- */
-
 #include "iot01A/encoder.h"
 
 // les 2 channels doivent être configuré dans l'ioc.
