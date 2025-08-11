@@ -241,7 +241,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             myprintf("BL-APPCNT1 x=%.3f y=%.3f\n", bleacher.x, bleacher.y);
             return Status::RUNNING;
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *input_, Command *, State *state_) {
             state_->positioning_holdon_before_pickup = state_->elapsedTime(*input_);
             return Status::SUCCESS;
         },
@@ -292,7 +292,7 @@ Status gotoClosestBleacher(input_t *input, Command *command, State *state) {
             printf("BL-SLOW\n");
             return Status::SUCCESS;
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *, Command *, State *state_) {
             state_->world.remove_bleacher(state_->target.x, state_->target.y);
             state_->release_target();
             state_->bleacher_lifted = true;
@@ -465,7 +465,7 @@ Status goToClosestBuildingArea(input_t *input, Command *command, State *state) {
             command_->shovel = ShovelCommand::SHOVEL_EXTENDED;
             return rotate(angle_normalize(state_->target.orientation + M_PI), 10.0f)(input_, command_, state_);
         },
-        [](input_t *input_, Command *command_, State *state_) {
+        [](input_t *input_, Command *, State *state_) {
             state_->start_retraction_at = state_->elapsedTime(*input_);
             return Status::SUCCESS;
         },
