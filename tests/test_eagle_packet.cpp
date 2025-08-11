@@ -1,12 +1,12 @@
-#include "robotic/eagle_packet.hpp"
+#include "../platforms/shared/include/robotic/eagle_packet.hpp"
 
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <gtest/gtest.h>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
-#include <sstream>
 
 /* ──────────────────────────────────────────────────────────────────────────
    Helper: encode an EaglePacket into the raw payload that sits between
