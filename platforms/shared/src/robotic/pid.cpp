@@ -17,7 +17,7 @@
 // #define REVERSE 1
 // int controllerDirection = DIRECT;
 
-#include "../../include/robotic/pid.hpp"
+#include "robotic/pid.hpp"
 #include <stdio.h> //printf
 
 float clamp(float val, float Min, float Max) {

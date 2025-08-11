@@ -10,14 +10,10 @@ include_directories(
 
 # The program source file(s) we are testing.
 # We compile the .cpp directly into the test executable.
-set(PROGRAM_SOURCES
-    ${CMAKE_SOURCE_DIR}/platforms/shared/src/utils/angles.cpp
-    ${CMAKE_SOURCE_DIR}/platforms/shared/src/robotic/bluetooth.cpp
-    # ${CMAKE_SOURCE_DIR}/platforms/shared/src/utils/myprintf.cpp
-    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/robotic/eagle_packet.cpp
-    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/opponent_tracker.cpp
-    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/game_entities.cpp
+file(GLOB_RECURSE PROGRAM_SOURCES
+    "${CMAKE_SOURCE_DIR}/platforms/shared/src/*.cpp"
     ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/potential_field.cpp
+    ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/game_entities.cpp
     ${CMAKE_SOURCE_DIR}/platforms/falcon-2025/Core/Src/eaglesteward/world.cpp
 )
 

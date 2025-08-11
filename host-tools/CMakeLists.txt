@@ -9,8 +9,7 @@ include_directories(
 )
 
 file(GLOB_RECURSE SOURCES_NO_STM32_DEPENDENCY
-        "../platforms/shared/src/utils/*.cpp"
-        "../platforms/shared/src/robotic/*.cpp"
+        "../platforms/shared/src/*.cpp"
         "../platforms/falcon-2025/Core/Src/eaglesteward/*.cpp"
         "../platforms/falcon-2025/Core/Src/utils/*.cpp"
         "../platforms/falcon-2025/Core/Src/robotic/*.cpp"

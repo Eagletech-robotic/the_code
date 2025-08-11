@@ -1,10 +1,3 @@
-/*
- * fusion_odo_inu.c
- *
- *  Created on: Apr 6, 2025
- *      Author: nboulay
- */
-
 #include "robotic/fusion_odo_imu.hpp"
 
 // Il s'agit d'un moyen de mélanger les données des odomètres et de la central intertiel (IMU)

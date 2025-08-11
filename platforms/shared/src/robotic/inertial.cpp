@@ -1,10 +1,3 @@
-/*
- * intertial.c
- *
- *  Created on: Aug 30, 2024
- *      Author: nboulay
- */
-
 #include "robotic/inertial.hpp"
 
 #include <math.h>
