@@ -59,6 +59,40 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define PWM1_Pin GPIO_PIN_0
+#define PWM1_GPIO_Port GPIOA
+#define PWM2_Pin GPIO_PIN_1
+#define PWM2_GPIO_Port GPIOA
+#define SERVO1_Pin GPIO_PIN_2
+#define SERVO1_GPIO_Port GPIOA
+#define SERVO2_Pin GPIO_PIN_3
+#define SERVO2_GPIO_Port GPIOA
+#define VBAT_VSENSE_Pin GPIO_PIN_5
+#define VBAT_VSENSE_GPIO_Port GPIOA
+#define ENCODER1_1_Pin GPIO_PIN_6
+#define ENCODER1_1_GPIO_Port GPIOA
+#define ENCODER1_2_Pin GPIO_PIN_7
+#define ENCODER1_2_GPIO_Port GPIOA
+#define TOF1_SCL_Pin GPIO_PIN_10
+#define TOF1_SCL_GPIO_Port GPIOB
+#define TOF1_SDA_Pin GPIO_PIN_12
+#define TOF1_SDA_GPIO_Port GPIOB
+#define RGB_SCK_Pin GPIO_PIN_13
+#define RGB_SCK_GPIO_Port GPIOB
+#define SERVO4_Pin GPIO_PIN_14
+#define SERVO4_GPIO_Port GPIOB
+#define RGB_MOSI_Pin GPIO_PIN_15
+#define RGB_MOSI_GPIO_Port GPIOB
+#define ENCODER2_2_Pin GPIO_PIN_6
+#define ENCODER2_2_GPIO_Port GPIOC
+#define ENCODER2_2C7_Pin GPIO_PIN_7
+#define ENCODER2_2C7_GPIO_Port GPIOC
+#define TOF2_SDA_Pin GPIO_PIN_9
+#define TOF2_SDA_GPIO_Port GPIOC
+#define TOF2_SCL_Pin GPIO_PIN_8
+#define TOF2_SCL_GPIO_Port GPIOA
+#define SERVO3_Pin GPIO_PIN_9
+#define SERVO3_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
