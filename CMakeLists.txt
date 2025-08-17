@@ -1,18 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
-project(the_code LANGUAGES C CXX)
+project(the_code)
 
 # Set C/C++ standard
 set(CMAKE_CXX_STANDARD 20)
 
-# Enable testing framework CTest (should be near the top)
-# Required for gtest_discover_tests to work correctly
+# Enable testing framework CTest. Required for gtest_discover_tests to work correctly.
 enable_testing()
-
-# Include directories
-include_directories(
-        platforms/shared/include
-        platforms/falcon-2025/Core/Inc
-)
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
 add_subdirectory(platforms/falcon-2025/host-tools)
@@ -20,7 +13,7 @@ add_subdirectory(platforms/falcon-2025/host-tools)
 # Add tests subdirectory (only when not cross-compiling for STM32)
 if (NOT CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")
     message(STATUS "Adding tests subdirectory")
-    add_subdirectory(tests)
+    add_subdirectory(platforms/shared/tests)
 endif ()
 
 # --- STM32 Target Definition ---

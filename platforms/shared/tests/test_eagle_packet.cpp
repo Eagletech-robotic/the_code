@@ -1,4 +1,4 @@
-#include "../platforms/shared/include/robotic/eagle_packet.hpp"
+#include "robotic/eagle_packet.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -48,7 +48,7 @@ std::vector<uint8_t> build_payload(const EaglePacket &packet) {
     bp.push(packet.opponent_y_cm, 8);
     bp.push(static_cast<uint16_t>(packet.opponent_theta_deg), 9);
 
-    bp.push(0u, 1);                  // padding bit 56
+    bp.push(0u, 1); // padding bit 56
 
     return bp.to_bytes();
 }

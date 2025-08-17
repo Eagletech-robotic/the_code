@@ -210,7 +210,7 @@ test_native() {
 
     # 2. Build the test runner target
     echo "Building test runner..."
-    cmake --build "${cmake_build_dir}" --target test_runner -j$(nproc)
+    cmake --build "${cmake_build_dir}" --target shared_tests -j$(nproc)
 
     # 3. Run tests using CTest
     echo "Running tests..."
