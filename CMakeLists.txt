@@ -15,7 +15,7 @@ include_directories(
 )
 
 # Add host-tools subdirectory - this is where all host-side tools are defined
-add_subdirectory(host-tools)
+add_subdirectory(platforms/falcon-2025/host-tools)
 
 # Add tests subdirectory (only when not cross-compiling for STM32)
 if (NOT CMAKE_TOOLCHAIN_FILE MATCHES ".*stm32_toolchain.cmake")

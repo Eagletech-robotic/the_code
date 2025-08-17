@@ -44,7 +44,7 @@ Ce répertoire contient les programmes qui s'exécutent sur la machine de dével
 
 ```bash
 ./build.sh build --native --clean && \
-  ./build/host-tools/thibault_debug
+  ./build/platforms/falcon-2025/host-tools/thibault_debug
 ```
 
 ### `simulator_connector.cpp`
@@ -62,7 +62,7 @@ Installez Emscripten en suivant les instructions sur le [site officiel](https://
 
 ```bash
 ./build.sh build --wasm --clean && \
-  cp build-wasm/host-tools/simulator-connector.wasm ../simulator/public/
+  cp build-wasm/platforms/falcon-2025/host-tools/simulator-connector.wasm ../simulator/public/
 ```
 
 #### Utilisation
