@@ -1,8 +1,3 @@
-include_directories(
-        ${PROJECT_SOURCE_DIR}/platforms/shared/include
-        ../Core/Inc
-)
-
 file(GLOB_RECURSE SOURCES_NO_STM32_DEPENDENCY
         "${PROJECT_SOURCE_DIR}/platforms/shared/src/*.cpp"
         "../Core/Src/eaglesteward/*.cpp"
@@ -18,6 +13,11 @@ if (NOT EMSCRIPTEN)
             ${CMAKE_CURRENT_SOURCE_DIR}/thibault_debug.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/overrides.cpp
             ${SOURCES_NO_STM32_DEPENDENCY}
+    )
+
+    target_include_directories(thibault_debug PRIVATE
+            ${PROJECT_SOURCE_DIR}/platforms/shared/include
+            ../Core/Inc
     )
 
     target_compile_definitions(thibault_debug PRIVATE
@@ -46,6 +46,11 @@ if (EMSCRIPTEN)
             ${CMAKE_CURRENT_SOURCE_DIR}/simulator-connector.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/overrides.cpp
             ${SOURCES_NO_STM32_DEPENDENCY}
+    )
+
+    target_include_directories(simulator_connector PRIVATE
+            ${PROJECT_SOURCE_DIR}/platforms/shared/include
+            ../Core/Inc
     )
 
     target_compile_definitions(simulator_connector PRIVATE
